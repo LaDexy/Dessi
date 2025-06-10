@@ -1,24 +1,35 @@
 <template>
-  <div id="app">
-    <h1>Hola Mundox</h1>
-  <emprendedor/>
-  </div>
+  <InicialPag/>
 </template>
 
 <script>
-import { createApp } from "vue";
-import App from './App.vue'
+import InicialPag from './components/InicialPag.vue';
 
-createApp(App).mount('#app');
+export default {
+  name: 'App', 
+    components: {
+    InicialPag
+    }
+}
 </script>
 
 <style>
+html,
+body {
+  display: flex;
+  margin: 0px;
+  background-color: #000000;
+}
+
 #app {
-  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+  font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
+  color: #000000;
+  margin-top: 10px;
 }
+
+
+
 </style>

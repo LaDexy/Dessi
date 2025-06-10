@@ -11,9 +11,8 @@ app.set("port",4000);
 app.listen(app.get("port"));
 console.log("Servidor ejecutando en puerto",app.get("port"));
 
-//Rutas
-app.get("/",(req,res)=> res.sendFile(__dirname + "/interfaz/registro/emprendedor.html"));
-
+//Ruta de prueba
 app.get('/test', (req,res) => {
-    res.send('Holaaaaa');
-})
+    res.send('Holaaaaaa');
+});
+
