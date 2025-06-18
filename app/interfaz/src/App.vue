@@ -1,14 +1,15 @@
 <template>
-  <InicialPag/>
+  <PruebaDos/>
 </template>
 
 <script>
-import InicialPag from './components/InicialPag.vue';
+import PruebaDos from './components/PruebaDos.vue';
 
 export default {
   name: 'App', 
     components: {
-    InicialPag
+
+    PruebaDos
     }
 }
 </script>
@@ -18,7 +19,7 @@ html,
 body {
   display: flex;
   margin: 0px;
-  background-color: #000000;
+  background-color: hsl(0, 0%, 100%);
 }
 
 #app {
