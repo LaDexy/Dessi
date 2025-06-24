@@ -18,9 +18,9 @@
 
             <div class="content">
 
-                <div @click="MostrarRegistroEmpre = true; perfil='Emprendedor'">Emprendedor</div>
-                <div @click="MostrarRegistroDise = true; perfil='Diseñador'">Diseñador</div>
-                <div @click="MostrarRegistroMar = true; perfil='Marketing'">Marketing</div>
+                <div @click="$emit('MostrarRegistro', 'Emprendedor')">Emprendedor</div>
+                <div @click="$emit('MostrarRegistro', 'Diseñador')">Diseñador</div>
+                <div @click="$emit('MostrarRegistro', 'Marketing')">Marketing</div>
 
             </div>
     </div>
