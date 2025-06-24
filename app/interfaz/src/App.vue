@@ -11,6 +11,7 @@
     <PruebaRegistro/>
     <RegistroDisenador/>
     <RegistroMarketing/>
+
   </div>
 </template>
 
@@ -30,6 +31,19 @@ import RegistroMarketing from './components/TituloInicial.vue';
 
 export default {
   name: 'App', 
+
+data(){
+    return {
+
+    MostrarRegistroEmpre: false,
+    MostrarRegistroDise: false,
+    MostrarRegistroMar: false
+
+            }
+
+        },
+
+
     components: {  
     PatenteAdmin,
     BarraOpciones,
@@ -43,7 +57,7 @@ export default {
     RegistroDisenador,
     RegistroMarketing
 
-    },
+    }
 
     
     
