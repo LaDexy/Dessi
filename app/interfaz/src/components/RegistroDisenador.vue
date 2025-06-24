@@ -17,7 +17,7 @@
 <form action="#">
 
 <!--Icono de Cerrar-->
-<div class="Cerrar">
+<div class="Cerrar" @click="$emit('cerrar')">
 	<span class="icon-close">
 
 <i class="fa-regular fa-circle-xmark" style="color: #0a0f18;"></i>

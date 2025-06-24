@@ -8,9 +8,9 @@
     <ImagenCentral />
     <BarraOpciones />
     <PatenteAdmin />
-    <PruebaRegistro />
-    <RegistroDisenador v-if="MostrarRegistroDise"/>
-    <RegistroMarketing v-if="MostrarRegistroMar"/>
+    <PruebaRegistro v-if="MostrarRegistroEmpre" @cerrar="MostrarRegistroEmpre=false"/>
+    <RegistroDisenador v-if="MostrarRegistroDise" @cerrar="MostrarRegistroDise=false"/>
+    <RegistroMarketing v-if="MostrarRegistroMar" @cerrar="MostrarRegistroMar=false"/>
   </div>
 </template>
 
@@ -23,9 +23,9 @@ import LogrosUsuarios from "./components/LogrosUsuarios.vue";
 import PatenteAdmin from "./components/PatenteAdmin.vue";
 import TextoMotivador from "./components/TextoMotivador.vue";
 import TituloInicial from "./components/TituloInicial.vue";
-import PruebaRegistro from "./components/TituloInicial.vue";
-import RegistroDisenador from "./components/TituloInicial.vue";
-import RegistroMarketing from "./components/TituloInicial.vue";
+import PruebaRegistro from "./components/PruebaRegistro.vue";
+import RegistroDisenador from "./components/RegistroDisenador.vue";
+import RegistroMarketing from "./components/RegistroMarketing.vue";
 
 export default {
   name: "App",

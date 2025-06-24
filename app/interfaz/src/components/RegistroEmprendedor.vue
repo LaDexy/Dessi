@@ -18,7 +18,7 @@
 
 <!--Icono de Cerrar-->
 
-<span class="icon-close">
+<span class="icon-close" @click="$emit('cerrar')">
 
 <i class="fa-solid fa-xmark"></i>
 
