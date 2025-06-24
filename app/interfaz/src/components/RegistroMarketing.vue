@@ -3,7 +3,7 @@
 
   <!--Clase que denomina todos los requisitos-->
   
-      <div class="Requisitos">
+      <div class="TodoTres">
 
 
 
@@ -13,59 +13,68 @@
 
 <div class="wrapper">
 <div class="form-box login">
-<h2>Emprendedor</h2>
+<h2>Marketing</h2>
 <form action="#">
 
 <!--Icono de Cerrar-->
+<div class="Cerrar">
+	<span class="icon-close">
 
-<span class="icon-close">
-
-<i class="fa-solid fa-xmark"></i>
+<i class="fa-regular fa-circle-xmark" style="color: #0a0f18;"></i>
 
 </span>
+</div>
 
-<!--OPcion de Correo electronico-->
+<!-- Opcion de Nombre de usuario-->
+
+	<div class="input-box">
+		<span class="icon">
+     
+    </span>
+		<input type="text" required>
+		<label>Nombre de usuario</label>
+	</div>
+
+
+<!-- Opcion de Localidad-->
+
+	<div class="input-box">
+		<span class="icon">
+     
+    </span>
+		<input type="text" required>
+		<label>Localidad</label>
+	</div>
+
+<!-- Opcion de Modalidad-->
+
+	<div class="remember-forgot">
+		<label><input type="checkbox">
+
+		Metodo remoto</label>
+	</div>
+
+	<div class="remember-forgot">
+		<label><input type="checkbox">
+
+		Metodo Semi-Presencial</label>
+	</div>
+
+<!--Opcion de Correo electronico-->
 	<div class="input-box">
 		<span class="icon">
      
     </span>
 		<input type="email" required>
-		<label>Email</label>
+		<label>Correo electronico</label>
 	</div>
 
-<!--OPcion de contraseña-->
-	<div class="input-box">
-    
-		<span class="icon">
- 
-    </span>
-		<input type="password" required>
-		<label>Password</label>
+<!--Boton para registrar datos-->
 
+	<button type="submit" class="Registro">Registrar</button>
 
+	</form>
 	</div>
-
-  <!--Opcion para recordar contraseña-->
-	<div class="remember-forgot">
-		<label><input type="checkbox">
-
-		Recuerdame</label>
-	</div>
-
- 
- <!--Olvido de contraseña-->
-<div class="remember-forgot">
-<div>
-<a href="#">Olvide contraseña</a>
-</div>
-</div>
-  <!--Boton para registrar datos-->
-
-<button type="submit" class="Registro">Registrar</button>
-
-</form>
-</div>
-
 
 <!--Cierre de requisitos-->
 
@@ -83,7 +92,7 @@
 <script>
 
 export default {
-    name: "RegistroEmprendedor"
+    name: "RegistroMarketing"
   
 }
 
@@ -94,30 +103,31 @@ export default {
 
 
 /*centrar los requisitos*/
-.Requisitos{
+.TodoTres{
 
 position: absolute;
-left: 800px;
+left: 500px;
 top: 50px;
 padding: 40px;
-
+font-family: "Times New Roman", serif;
 
 }
 
 .wrapper {
 
 position: relative;
-width: 400px;
-height: 500px;
-background: transparent;
-border: 2px solid rgba(0, 0, 0, 0.5);
-border-radius: 20px;
+width: 450px;
+height: 600px;
+background: white;
+border: 5px solid rgba(0, 0, 0, 0.5);
+border-radius: 100px;
 backdrop-filter: blur(20px);
 box-shadow: 0 0 30px rgba(0, 0, 0, .5);
 display: flex;
 justify-content: center;
 align-items: center;
 overflow: hidden;
+opacity: 0.9;
 
 }
 
@@ -131,26 +141,23 @@ padding: 40px;
 .wrapper .icon-close{
 
 position: absolute;
-top: 0;
-right: 0;
+top: 18px;
+right: 28px;
 width: 45px;
 height: 45px;
-background: #162938;
 font-size: 2em;
-color: #fff;
 display: flex;
 justify-content: center;
 align-items: center;
-border-bottom-left-radius: 20px;
+border-bottom-left-radius: 100px;
 cursor: pointer;
-z-index: 1;
 
 }
 
 .form-box h2{
 
-font-size: 2em;
-color: #2e6fa0;
+font-size: 3em;
+color: #000000;
 text-align: center;
 
 }
@@ -160,7 +167,7 @@ text-align: center;
 position: relative;
 width: 100%;
 height: 50px;
-border-bottom: 2px solid #5f7e96;
+border-bottom: 2px solid #000000;
 margin: 30px 0;
 
 }
@@ -171,8 +178,8 @@ position: absolute;
 top: 50%;
 left: 5px;
 transform: translateY(-50%);
-font-size: 1em;
-color: #446a88;
+font-size: 1.3em;
+color: #000000;
 font-weight: 500;
 pointer-events: none;
 transition: .5s;
@@ -193,8 +200,8 @@ height: 100%;
 background: transparent;
 border: none;
 outline: none;
-font-size: 1em;
-color: #6290b4;
+font-size: 1.5em;
+color: #000000;
 font-weight: 600;
 padding: 0 35px 0 5px;
 
@@ -202,8 +209,8 @@ padding: 0 35px 0 5px;
 
 .remember-forgot{
 
-font-size: .9em;
-color: #76bcf1;
+font-size: 1em;
+color: #000000;
 font-weight: 500;
 margin: -15px 0 15px;
 display: flex;
@@ -213,7 +220,7 @@ justify-content: space-between;
 
 .remember-forgot label input{
 
-accent-color: #85b8df;
+accent-color: #861c78;
 margin-right: 3px;
 
 }
@@ -235,7 +242,7 @@ text-decoration: underline;
 
 width: 100%;
 height: 45px;
-background: #162938;
+background: #440857;
 border: none;
 outline: none;
 border-radius: 6px;
