@@ -6,7 +6,7 @@
 
     <div class="Inicio">
 
-        <div @click="$emit('MostrarSesion', 'Sesion')"><button>Iniciar Sesion</button></div>
+        <div @click="$emit('MostrarInicio', 'Iniciar')"><button>Iniciar Sesion</button></div>
 
     </div>
 
@@ -29,10 +29,9 @@ export default{
 /*Boton de Inicio de Sesion*/
 .Inicio{
 
-left: 35%;
+left: 30%;
 position: relative;
 display: inline-block;
-top: 10px;
 
 }
 

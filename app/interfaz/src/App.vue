@@ -2,7 +2,7 @@
   <div>
     <TituloInicial />
     <BotonesRegistro @MostrarRegistro="MostrarRegistro"/>
-    <BotonInicio @MostrarSesion="MostrarSesion"/>
+    <BotonInicio @MostrarInicio="MostrarInicio"/>
     <TextoMotivador />
     <CarruselImagenes />
     <LogrosUsuarios />
@@ -12,7 +12,7 @@
     <RegistroEmprendedor v-if="MostrarRegistroEmpre" @cerrar="MostrarRegistroEmpre=false"/>
     <RegistroDisenador v-if="MostrarRegistroDise" @cerrar="MostrarRegistroDise=false"/>
     <RegistroMarketing v-if="MostrarRegistroMar" @cerrar="MostrarRegistroMar=false"/>
-    <InicioSesion v-if="MostrarInicio" @cerrar="MostrarInicio=false"/>
+    <InicioSesion v-if="MostrarInicioSesion" @cerrar="MostrarInicioSesion=false"/>
 
   </div>
 </template>
@@ -30,7 +30,7 @@ import RegistroDisenador from "./components/RegistroDisenador.vue";
 import RegistroMarketing from "./components/RegistroMarketing.vue";
 import RegistroEmprendedor from "./components/RegistroEmprendedor.vue";
 import InicioSesion from "./components/InicioSesion.vue";
-import BotonInicio from "./components/InicioSesion.vue";
+import BotonInicio from "./components/BotonInicio.vue";
 
 export default {
   name: "App",
@@ -40,7 +40,7 @@ export default {
       MostrarRegistroEmpre: false,
       MostrarRegistroDise: false,
       MostrarRegistroMar: false,
-      MostrarInicio: false,
+      MostrarInicioSesion: false,
     };
   },
 
@@ -60,7 +60,7 @@ export default {
 
       }
 
-      else{
+      else {
 
          this.MostrarRegistroEmpre = false
           this.MostrarRegistroDise = false
@@ -70,17 +70,19 @@ export default {
 
     },
 
-    MostrarSesion(Inicio){
+    MostrarSesion(Sesion){
 
-      if (Inicio == 'Sesion') {
-        this.MostrarInicio = true
-      }
+        if (Sesion == 'Iniciar'){
 
-      else{
+          this.MostrarInicioSesion = true
 
-        this.MostrarInicio = false
+        }
 
-      }
+        else{
+
+          this.MostrarInicioSesion = false
+
+        }
 
     },
 
