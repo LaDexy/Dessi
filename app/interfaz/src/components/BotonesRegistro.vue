@@ -2,14 +2,6 @@
 
 <div>
 
-<!--Boton para iniciar sesion-->
-
-    <div class="Inicio">
-
-        <button>Iniciar Sesion</button>
-
-    </div>
-
 <!--Menu desplegable para registro de perfil-->
 
     <div class="dropdown">
@@ -18,9 +10,9 @@
 
             <div class="content">
 
-                <div @click="$emit('MostrarRegistro', 'Emprendedor')">Emprendedor</div>
-                <div @click="$emit('MostrarRegistro', 'Diseñador')">Diseñador</div>
-                <div @click="$emit('MostrarRegistro', 'Marketing')">Marketing</div>
+                <div @click="$emit('MostrarRegistro', 'Emprendedor')"><a>Emprendedor</a></div>
+                <div @click="$emit('MostrarRegistro', 'Diseñador')"><a>Diseñador</a></div>
+                <div @click="$emit('MostrarRegistro', 'Marketing')"><a>Marketing</a></div>
 
             </div>
     </div>
@@ -44,25 +36,7 @@ export default {
 
 <style>
 
-/*Boton de Inicio de Sesion*/
-.Inicio{
 
-left: 35%;
-position: relative;
-display: inline-block;
-top: 10px;
-
-}
-
-.Inicio button{
-
-background-color: antiquewhite;
-color: white;
-padding: 10px 15px;
-border: none;
-cursor: pointer;
-
-}
 
 /*Menu desplegable de Registro*/
 

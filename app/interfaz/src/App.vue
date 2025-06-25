@@ -1,16 +1,19 @@
 <template>
   <div>
     <TituloInicial />
-    <BotonesRegistro @MostrarRegistro="MostrarRegistro" />
+    <BotonesRegistro @MostrarRegistro="MostrarRegistro"/>
+    <BotonInicio @MostrarSesion="MostrarSesion"/>
     <TextoMotivador />
     <CarruselImagenes />
     <LogrosUsuarios />
     <ImagenCentral />
     <BarraOpciones />
     <PatenteAdmin />
-    <PruebaRegistro v-if="MostrarRegistroEmpre" @cerrar="MostrarRegistroEmpre=false"/>
+    <RegistroEmprendedor v-if="MostrarRegistroEmpre" @cerrar="MostrarRegistroEmpre=false"/>
     <RegistroDisenador v-if="MostrarRegistroDise" @cerrar="MostrarRegistroDise=false"/>
     <RegistroMarketing v-if="MostrarRegistroMar" @cerrar="MostrarRegistroMar=false"/>
+    <InicioSesion v-if="MostrarInicio" @cerrar="MostrarInicio=false"/>
+
   </div>
 </template>
 
@@ -23,9 +26,11 @@ import LogrosUsuarios from "./components/LogrosUsuarios.vue";
 import PatenteAdmin from "./components/PatenteAdmin.vue";
 import TextoMotivador from "./components/TextoMotivador.vue";
 import TituloInicial from "./components/TituloInicial.vue";
-import PruebaRegistro from "./components/PruebaRegistro.vue";
 import RegistroDisenador from "./components/RegistroDisenador.vue";
 import RegistroMarketing from "./components/RegistroMarketing.vue";
+import RegistroEmprendedor from "./components/RegistroEmprendedor.vue";
+import InicioSesion from "./components/InicioSesion.vue";
+import BotonInicio from "./components/InicioSesion.vue";
 
 export default {
   name: "App",
@@ -35,6 +40,7 @@ export default {
       MostrarRegistroEmpre: false,
       MostrarRegistroDise: false,
       MostrarRegistroMar: false,
+      MostrarInicio: false,
     };
   },
 
@@ -63,6 +69,21 @@ export default {
       }
 
     },
+
+    MostrarSesion(Inicio){
+
+      if (Inicio == 'Sesion') {
+        this.MostrarInicio = true
+      }
+
+      else{
+
+        this.MostrarInicio = false
+
+      }
+
+    },
+
   },
 
   components: {
@@ -74,9 +95,11 @@ export default {
     LogrosUsuarios,
     TextoMotivador,
     TituloInicial,
-    PruebaRegistro,
+    RegistroEmprendedor,
     RegistroDisenador,
     RegistroMarketing,
+    InicioSesion,
+    BotonInicio
   },
 };
 </script>
