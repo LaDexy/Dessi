@@ -2,17 +2,17 @@
   <div>
     <TituloInicial />
     <BotonesRegistro @MostrarRegistro="MostrarRegistro"/>
-    <BotonInicio @MostrarInicio="MostrarInicio"/>
     <TextoMotivador />
     <CarruselImagenes />
     <LogrosUsuarios />
     <ImagenCentral />
     <BarraOpciones />
     <PatenteAdmin />
-    <RegistroEmprendedor v-if="MostrarRegistroEmpre" @cerrar="MostrarRegistroEmpre=false"/>
-    <RegistroDisenador v-if="MostrarRegistroDise" @cerrar="MostrarRegistroDise=false"/>
-    <RegistroMarketing v-if="MostrarRegistroMar" @cerrar="MostrarRegistroMar=false"/>
-    <InicioSesion v-if="MostrarInicioSesion" @cerrar="MostrarInicioSesion=false"/>
+    <RegistroEmprendedor v-if="MostrarRegistroEmpre" @cerrar="MostrarRegistroEmpre=false"  @MostrarRegistro="MostrarRegistro"/>
+    <RegistroDisenador v-if="MostrarRegistroDise" @cerrar="MostrarRegistroDise=false" @MostrarRegistro="MostrarRegistro"/>
+    <RegistroMarketing v-if="MostrarRegistroMar" @cerrar="MostrarRegistroMar=false" @MostrarRegistro="MostrarRegistro"/>
+    <InicioSesion v-if="MostrarInicioSes" @cerrar="MostrarInicioSes=false"/>
+    <CrearContrasena v-if="MostrarClave" @cerrar="MostrarClave=false"/>
 
   </div>
 </template>
@@ -30,7 +30,7 @@ import RegistroDisenador from "./components/RegistroDisenador.vue";
 import RegistroMarketing from "./components/RegistroMarketing.vue";
 import RegistroEmprendedor from "./components/RegistroEmprendedor.vue";
 import InicioSesion from "./components/InicioSesion.vue";
-import BotonInicio from "./components/BotonInicio.vue";
+import CrearContrasena from "./components/CrearContrasena.vue";
 
 export default {
   name: "App",
@@ -40,7 +40,8 @@ export default {
       MostrarRegistroEmpre: false,
       MostrarRegistroDise: false,
       MostrarRegistroMar: false,
-      MostrarInicioSesion: false,
+      MostrarInicioSes: false,
+      MostrarClave: false,
     };
   },
 
@@ -50,6 +51,8 @@ export default {
         this.MostrarRegistroEmpre = true
           this.MostrarRegistroDise = false
           this.MostrarRegistroMar = false
+          this.MostrarInicioSes = false
+          this.MostrarClave = false
       }
 
       else if (Tipo == 'Diseñador'){
@@ -57,32 +60,42 @@ export default {
          this.MostrarRegistroEmpre = false
           this.MostrarRegistroDise = true
           this.MostrarRegistroMar = false
+          this.MostrarInicioSes = false
+          this.MostrarClave = false
 
       }
 
-      else {
+      else if (Tipo == 'Clave'){
+
+        this.MostrarRegistroEmpre = false
+          this.MostrarRegistroDise = false
+          this.MostrarRegistroMar = false
+          this.MostrarInicioSes = false
+          this.MostrarClave = true
+
+      }
+
+      else if (Tipo == 'Iniciar'){
+
+        this.MostrarRegistroEmpre = false
+          this.MostrarRegistroDise = false
+          this.MostrarRegistroMar = false
+          this.MostrarInicioSes = true
+          this.MostrarClave = false
+
+      }
+
+      else{
 
          this.MostrarRegistroEmpre = false
           this.MostrarRegistroDise = false
           this.MostrarRegistroMar = true
+          this.MostrarInicioSes = false
+          this.MostrarClave = false
 
       }
 
-    },
-
-    MostrarSesion(Sesion){
-
-        if (Sesion == 'Iniciar'){
-
-          this.MostrarInicioSesion = true
-
-        }
-
-        else{
-
-          this.MostrarInicioSesion = false
-
-        }
+      
 
     },
 
@@ -101,7 +114,7 @@ export default {
     RegistroDisenador,
     RegistroMarketing,
     InicioSesion,
-    BotonInicio
+    CrearContrasena
   },
 };
 </script>

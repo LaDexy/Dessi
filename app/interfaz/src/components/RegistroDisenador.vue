@@ -71,7 +71,7 @@
 
 <!--Boton para registrar datos-->
 
-	<button type="submit" class="Registro">Registrar</button>
+	<div @click="$emit('MostrarRegistro', 'Clave')"><button type="submit" class="Registro">Registrar</button></div>
 
 	</form>
 	</div>

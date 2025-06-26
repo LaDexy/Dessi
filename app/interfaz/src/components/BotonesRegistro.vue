@@ -2,6 +2,15 @@
 
 <div>
 
+     <!--Boton para iniciar sesion-->
+
+    <div class="Inicio">
+
+        <div @click="$emit('MostrarRegistro', 'Iniciar')"><button>Iniciar Sesion</button></div>
+
+    </div>
+
+
 <!--Menu desplegable para registro de perfil-->
 
     <div class="dropdown">
@@ -36,7 +45,25 @@ export default {
 
 <style>
 
+/*Boton de Inicio de Sesion*/
+.Inicio{
 
+left: 35%;
+position: relative;
+display: inline-block;
+top: 9.5px;
+
+}
+
+.Inicio button{
+
+background-color: antiquewhite;
+color: white;
+padding: 10px 15px;
+border: none;
+cursor: pointer;
+
+}
 
 /*Menu desplegable de Registro*/
 

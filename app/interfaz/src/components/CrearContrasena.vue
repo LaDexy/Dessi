@@ -1,13 +1,13 @@
 <template>
-  <div id="Iniciar">
+  <div id="Contraseña">
     <!--Clase que denomina todos los requisitos-->
 
-    <div class="TodoCuatro">
+    <div class="Clave">
       <!--Requisitos para el registro-->
 
-      <div class="Boton">
+      <div class="General">
         <div class="form-box login">
-          <h2>Iniciar Sesion</h2>
+          <h2>Creacion de contraseña</h2>
           <form action="#">
             <!--Icono de Cerrar-->
             <div class="Cerrar" @click="$emit('cerrar')">
@@ -19,35 +19,18 @@
               </span>
             </div>
 
-            <!-- Opcion de Nombre de usuario-->
-
-            <div class="input-box">
-              <span class="icon"> </span>
-              <input type="Email" required />
-              <label>Correo electronico</label>
-            </div>
-
-            <!--OPcion de contraseña-->
+            <!--OPcion de crear contraseña-->
             <div class="input-box">
               <span class="icon"> </span>
               <input type="password" required />
-              <label>Password</label>
+              <label>Contraseña</label>
             </div>
 
-            <!--Opcion para recordar contraseña-->
-            <div class="remember-forgot">
-              <label
-                ><input type="checkbox" />
-
-                Recordar contraseña</label
-              >
-            </div>
-
-            <!--Olvido de contraseña-->
-            <div class="remember-forgot">
-              <div>
-                <a href="#">Olvide contraseña</a>
-              </div>
+            <!--OPcion de comprobar contraseña -->
+            <div class="input-box">
+              <span class="icon"> </span>
+              <input type="password" required />
+              <label>Validar contraseña</label>
             </div>
 
             <!--Boton para registrar datos-->
@@ -70,7 +53,7 @@ export default {
 
 <style>
 /*centrar los requisitos*/
-.TodoCuatro {
+.Clave {
   position: absolute;
   left: 500px;
   top: 50px;
@@ -78,10 +61,10 @@ export default {
   font-family: "Times New Roman", serif;
 }
 
-.Boton {
+.General {
   position: relative;
   width: 450px;
-  height: 400px;
+  height: 500px;
   background: white;
   border: 5px solid rgba(0, 0, 0, 0.5);
   border-radius: 100px;
@@ -94,12 +77,12 @@ export default {
   opacity: 0.9;
 }
 
-.Boton .form-box {
+.General .form-box {
   width: 100%;
   padding: 40px;
 }
 
-.Boton .icon-close {
+.General .icon-close {
   position: absolute;
   top: 18px;
   right: 28px;
