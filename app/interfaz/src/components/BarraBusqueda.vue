@@ -41,8 +41,8 @@ export default{
 
 position: absolute;
 padding: 5px;
-top: 260px;
-left: 630px;
+top: 246px;
+left: 47px;
 
 }
 

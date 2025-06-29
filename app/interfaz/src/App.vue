@@ -24,6 +24,7 @@
     <OpcionPerfil/>
     <ContenidoMenu/>
     <BarraBusqueda/>
+    <BotonesFiltro/>
 
   </div>
 </template>
@@ -52,6 +53,7 @@ import ImagenPerfil from './components/ImagenPerfil.vue';
 import OpcionPerfil from './components/OpcionPerfil.vue';
 import ContenidoMenu from './components/ContenidoMenu.vue';
 import BarraBusqueda from './components/BarraBusqueda.vue';
+import BotonesFiltro from './components/BotonesFiltro.vue';
 
 export default {
   name: "App",
@@ -154,7 +156,8 @@ export default {
     ImagenPerfil,
     OpcionPerfil,
     ContenidoMenu,
-    BarraBusqueda
+    BarraBusqueda,
+    BotonesFiltro
   }
 
 }
@@ -166,7 +169,7 @@ html,
 body {
   display: flex;
   margin: 0px;
-  background-color: hsla(0, 0%, 89%, 0.979);
+  background-color: hsla(0, 0%, 100%, 0.979);
 }
 
 #app {
