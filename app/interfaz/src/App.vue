@@ -22,6 +22,7 @@
     <BarraPerfil/>
     <ImagenPerfil/>
     <OpcionPerfil/>
+    <ContenidoMenu/>
 
   </div>
 </template>
@@ -48,6 +49,7 @@ import CrearContrasena from "./components/CrearContrasena.vue";
 import BarraPerfil from './components/BarraPerfil.vue';
 import ImagenPerfil from './components/ImagenPerfil.vue';
 import OpcionPerfil from './components/OpcionPerfil.vue';
+import ContenidoMenu from './components/ContenidoMenu.vue';
 
 export default {
   name: "App",
@@ -148,8 +150,8 @@ export default {
 
     BarraPerfil,
     ImagenPerfil,
-    OpcionPerfil
-
+    OpcionPerfil,
+    ContenidoMenu
   }
 
 }

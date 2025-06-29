@@ -10,9 +10,8 @@
 
             <div class="content">
 
-                <div><a>Emprendedor</a></div>
-                <div><a>Diseñador</a></div>
-                <div><a>Marketing</a></div>
+                <div><a>Editar perfil</a></div>
+                <div><a>Cerrar sesion</a></div>
 
             </div>
     </div>
@@ -38,7 +37,7 @@ export default{
 .MiPerfil{
 
 top: 190px;
-left: 90%;
+left: 85%;
 position: absolute;
 display: inline-block;
 
@@ -71,7 +70,7 @@ padding: 10px 15px;
 display: none;
 position: absolute;
 background-color: antiquewhite;
-min-width: 100px;
+min-width: 150px;
 box-shadow: 2px 2px 5px  hsla(0, 0%, 0%, 0.8) ;
 }
 
