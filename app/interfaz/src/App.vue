@@ -1,5 +1,8 @@
 <template>
   <div>
+
+    <!-- Pagina Inicial para Inicio de sesion o registro-->
+    <!--
     <TituloInicial />
     <BotonesRegistro @MostrarRegistro="MostrarRegistro"/>
     <TextoMotivador />
@@ -13,11 +16,18 @@
     <RegistroMarketing v-if="MostrarRegistroMar" @cerrar="MostrarRegistroMar=false" @MostrarRegistro="MostrarRegistro"/>
     <InicioSesion v-if="MostrarInicioSes" @cerrar="MostrarInicioSes=false"/>
     <CrearContrasena v-if="MostrarClave" @cerrar="MostrarClave=false"/>
+    -->
+
+    <!-- Pagina Central para ejecucion de app web -->
+    <BarraPerfil/>
 
   </div>
 </template>
 
 <script>
+
+/* Importacion de los componentes de Pagina Inicial*/
+/*
 import BarraOpciones from "./components/BarraOpciones.vue";
 import BotonesRegistro from "./components/BotonesRegistro.vue";
 import CarruselImagenes from "./components/CarruselImagenes.vue";
@@ -31,10 +41,16 @@ import RegistroMarketing from "./components/RegistroMarketing.vue";
 import RegistroEmprendedor from "./components/RegistroEmprendedor.vue";
 import InicioSesion from "./components/InicioSesion.vue";
 import CrearContrasena from "./components/CrearContrasena.vue";
+*/
+
+import BarraPerfil from './components/BarraPerfil.vue';
 
 export default {
   name: "App",
 
+  /* Funciones y metodos de Pagina Principal*/
+
+  /*
   data() {
     return {
       MostrarRegistroEmpre: false,
@@ -101,6 +117,11 @@ export default {
 
   },
 
+  */
+
+  /*Componentes de Pagina Principal*/
+
+  /*
   components: {
     PatenteAdmin,
     BarraOpciones,
@@ -117,6 +138,16 @@ export default {
     CrearContrasena
   },
 };
+
+*/
+  components: {
+
+    BarraPerfil
+
+  }
+
+}
+
 </script>
 
 <style>
