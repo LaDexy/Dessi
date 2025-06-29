@@ -9,7 +9,7 @@
     <CarruselImagenes />
     <LogrosUsuarios />
     <ImagenCentral />
-    <BarraOpciones />
+    <OpcionesBarra />
     <PatenteAdmin />
     <RegistroEmprendedor v-if="MostrarRegistroEmpre" @cerrar="MostrarRegistroEmpre=false"  @MostrarRegistro="MostrarRegistro"/>
     <RegistroDisenador v-if="MostrarRegistroDise" @cerrar="MostrarRegistroDise=false" @MostrarRegistro="MostrarRegistro"/>
@@ -21,6 +21,7 @@
     <!-- Pagina Central para ejecucion de app web -->
     <BarraPerfil/>
     <ImagenPerfil/>
+    <OpcionPerfil/>
 
   </div>
 </template>
@@ -29,7 +30,7 @@
 
 /* Importacion de los componentes de Pagina Inicial*/
 /*
-import BarraOpciones from "./components/BarraOpciones.vue";
+import OpcionesBarra from "./components/OpcionesBarra.vue";
 import BotonesRegistro from "./components/BotonesRegistro.vue";
 import CarruselImagenes from "./components/CarruselImagenes.vue";
 import ImagenCentral from "./components/ImagenCentral.vue";
@@ -46,6 +47,7 @@ import CrearContrasena from "./components/CrearContrasena.vue";
 
 import BarraPerfil from './components/BarraPerfil.vue';
 import ImagenPerfil from './components/ImagenPerfil.vue';
+import OpcionPerfil from './components/OpcionPerfil.vue';
 
 export default {
   name: "App",
@@ -126,7 +128,7 @@ export default {
   /*
   components: {
     PatenteAdmin,
-    BarraOpciones,
+    OpcionesBarra,
     BotonesRegistro,
     CarruselImagenes,
     ImagenCentral,
@@ -145,7 +147,8 @@ export default {
   components: {
 
     BarraPerfil,
-    ImagenPerfil
+    ImagenPerfil,
+    OpcionPerfil
 
   }
 
