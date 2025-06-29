@@ -23,6 +23,7 @@
     <ImagenPerfil/>
     <OpcionPerfil/>
     <ContenidoMenu/>
+    <BarraBusqueda/>
 
   </div>
 </template>
@@ -50,6 +51,7 @@ import BarraPerfil from './components/BarraPerfil.vue';
 import ImagenPerfil from './components/ImagenPerfil.vue';
 import OpcionPerfil from './components/OpcionPerfil.vue';
 import ContenidoMenu from './components/ContenidoMenu.vue';
+import BarraBusqueda from './components/BarraBusqueda.vue';
 
 export default {
   name: "App",
@@ -151,7 +153,8 @@ export default {
     BarraPerfil,
     ImagenPerfil,
     OpcionPerfil,
-    ContenidoMenu
+    ContenidoMenu,
+    BarraBusqueda
   }
 
 }
@@ -163,7 +166,7 @@ html,
 body {
   display: flex;
   margin: 0px;
-  background-color: hsla(0, 34%, 64%, 0.979);
+  background-color: hsla(0, 0%, 89%, 0.979);
 }
 
 #app {
