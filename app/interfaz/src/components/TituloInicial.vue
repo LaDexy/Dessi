@@ -32,7 +32,7 @@ export default {
   position: absolute;
   color: white;
   text-align: left;
-  top: 10px;
+  top: 15px;
 
 }
 
@@ -41,7 +41,7 @@ export default {
 .rectangulo{
 
 position: absolute;
-width: 1520px;
+width: 1525px;
 height: 60px;
 background-color: hsl(300, 29%, 78%);
 

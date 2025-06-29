@@ -20,6 +20,7 @@
 
     <!-- Pagina Central para ejecucion de app web -->
     <BarraPerfil/>
+    <ImagenPerfil/>
 
   </div>
 </template>
@@ -44,6 +45,7 @@ import CrearContrasena from "./components/CrearContrasena.vue";
 */
 
 import BarraPerfil from './components/BarraPerfil.vue';
+import ImagenPerfil from './components/ImagenPerfil.vue';
 
 export default {
   name: "App",
@@ -142,7 +144,8 @@ export default {
 */
   components: {
 
-    BarraPerfil
+    BarraPerfil,
+    ImagenPerfil
 
   }
 
