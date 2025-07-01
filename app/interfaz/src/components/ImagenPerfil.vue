@@ -4,7 +4,21 @@
  <!--Foto de perfil-->
 
     <div class="Perfil">
-      <div class="circulo">Foto</div>
+
+     
+      <div class="circulo">
+
+         <div class="cards">
+          <div class="card">
+            <div class="content">
+              <div class="img">
+                <img src="../assets/Usuario.png" alt="">
+            </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
 
     </div>
@@ -24,7 +38,8 @@ export default{
 
 /*Circulo de referencia para foto de perfil*/
 
-.Perfil {
+.Perfil .circulo .cards .card .img{
+
     position: absolute;
   width: 100px;
   height: 100px;

@@ -20,11 +20,12 @@
 
     <!-- Pagina Central para ejecucion de app web -->
     <BarraPerfil/>
-    <ImagenPerfil/>
     <OpcionPerfil/>
     <ContenidoMenu/>
     <BarraBusqueda/>
     <BotonesFiltro/>
+    <TarjetasPerfiles/>
+    <ImagenPerfil/>
 
   </div>
 </template>
@@ -49,11 +50,12 @@ import CrearContrasena from "./components/CrearContrasena.vue";
 */
 
 import BarraPerfil from './components/BarraPerfil.vue';
-import ImagenPerfil from './components/ImagenPerfil.vue';
 import OpcionPerfil from './components/OpcionPerfil.vue';
 import ContenidoMenu from './components/ContenidoMenu.vue';
 import BarraBusqueda from './components/BarraBusqueda.vue';
 import BotonesFiltro from './components/BotonesFiltro.vue';
+import TarjetasPerfiles from './components/TarjetasPerfiles.vue';
+import ImagenPerfil from './components/ImagenPerfil.vue';
 
 export default {
   name: "App",
@@ -153,11 +155,12 @@ export default {
   components: {
 
     BarraPerfil,
-    ImagenPerfil,
     OpcionPerfil,
     ContenidoMenu,
     BarraBusqueda,
-    BotonesFiltro
+    BotonesFiltro,
+    TarjetasPerfiles,
+    ImagenPerfil
   }
 
 }
