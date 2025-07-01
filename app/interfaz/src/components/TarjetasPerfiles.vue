@@ -15,8 +15,12 @@
           <div class="Texto-Tarjeta">
             <h3>Profesion</h3>
           </div>
+
+           <button class="Interes">Solicitud</button>
         </footer>
       </article>
+
+     
     </div>
     <!--Segunda tarjeta-->
 
@@ -34,6 +38,7 @@
           <div class="Texto-Tarjeta">
             <h3>Profesion</h3>
           </div>
+          <button class="Interes">Solicitud</button>
         </footer>
       </article>
     </div>
@@ -55,6 +60,7 @@
           <div class="Texto-Tarjeta">
             <h3>Profesion</h3>
           </div>
+          <button class="Interes">Solicitud</button>
         </footer>
       </article>
     </div>
