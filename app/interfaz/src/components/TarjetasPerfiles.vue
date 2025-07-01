@@ -113,10 +113,31 @@ margin-top: 1rem;
 
 }
 
-.Categoria-Tarjeta span{
+/*Boton de solicitud*/
 
+.Interes{
 
-  
+background-color: rgb(162, 162, 250);
+border-radius: 50px;
+padding: .2rem .5rem;
+
+}
+
+/*Parte externa de tarjeta*/
+
+.Tarjeta footer{
+
+padding: 0 1rem;
+
+}
+
+/*Ajuste de tarjetas*/
+
+.Exterior{
+
+display: flex;
+flex-flow: wrap;
+
 }
 
 </style>
