@@ -18,14 +18,16 @@
     <CrearContrasena v-if="MostrarClave" @cerrar="MostrarClave=false"/>
     -->
 
-    <!-- Pagina Central para ejecucion de app web -->
+    <!-- Pagina Central para ejecucion de app web 
     <BarraPerfil/>
     <OpcionPerfil/>
     <ContenidoMenu/>
     <BarraBusqueda/>
     <BotonesFiltro/>
-    <TarjetasPerfiles/>
     <ImagenPerfil/>
+    -->
+
+    <TarjetasPerfiles/>
 
   </div>
 </template>
@@ -49,13 +51,16 @@ import InicioSesion from "./components/InicioSesion.vue";
 import CrearContrasena from "./components/CrearContrasena.vue";
 */
 
+/*Importacion de los componentes de Pagina central
 import BarraPerfil from './components/BarraPerfil.vue';
 import OpcionPerfil from './components/OpcionPerfil.vue';
 import ContenidoMenu from './components/ContenidoMenu.vue';
 import BarraBusqueda from './components/BarraBusqueda.vue';
 import BotonesFiltro from './components/BotonesFiltro.vue';
-import TarjetasPerfiles from './components/TarjetasPerfiles.vue';
 import ImagenPerfil from './components/ImagenPerfil.vue';
+*/
+
+import TarjetasPerfiles from './components/TarjetasPerfiles.vue';
 
 export default {
   name: "App",
@@ -152,6 +157,8 @@ export default {
 };
 
 */
+
+/*Componentes de Pagina Central
   components: {
 
     BarraPerfil,
@@ -161,6 +168,15 @@ export default {
     BotonesFiltro,
     TarjetasPerfiles,
     ImagenPerfil
+  }
+
+}
+*/
+
+components: {
+
+    TarjetasPerfiles
+  
   }
 
 }
