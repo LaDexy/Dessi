@@ -167,12 +167,13 @@ export default {
 
 .TarjetasPerfiles{
 
-   display: flex;
-  flex-wrap: wrap; /* Permite que los elementos pasen a la siguiente fila */
-  justify-content: center; /* Centra los elementos horizontalmente */
-  gap: 20px; /* Espacio entre las tarjetas (ajusta a tu gusto) */
-  padding: 20px; /* Espacio interno del contenedor padre */
-  
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center; 
+  gap: 20px; 
+  padding: 20px; 
+  margin-top: 100px;
+
 }
 
 

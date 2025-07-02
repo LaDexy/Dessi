@@ -1,6 +1,7 @@
 <template>
   <div>
 
+
     <!--Rectangulo de arriba de barra de perfil-->
     <div class="Barra">
       <div class="rectangulo"></div>
@@ -32,10 +33,15 @@ export default {
 /*Rectangulo de barra superior*/
 
 .Barra {
-    position: absolute;
+
   width: 1525px;
   height: 230px;
   background-color: hsl(300, 29%, 78%);
+   display: flex;
+  flex-wrap: wrap;
+  justify-content: center; 
+  gap: 20px; 
+  padding: 20px;
 }
 
 
