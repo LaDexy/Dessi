@@ -2,11 +2,18 @@
 
 <div>
 
+    <div class="Album">
     <div class="Portafolio"><img src="../assets/Portafolio.png" alt=""></div>
     <div class="Portafolio"><img src="../assets/Portafolio.png" alt=""></div>
     <div class="Portafolio"><img src="../assets/Portafolio.png" alt=""></div>
     <div class="Portafolio"><img src="../assets/Portafolio.png" alt=""></div>
     <div class="Portafolio"><img src="../assets/Portafolio.png" alt=""></div>
+    <div class="Portafolio"><img src="../assets/Portafolio.png" alt=""></div>
+    <div class="Portafolio"><img src="../assets/Portafolio.png" alt=""></div>
+    <div class="Portafolio"><img src="../assets/Portafolio.png" alt=""></div>
+    <div class="Portafolio"><img src="../assets/Portafolio.png" alt=""></div>
+    <div class="Portafolio"><img src="../assets/Portafolio.png" alt=""></div>
+    </div>
 
 </div>
 
@@ -23,6 +30,18 @@ export default{
 </script>
 
 <style>
+
+.Album {
+
+display: flex;
+  flex-wrap: wrap;
+  justify-content: center; 
+  gap: 20px; 
+  padding: 20px; 
+  margin-top: 150px;
+
+
+}
 
 .Portafolio{
 
