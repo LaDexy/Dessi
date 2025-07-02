@@ -1,9 +1,9 @@
 <template>
   <div>
     <nav>
-      <router-link to="/">Inicio</router-link>
-      <router-link to="/central">Central</router-link>
-      <router-link to="/perfil">Perfil</router-link>
+      <router-link to="/"></router-link>
+      <router-link to="/central"></router-link>
+      <router-link to="/perfil"></router-link>
     </nav>
 
     <router-view></router-view>
