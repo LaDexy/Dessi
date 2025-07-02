@@ -2,6 +2,7 @@
   <div id="Iniciar">
     <!--Clase que denomina todos los requisitos-->
 
+    
     <div class="TodoCuatro">
       <!--Requisitos para el registro-->
 

@@ -2,8 +2,10 @@
   <div>
 
     <div class="TarjetasPerfiles">
+
     <!--Primera tarjeta-->
     <div class="Exterior">
+      
       <div class="Tarjeta">
         <header class="Inicio-Tarjeta">
           <img src="../assets/Perfil.png" alt="" />
@@ -18,6 +20,9 @@
             <h3>Profesion</h3>
           </div>
 
+           <div class="Descripcion-Tarjeta">
+            <p>Descripcion</p>
+          </div>
            <button class="Interes">Solicitud</button>
         </footer>
       </div>
@@ -39,6 +44,10 @@
 
           <div class="Texto-Tarjeta">
             <h3>Profesion</h3>
+          </div>
+
+           <div class="Descripcion-Tarjeta">
+            <p>Descripcion</p>
           </div>
           <button class="Interes">Solicitud</button>
         </footer>
@@ -62,6 +71,10 @@
           <div class="Texto-Tarjeta">
             <h3>Profesion</h3>
           </div>
+
+           <div class="Descripcion-Tarjeta">
+            <p>Descripcion</p>
+          </div>
           <button class="Interes">Solicitud</button>
         </footer>
       </div>
@@ -82,6 +95,10 @@
 
           <div class="Texto-Tarjeta">
             <h3>Profesion</h3>
+          </div>
+
+           <div class="Descripcion-Tarjeta">
+            <p>Descripcion</p>
           </div>
           <button class="Interes">Solicitud</button>
         </footer>
@@ -104,6 +121,10 @@
           <div class="Texto-Tarjeta">
             <h3>Profesion</h3>
           </div>
+
+          <div class="Descripcion-Tarjeta">
+            <p>Descripcion</p>
+          </div>
           <button class="Interes">Solicitud</button>
         </footer>
       </div>
@@ -125,6 +146,10 @@
           <div class="Texto-Tarjeta">
             <h3>Profesion</h3>
           </div>
+
+           <div class="Descripcion-Tarjeta">
+            <p>Descripcion</p>
+          </div>
           <button class="Interes">Solicitud</button>
         </footer>
       </div>
@@ -145,6 +170,10 @@
 
           <div class="Texto-Tarjeta">
             <h3>Profesion</h3>
+          </div>
+
+           <div class="Descripcion-Tarjeta">
+            <p>Descripcion</p>
           </div>
           <button class="Interes">Solicitud</button>
         </footer>

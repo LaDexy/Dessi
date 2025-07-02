@@ -76,6 +76,7 @@
 	</form>
 	</div>
 
+
 <!--Cierre de requisitos-->
 
 </div>
@@ -91,8 +92,10 @@
 
 <script>
 
+
 export default {
     name: "RegistroDisenador"
+	
   
 }
 
