@@ -67,6 +67,90 @@
       </div>
     </div>
 
+    <!--Cuarta tarjeta-->
+
+      <div class="Exterior">
+      <div class="Tarjeta">
+        <header class="Inicio-Tarjeta">
+          <img src="../assets/Perfil.png" alt="" />
+        </header>
+
+        <footer class="Final-Tarjeta">
+          <div class="Categoria-Tarjeta">
+            <span>Nombre de usuario</span>
+          </div>
+
+          <div class="Texto-Tarjeta">
+            <h3>Profesion</h3>
+          </div>
+          <button class="Interes">Solicitud</button>
+        </footer>
+      </div>
+    </div>
+
+    <!--Quinta tarjeta-->
+
+      <div class="Exterior">
+      <div class="Tarjeta">
+        <header class="Inicio-Tarjeta">
+          <img src="../assets/Perfil.png" alt="" />
+        </header>
+
+        <footer class="Final-Tarjeta">
+          <div class="Categoria-Tarjeta">
+            <span>Nombre de usuario</span>
+          </div>
+
+          <div class="Texto-Tarjeta">
+            <h3>Profesion</h3>
+          </div>
+          <button class="Interes">Solicitud</button>
+        </footer>
+      </div>
+    </div>
+
+    <!--Sesta tarjeta-->
+
+      <div class="Exterior">
+      <div class="Tarjeta">
+        <header class="Inicio-Tarjeta">
+          <img src="../assets/Perfil.png" alt="" />
+        </header>
+
+        <footer class="Final-Tarjeta">
+          <div class="Categoria-Tarjeta">
+            <span>Nombre de usuario</span>
+          </div>
+
+          <div class="Texto-Tarjeta">
+            <h3>Profesion</h3>
+          </div>
+          <button class="Interes">Solicitud</button>
+        </footer>
+      </div>
+    </div>
+
+    <!--Septima tarjeta-->
+
+      <div class="Exterior">
+      <div class="Tarjeta">
+        <header class="Inicio-Tarjeta">
+          <img src="../assets/Perfil.png" alt="" />
+        </header>
+
+        <footer class="Final-Tarjeta">
+          <div class="Categoria-Tarjeta">
+            <span>Nombre de usuario</span>
+          </div>
+
+          <div class="Texto-Tarjeta">
+            <h3>Profesion</h3>
+          </div>
+          <button class="Interes">Solicitud</button>
+        </footer>
+      </div>
+    </div>
+
     </div>
   </div>
 </template>
@@ -78,6 +162,19 @@ export default {
 </script>
 
 <style>
+
+/*Todos los perfiles*/
+
+.TarjetasPerfiles{
+
+   display: flex;
+  flex-wrap: wrap; /* Permite que los elementos pasen a la siguiente fila */
+  justify-content: center; /* Centra los elementos horizontalmente */
+  gap: 20px; /* Espacio entre las tarjetas (ajusta a tu gusto) */
+  padding: 20px; /* Espacio interno del contenedor padre */
+  
+}
+
 
 /*Imagen*/
 
