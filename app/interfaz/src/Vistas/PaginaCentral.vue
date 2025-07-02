@@ -2,12 +2,13 @@
   <div>
     <!--Componentes de pagina central-->
 
-   <BarraPerfil/>
+    <BarraPerfil/>
     <OpcionPerfil/>
     <ContenidoMenu/>
     <BarraBusqueda/>
     <BotonesFiltro/>
     <ImagenPerfil/>
+    <TarjetasPerfiles/>
 
   </div>
 </template>
@@ -16,12 +17,13 @@
 
 /*Importacion de componentes de pagina central*/
 
-import BarraPerfil from './components/BarraPerfil.vue';
-import OpcionPerfil from './components/OpcionPerfil.vue';
-import ContenidoMenu from './components/ContenidoMenu.vue';
-import BarraBusqueda from './components/BarraBusqueda.vue';
-import BotonesFiltro from './components/BotonesFiltro.vue';
-import ImagenPerfil from './components/ImagenPerfil.vue';
+import BarraPerfil from '../components/BarraPerfil.vue';
+import OpcionPerfil from '../components/OpcionPerfil.vue';
+import ContenidoMenu from '../components/ContenidoMenu.vue';
+import BarraBusqueda from '../components/BarraBusqueda.vue';
+import BotonesFiltro from '../components/BotonesFiltro.vue';
+import ImagenPerfil from '../components/ImagenPerfil.vue';
+import TarjetasPerfiles from '@/components/TarjetasPerfiles.vue';
 
 export default{
 
@@ -35,7 +37,8 @@ export default{
     BarraBusqueda,
     BotonesFiltro,
     TarjetasPerfiles,
-    ImagenPerfil
+    ImagenPerfil,
+    
   }
 
 }

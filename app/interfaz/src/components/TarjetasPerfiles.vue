@@ -2,7 +2,7 @@
   <div>
     <!--Primera tarjeta-->
     <div class="Exterior">
-      <article class="Tarjeta">
+      <div class="Tarjeta">
         <header class="Inicio-Tarjeta">
           <img src="../assets/Perfil.png" alt="" />
         </header>
@@ -18,14 +18,14 @@
 
            <button class="Interes">Solicitud</button>
         </footer>
-      </article>
+      </div>
 
      
     </div>
     <!--Segunda tarjeta-->
 
 <div class="Exterior">
-      <article class="Tarjeta">
+      <div class="Tarjeta">
         <header class="Inicio-Tarjeta">
           <img src="../assets/Perfil.png" alt="" />
         </header>
@@ -40,14 +40,14 @@
           </div>
           <button class="Interes">Solicitud</button>
         </footer>
-      </article>
+      </div>
     </div>
 
 
       <!--Tercera tarjeta-->
 
       <div class="Exterior">
-      <article class="Tarjeta">
+      <div class="Tarjeta">
         <header class="Inicio-Tarjeta">
           <img src="../assets/Perfil.png" alt="" />
         </header>
@@ -62,7 +62,7 @@
           </div>
           <button class="Interes">Solicitud</button>
         </footer>
-      </article>
+      </div>
     </div>
 
   </div>
@@ -85,8 +85,9 @@ max-width: 100%;
 }
 
 /*Tarjeta*/
-article.Tarjeta{
+.Tarjeta{
 
+position: relative;
 max-width: 100%;
 border-radius: 8px;
 margin: 1rem;

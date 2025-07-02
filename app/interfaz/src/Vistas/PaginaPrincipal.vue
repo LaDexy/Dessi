@@ -34,19 +34,19 @@
 
 /*Importacion de componentes de pagina principal*/
 
-    import OpcionesBarra from "./components/OpcionesBarra.vue";
-    import BotonesRegistro from "./components/BotonesRegistro.vue";
-    import CarruselImagenes from "./components/CarruselImagenes.vue";
-    import ImagenCentral from "./components/ImagenCentral.vue";
-    import LogrosUsuarios from "./components/LogrosUsuarios.vue";
-    import PatenteAdmin from "./components/PatenteAdmin.vue";
-    import TextoMotivador from "./components/TextoMotivador.vue";
-    import TituloInicial from "./components/TituloInicial.vue";
-    import RegistroDisenador from "./components/RegistroDisenador.vue";
-    import RegistroMarketing from "./components/RegistroMarketing.vue";
-    import RegistroEmprendedor from "./components/RegistroEmprendedor.vue";
-    import InicioSesion from "./components/InicioSesion.vue";
-    import CrearContrasena from "./components/CrearContrasena.vue";
+    import OpcionesBarra from "../components/OpcionesBarra.vue";
+    import BotonesRegistro from "../components/BotonesRegistro.vue";
+    import CarruselImagenes from "../components/CarruselImagenes.vue";
+    import ImagenCentral from "../components/ImagenCentral.vue";
+    import LogrosUsuarios from "../components/LogrosUsuarios.vue";
+    import PatenteAdmin from "../components/PatenteAdmin.vue";
+    import TextoMotivador from "../components/TextoMotivador.vue";
+    import TituloInicial from "../components/TituloInicial.vue";
+    import RegistroDisenador from "../components/RegistroDisenador.vue";
+    import RegistroMarketing from "../components/RegistroMarketing.vue";
+    import RegistroEmprendedor from "../components/RegistroEmprendedor.vue";
+    import InicioSesion from "../components/InicioSesion.vue";
+    import CrearContrasena from "../components/CrearContrasena.vue";
 
 export default{
 
