@@ -3,6 +3,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import PaginaPrincipal from '../Vistas/PaginaPrincipal.vue';
 import PaginaCentral from '../Vistas/PaginaCentral.vue';
+import PaginaPerfil from '@/Vistas/PaginaPerfil.vue';
+
 
 const routes = [
   {
@@ -14,7 +16,12 @@ const routes = [
     path: '/central',
     name: 'Central', 
     component: PaginaCentral
-  }
+  },
+  {
+    path: '/perfil',
+    name: 'Perfil',
+    component: PaginaPerfil
+  },
 ];
 
 const router = createRouter({
