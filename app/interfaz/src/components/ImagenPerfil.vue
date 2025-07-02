@@ -3,7 +3,7 @@
     <!--Foto de perfil-->
 
     <div class="Perfil">
-      <div class="circulo" img src="../assets/Usuario.png" alt=""></div>
+      <div class="circulo"><img src="../assets/Usuario.png" alt=""></div>
     </div>
   </div>
 </template>
