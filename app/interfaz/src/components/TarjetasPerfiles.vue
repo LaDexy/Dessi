@@ -1,5 +1,7 @@
 <template>
   <div>
+
+    <div class="TarjetasPerfiles">
     <!--Primera tarjeta-->
     <div class="Exterior">
       <div class="Tarjeta">
@@ -65,6 +67,7 @@
       </div>
     </div>
 
+    </div>
   </div>
 </template>
 

@@ -5,6 +5,7 @@
     <BarraPerfil/>
     <ImagenPerfil/>
     <TipoPerfil/>
+    <PortafolioPerfil/>
 
   </div>
 </template>
@@ -15,6 +16,7 @@
 import BarraPerfil from '@/components/BarraPerfil.vue';
 import ImagenPerfil from '@/components/ImagenPerfil.vue';
 import TipoPerfil from '@/components/TipoPerfil.vue';
+import PortafolioPerfil from '@/components/PortafolioPerfil.vue';
 
 export default{
 
@@ -24,7 +26,8 @@ export default{
 
         BarraPerfil,
         ImagenPerfil,
-        TipoPerfil
+        TipoPerfil,
+        PortafolioPerfil
     
   }
 
