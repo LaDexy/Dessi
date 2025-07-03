@@ -3,9 +3,11 @@
     <!--Componentes de pagina de perfil-->
     
     <BarraPerfil/>
+    <BotonesDesafios/>
     <ImagenPerfil/>
     <TipoPerfil/>
     <PortafolioPerfil/>
+    
 
   </div>
 </template>
@@ -17,6 +19,7 @@ import BarraPerfil from '@/components/BarraPerfil.vue';
 import ImagenPerfil from '@/components/ImagenPerfil.vue';
 import TipoPerfil from '@/components/TipoPerfil.vue';
 import PortafolioPerfil from '@/components/PortafolioPerfil.vue';
+import BotonesDesafios from '@/components/BotonesDesafios.vue';
 
 export default{
 
@@ -27,7 +30,8 @@ export default{
         BarraPerfil,
         ImagenPerfil,
         TipoPerfil,
-        PortafolioPerfil
+        PortafolioPerfil,
+        BotonesDesafios
     
   }
 
