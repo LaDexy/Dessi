@@ -303,46 +303,46 @@ export default {
         .ListaTemas {
             display: flex;
             flex-direction: column;
-            gap: 1rem; /* Espacio vertical entre los elementos hijos */
-            margin-bottom: 1.5rem; /* Margen inferior para separar de otras secciones */
+            gap: 1rem; 
+            margin-bottom: 1.5rem;
         }
 
         /* Contenedor del título "Temas Recientes" y el botón "Crear Nuevo Tema" */
         .titulo-temas {
             display: flex;
-            justify-content: space-between; /* Espacio entre los elementos */
-            align-items: center; /* Centrado vertical */
-            margin-bottom: 1rem; /* Margen inferior */
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 1rem; 
         }
 
         /* Estilos para el h2 "Temas Recientes" */
         .Seccion {
-            font-size: 1.5rem; /* Tamaño de fuente */
-            font-weight: 600; /* Semi-negrita */
-            color: #4a5568; /* Gris oscuro */
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #4a5568; 
         }
 
         /* Estilos para el botón "Crear Nuevo Tema" */
         .NuevoTema {
-            background-color: #e4a0d5; /* Color morado suave */
+            background-color: #e4a0d5;
             color: white;
             padding: 0.75rem 1.5rem;
             border-radius: 0.5rem;
             font-weight: 600;
-            border: none; /* Quitar borde por defecto del botón */
+            border: none; 
             cursor: pointer;
-            transition: background-color 0.2s ease-in-out; /* Transición para hover */
+            transition: background-color 0.2s ease-in-out; 
         }
 
         .NuevoTema:hover {
-            background-color: #e4a0d5; /* Color al pasar el ratón */
+            background-color: #e4a0d5; 
         }
 
         /* Contenedor donde se cargarán las tarjetas de los temas */
         .TarjetasTemas {
             display: flex;
             flex-direction: column;
-            gap: 1rem; /* Espacio entre las tarjetas */
+            gap: 1rem; 
         }
 
         /* Estilos para cada tarjeta de tema individual */
@@ -355,7 +355,7 @@ export default {
             transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
             display: flex;
             flex-direction: column;
-            align-items: flex-start; /* Alinea el contenido a la izquierda */
+            align-items: flex-start; 
         }
 
         .TarjetaIndividual:hover {
@@ -392,8 +392,8 @@ export default {
             width: 1.5rem;
             height: 1.5rem;
             border-radius: 50%;
-            background-color: #fcd34d; /* Amarillo para la insignia */
-            color: #92400e; /* Texto marrón oscuro */
+            background-color: #fcd34d; 
+            color: #92400e; 
             font-weight: bold;
             font-size: 0.75rem;
             margin-left: 0.5rem;
@@ -401,13 +401,13 @@ export default {
 
         /* --- Estilos para la vista de detalle del tema --- */
         .DetalleTemas {
-            background-color: #f9fafb; /* Fondo ligeramente gris para la sección */
+            background-color: #f9fafb; 
             padding: 1.5rem;
             border-radius: 0.75rem;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
-            gap: 1rem; /* Espacio entre los elementos del detalle */
+            gap: 1rem; 
         }
         .VolverBoton { /* Botón para volver al foro */
             background-color: #e5e7eb;
@@ -418,18 +418,18 @@ export default {
             border: none;
             cursor: pointer;
             transition: background-color 0.2s ease-in-out;
-            margin-bottom: 1rem; /* Margen después del botón */
-            align-self: flex-start; /* Alinea el botón a la izquierda */
+            margin-bottom: 1rem; 
+            align-self: flex-start; 
         }
         .VolverBoton:hover {
             background-color: #d1d5db;
         }
         .PrimerTema { /* Tarjeta del tema principal en el detalle */
-            background-color: #e0f2fe; /* Azul claro */
+            background-color: #e0f2fe; 
             border: 1px solid #90cdf4;
             border-radius: 0.5rem;
             padding: 1.5rem;
-            margin-bottom: 1rem; /* Margen después del tema principal */
+            margin-bottom: 1rem; 
         }
         .PrimerTema h3 {
             font-size: 1.75rem;
@@ -451,8 +451,8 @@ export default {
             font-size: 1.25rem;
             font-weight: 600;
             color: #4a5568;
-            margin-top: 1rem; /* Margen superior */
-            margin-bottom: 1rem; /* Margen inferior */
+            margin-top: 1rem; 
+            margin-bottom: 1rem;
         }
         .respuestas-lista { /* Contenedor de la lista de respuestas */
             display: flex;
@@ -518,7 +518,7 @@ export default {
         }
 
         /* --- Estilos para el formulario de nuevo tema --- */
-        .FormularioNuevoTema { /* Contenedor principal del formulario de nuevo tema */
+        .FormularioNuevoTema { 
             background-color: #f9fafb;
             padding: 1.5rem;
             border-radius: 0.75rem;
