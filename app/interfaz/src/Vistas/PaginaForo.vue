@@ -1,7 +1,7 @@
 <template>
   <div>
     <!--Componentes de pagina de perfil-->
-    
+
     <ForoUsuarios/>
     
 

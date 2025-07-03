@@ -1,8 +1,19 @@
 <template>
 
-<!-- Aquí va todo el HTML de tu foro que ya tienes adaptado -->
+<div>
+
+ <!--Rectangulo de arriba de texto de foro-->
+    <div class="RectanguloForo">
+      <div class="rectangulo"></div>
+      <h1 class="titulo-foro">Foro de la Comunidad</h1>
+    </div>
+
+<!-- Cuerpo inicial del foro-->
   <div class="forum-container">
-    <h1 class="titulo-foro">Foro de la Comunidad</h1>
+
+    
+
+    
 
     <!-- Vista de Lista de Temas -->
     <div v-if="currentView === 'topicList'" class="ListaTemas">
@@ -85,16 +96,16 @@
     </div>
   </div>
 
-
+</div>
 </template>
 
 <script>
 
 export default {
-  name: "ForoUsuarios", // Tal como lo indicaste en la imagen
+  name: "ForoUsuarios",
   data() {
     return {
-      // Datos Mock para el foro
+      // Datos falsos para el foro
       forumData: [
         {
           id: 't1',
@@ -176,23 +187,23 @@ export default {
           ]
         }
       ],
-      // Estado de la UI
-      currentView: 'topicList', // 'topicList', 'topicDetail', 'newTopicForm'
-      currentTopic: null, // El tema que se está viendo en detalle
+      
+      currentView: 'topicList',
+      currentTopic: null, 
 
-      // Datos del Formulario Nuevo Tema
+      /* Datos del Formulario Nuevo Tema*/
       newTopicTitle: '',
       newTopicContent: '',
 
-      // Datos del Formulario de Respuesta
+      /*Datos del Formulario de Respuesta*/
       replyContent: ''
     };
   },
   methods: {
-    // Funciones de Navegación
+    /*Funciones dentro del foro*/
     showTopicList() {
       this.currentView = 'topicList';
-      this.currentTopic = null; // Limpiar el tema actual
+      this.currentTopic = null; 
     },
     showTopicDetail(topicId) {
       this.currentTopic = this.forumData.find(t => t.id === topicId);
@@ -200,11 +211,11 @@ export default {
     },
     showNewTopicForm() {
       this.currentView = 'newTopicForm';
-      this.newTopicTitle = ''; // Limpiar campos al mostrar el formulario
+      this.newTopicTitle = '';
       this.newTopicContent = '';
     },
 
-    // Funciones de Lógica del Foro
+    
     createNewTopic() {
       if (this.newTopicTitle.trim() === '' || this.newTopicContent.trim() === '') {
         alert('Por favor, completa el título y el contenido del tema.');
@@ -212,17 +223,17 @@ export default {
       }
 
       const newTopic = {
-        id: 't' + (this.forumData.length + 1), // ID simple para mock
+        id: 't' + (this.forumData.length + 1), 
         title: this.newTopicTitle.trim(),
-        author: 'Usuario Actual', // Simula el usuario logueado
-        authorReputation: 50, // Reputación inicial para nuevos temas/usuarios
-        date: new Date().toISOString().slice(0, 10), // Fecha actual
+        author: 'Usuario Actual', 
+        authorReputation: 50, 
+        date: new Date().toISOString().slice(0, 10),
         content: this.newTopicContent.trim(),
         replies: []
       };
 
-      this.forumData.unshift(newTopic); // Añadir al principio para que se vea
-      this.showTopicList(); // Volver a la lista de temas
+      this.forumData.unshift(newTopic); 
+      this.showTopicList(); 
     },
     postReply() {
       if (this.replyContent.trim() === '') {
@@ -233,24 +244,17 @@ export default {
       if (this.currentTopic) {
         const newReply = {
           id: 'r' + this.currentTopic.id + '-' + (this.currentTopic.replies.length + 1),
-          author: 'Usuario Actual', // Simula el usuario logueado
-          authorReputation: 50, // Reputación inicial para respuestas
+          author: 'Usuario Actual', 
+          authorReputation: 50,
           date: new Date().toISOString().slice(0, 10),
           content: this.replyContent.trim()
         };
         this.currentTopic.replies.push(newReply);
-        this.replyContent = ''; // Limpiar el campo de respuesta
-        // En Options API, para asegurar que Vue detecte el cambio en arrays anidados,
-        // a veces es útil forzar una actualización o usar Vue.set si es una propiedad nueva.
-        // Sin embargo, para .push(), Vue 3 lo detecta bien.
+        this.replyContent = ''; 
       }
     }
   },
-  // Si tuvieras que hacer algo al montar el componente (ej. cargar datos de una API real),
-  // lo harías aquí:
-  // mounted() {
-  //   // Código a ejecutar cuando el componente se ha montado en el DOM
-  // }
+ 
 };
 
 
@@ -259,23 +263,40 @@ export default {
 
 <style>
 
+/*Rectangulo de barra superior*/
+
+.RectanguloForo {
+
+  width: 1525px;
+  height: 230px;
+  background-color: hsl(300, 29%, 78%);
+   display: flex;
+  flex-wrap: wrap;
+  justify-content: center; 
+  gap: 20px; 
+  padding: 20px;
+  margin-left: 0%;
+}
+
 /* Contenedor principal del foro */
         .forum-container {
             max-width: 960px;
-            margin: 2rem auto; /* Centra el contenedor con margen vertical */
+            margin: 2rem auto; 
             padding: 1.5rem;
             background-color: #ffffff;
-            border-radius: 0.75rem; /* Bordes redondeados */
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Sombra suave */
+            border-radius: 0.75rem; 
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); 
         }
 
         /* Estilos para el título principal del foro */
         .titulo-foro {
-            font-size: 2.25rem; /* Tamaño grande para el título */
-            font-weight: bold; /* Negrita */
-            color: #333333; /* Gris oscuro */
-            margin-bottom: 1.5rem; /* Margen inferior */
-            text-align: center; /* Centrado */
+            top: 90px;
+            position: absolute;
+            font-size: 3rem; 
+            font-weight: bold;
+            color: #ffffff; 
+            margin-bottom: 1.5rem; 
+            text-align: center; 
         }
 
         /* Contenedor de la lista de temas */
@@ -303,7 +324,7 @@ export default {
 
         /* Estilos para el botón "Crear Nuevo Tema" */
         .NuevoTema {
-            background-color: #8c82eb; /* Color morado suave */
+            background-color: #e4a0d5; /* Color morado suave */
             color: white;
             padding: 0.75rem 1.5rem;
             border-radius: 0.5rem;
@@ -314,7 +335,7 @@ export default {
         }
 
         .NuevoTema:hover {
-            background-color: #7a71dc; /* Color al pasar el ratón */
+            background-color: #e4a0d5; /* Color al pasar el ratón */
         }
 
         /* Contenedor donde se cargarán las tarjetas de los temas */
@@ -483,7 +504,7 @@ export default {
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
         }
         .PublicarRespuesta { /* Botón para publicar respuesta */
-            background-color: #8c82eb;
+            background-color: #e4a0d5;
             color: white;
             padding: 0.75rem 1.5rem;
             border-radius: 0.5rem;
@@ -493,7 +514,7 @@ export default {
             transition: background-color 0.2s ease-in-out;
         }
         .PublicarRespuesta:hover {
-            background-color: #7a71dc;
+            background-color: #e4a0d5;
         }
 
         /* --- Estilos para el formulario de nuevo tema --- */
@@ -538,7 +559,7 @@ export default {
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
         }
         .PublicarTema { /* Botón para publicar el nuevo tema */
-            background-color: #8c82eb;
+            background-color: #e4a0d5;
             color: white;
             padding: 0.75rem 1.5rem;
             border-radius: 0.5rem;

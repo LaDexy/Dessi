@@ -68,7 +68,7 @@ right: 0;
 width: 55px;
 height: 55x;
 line-height: 55px;
-background: #440080;
+background: #e4a0d5;;
 text-align: center;
 color: white;
 font-size: 20px;

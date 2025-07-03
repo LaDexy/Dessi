@@ -9,8 +9,9 @@
             <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight">
 
   <!--Icono de Menu-->
+                    <div class="Rayas">
                 <i class="fa-solid fa-bars fa-lg" style="color: #ffffff;"></i>
-
+                        </div>
             </button>
 
     <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
@@ -53,12 +54,12 @@
 
     <div class="Desafios">
     <p>
-        <a class="btn btn-primary" data-bs-toggle="collapse" href="#collapseExample2" role="button" aria-expanded="false" aria-controls="collapseExample">
+        <a class="btn btn-primary" data-bs-toggle="collapse" href="#collapseExample5" role="button" aria-expanded="false" aria-controls="collapseExample">
     Desafios
         </a>
     </p>
 
-    <div class="collapse" id="collapseExample2">
+    <div class="collapse" id="collapseExample5">
         <div class="card card-body">
     Aca saldran los desafios abiertos
         </div>
@@ -127,6 +128,7 @@ export default{
 position: absolute;
 top: 200px;
 left: 50px;
+;
 
 }
 
@@ -135,6 +137,7 @@ left: 50px;
   position: absolute;
   top: 500px;
   left: 10px;
+ 
 
 }
 

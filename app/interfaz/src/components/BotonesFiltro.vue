@@ -63,7 +63,7 @@ top: 250px;
 
 .PerEmprendedores button{
 
-background-color: #440080;
+background-color: #e4a0d5;
 color: white;
 padding: 10px 15px;
 border: none;
@@ -85,7 +85,7 @@ top: 250px;
 
 .Todos button{
 
-background-color: #440080;
+background-color:#e4a0d5;;
 color: white;
 padding: 10px 15px;
 border: none;
@@ -107,7 +107,7 @@ top: 250px;
 
 .PerDiseñadores button{
 
-background-color: #440080;
+background-color: #e4a0d5;;
 color: white;
 padding: 10px 15px;
 border: none;
@@ -129,7 +129,7 @@ top: 250px;
 
 .PerMarketing button{
 
-background-color: #440080;
+background-color: #e4a0d5;
 color: white;
 padding: 10px 15px;
 border: none;
