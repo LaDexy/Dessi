@@ -4,7 +4,7 @@
 
   <!--Clase que denomina todos los requisitos-->
   
-      <div class="TodoTres">
+      <div class="TodoDesafio">
 
 
 
@@ -86,7 +86,7 @@ export default{
 
 <style>
 
-.TodoTres{
+.TodoDesafio{
 
 position: absolute;
 left: 500px;

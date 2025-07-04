@@ -10,7 +10,7 @@
 
             <div class="content">
 
-                <div ><a>Crear desafio</a></div>
+                <div @click="$emit('MostrarRegistro', 'DesafioNuevo')"><a>Crear desafio</a></div>
                 <div><a>Ver mis desafio</a></div>
 
             </div>
