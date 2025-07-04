@@ -50,22 +50,6 @@
     </div> 
     </div>
 
-    <!--Boton de desafios-->
-
-    <div class="Desafios">
-    <p>
-        <a class="btn btn-primary" data-bs-toggle="collapse" href="#collapseExample5" role="button" aria-expanded="false" aria-controls="collapseExample">
-    Desafios
-        </a>
-    </p>
-
-    <div class="collapse" id="collapseExample5">
-        <div class="card card-body">
-    Aca saldran los desafios abiertos
-        </div>
-    </div> 
-    </div>
-
     <!--Boton de convenios-->
 
     <div class="Convenio">
