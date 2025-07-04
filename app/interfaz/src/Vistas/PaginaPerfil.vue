@@ -7,6 +7,7 @@
     <ImagenPerfil/>
     <TipoPerfil/>
     <PortafolioPerfil/>
+    <CrearDesafio/>
     
 
   </div>
@@ -20,6 +21,7 @@ import ImagenPerfil from '@/components/ImagenPerfil.vue';
 import TipoPerfil from '@/components/TipoPerfil.vue';
 import PortafolioPerfil from '@/components/PortafolioPerfil.vue';
 import BotonesDesafios from '@/components/BotonesDesafios.vue';
+import CrearDesafio from '@/components/CrearDesafio.vue';
 
 export default{
 
@@ -31,7 +33,8 @@ export default{
         ImagenPerfil,
         TipoPerfil,
         PortafolioPerfil,
-        BotonesDesafios
+        BotonesDesafios,
+        CrearDesafio
     
   }
 

@@ -2,17 +2,17 @@
 
 <div>
 
-   <!--Menu desplegable para crear y ver tus desafios-->
+  <!--Menu desplegable para opciones de desafios-->
 
-    <div class="BotonesDesafios">
+    <div class="MisDesafios">
 
-        <button>Desafios</button>
+        <button>Mis desafios</button>
 
-            <div class="contentDesafios">
+            <div class="content">
 
                 <div ><a>Crear desafio</a></div>
-                <div><a>Ver mis desafios</a></div>
-                
+                <div><a>Ver mis desafio</a></div>
+
             </div>
     </div>
 
@@ -32,18 +32,19 @@ export default{
 
 <style>
 
-/*Menu desplegable de Registro*/
+/*Menu desplegable de desafios*/
 
-.BotonesDesafios{
+.MisDesafios{
 
-left: 10%;
+top: 190px;
+left: 85%;
 position: absolute;
 display: inline-block;
-top: 190px;
+
 
 }
 
-.BotonesDesafios button{
+.MisDesafios button{
 
 
 background-color: antiquewhite;
@@ -55,38 +56,38 @@ cursor: pointer;
 
 }
 
-.BotonesDesafios a{
+.MisDesafios a{
 
 display: block;
 color: black;
 text-decoration: none;
-padding: 10px 20px;
+padding: 10px 15px;
 
 }
 
-.BotonesDesafios .contentDesafios{
+.MisDesafios .content{
 
 display: none;
 position: absolute;
 background-color: antiquewhite;
-min-width: 100px;
+min-width: 150px;
 box-shadow: 2px 2px 5px  hsla(0, 0%, 0%, 0.8) ;
 }
 
-.BotonesDesafios:hover .contentDesafios{
+.MisDesafios:hover .content{
 
 display: block;
 
 }
 
-.BotonesDesafios:hover button{
+.MisDesafios:hover button{
 
 background-color: hsl(0, 0%, 70%);
 
 }
 
 
-.BotonesDesafios a:hover{
+.MisDesafios a:hover{
 
 background-color: hsl(0, 0%, 90%);
 
