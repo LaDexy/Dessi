@@ -11,6 +11,7 @@
    v-if="CrearDesafioNuevo"
       @cerrar="CrearDesafioNuevo = false"
       @MostrarRegistro="MostrarRegistro"/>
+    <VerDesafios/>
     
 
   </div>
@@ -25,6 +26,7 @@ import TipoPerfil from '../components/TipoPerfil.vue';
 import PortafolioPerfil from '../components/PortafolioPerfil.vue';
 import BotonesDesafios from '../components/BotonesDesafios.vue';
 import CrearDesafio from '../components/CrearDesafio.vue';
+import VerDesafios from '@/components/VerDesafios.vue';
 
 export default{
 
@@ -62,7 +64,8 @@ export default{
         TipoPerfil,
         PortafolioPerfil,
         BotonesDesafios,
-        CrearDesafio
+        CrearDesafio,
+        VerDesafios
     
   }
 
