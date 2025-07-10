@@ -11,7 +11,10 @@
    v-if="CrearDesafioNuevo"
       @cerrar="CrearDesafioNuevo = false"
       @MostrarRegistro="MostrarRegistro"/>
-    <VerDesafio/>
+    <VerDesafio
+     v-if="VerDesafiosCreados"
+      @cerrar="VerDesafiosCreados = false"
+      @MostrarRegistro="MostrarRegistro"/>
 
   </div>
 </template>
@@ -34,12 +37,13 @@ export default{
     data() {
     return {
       CrearDesafioNuevo: false,
+      VerDesafiosCreados: false,
     };
   },
 
   methods: {
     MostrarRegistro(Todo) {
-      if (Todo == 'DesafioNuevo') {
+      if (Todo == 'DesafiosNuevos') {
         this.CrearDesafioNuevo = true
       }
 
@@ -50,10 +54,19 @@ export default{
 
       }
 
-      
+      if (Todo == 'DesafiosCreados'){
+
+          this.VerDesafiosCreados = true
+
+      }
+
+      else{
+
+          this.VerDesafiosCreados = false
+
+      }
 
     },
-
   },
 
     components: {

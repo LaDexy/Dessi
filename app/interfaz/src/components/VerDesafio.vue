@@ -11,7 +11,7 @@
                 <p>No hay desafíos creados aún.</p>
             </div>
             <div>
-                <button type="button" id="closeViewBtn">
+                <button class="CerrarDesafio" type="button" id="closeViewBtn" @click="$emit('cerrar')">
                     Cerrar
                 </button>
             </div>
@@ -41,8 +41,8 @@ export default{
 
 .VerDesafios {
   position: absolute;
-  left: 500px;
-  top: 50px;
+  left: 530px;
+  top: 250px;
   padding: 40px;
   font-family: "Times New Roman", serif;
   width: 450px;
@@ -59,7 +59,18 @@ export default{
   opacity: 0.9;
 }
 
-
+.CerrarDesafio {
+  width: 100%;
+  height: 30px;
+  background: #440857;
+  border: none;
+  outline: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 1em;
+  color: #fff;
+  font-weight: 500;
+}
 
 
 </style>
