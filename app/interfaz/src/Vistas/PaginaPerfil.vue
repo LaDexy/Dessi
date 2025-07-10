@@ -7,12 +7,11 @@
     <ImagenPerfil/>
     <TipoPerfil/>
     <PortafolioPerfil/>
-    <CrearDesafio  
+   <CrearDesafio  
    v-if="CrearDesafioNuevo"
       @cerrar="CrearDesafioNuevo = false"
       @MostrarRegistro="MostrarRegistro"/>
-    <VerDesafios/>
-    
+    <VerDesafio/>
 
   </div>
 </template>
@@ -25,8 +24,8 @@ import ImagenPerfil from '../components/ImagenPerfil.vue';
 import TipoPerfil from '../components/TipoPerfil.vue';
 import PortafolioPerfil from '../components/PortafolioPerfil.vue';
 import BotonesDesafios from '../components/BotonesDesafios.vue';
-import CrearDesafio from '../components/CrearDesafio.vue';
-import VerDesafios from '@/components/VerDesafios.vue';
+import CrearDesafio from '@/components/CrearDesafio.vue';
+import VerDesafio from '@/components/VerDesafio.vue';
 
 export default{
 
@@ -65,7 +64,8 @@ export default{
         PortafolioPerfil,
         BotonesDesafios,
         CrearDesafio,
-        VerDesafios
+        VerDesafio
+        
     
   }
 
