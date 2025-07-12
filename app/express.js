@@ -3,6 +3,7 @@ import express from 'express';
 import mysql from 'mysql2/promise'; // Usamos mysql2 con promesas para operaciones asíncronas
 import bcrypt from 'bcrypt'; // Para hashear contraseñas
 import cors from 'cors'; // Para manejar las políticas de Cross-Origin Resource Sharing
+import jwt from 'jsonwebtoken'; // Para generar JSON Web Tokens
 
 // Para el llamado de las rutas y __dirname en ES Modules
 import path from 'path';
@@ -30,60 +31,52 @@ const dbConfig = {
 };
 
 // Crea un pool de conexiones para la base de datos
-// Un pool de conexiones es más eficiente para manejar múltiples solicitudes
 const pool = mysql.createPool(dbConfig);
 
-// Ruta para el registro de usuarios
+// Clave secreta para firmar los JWT
+// ¡CAMBIA ESTO POR UNA CADENA LARGA Y COMPLEJA EN PRODUCCIÓN!
+const JWT_SECRET = 'H0l4c0m03st4squ13r0qu3s3p4squ33st03sun4cl4v3sup3rd1f1c1lh3ch4p0rm1';
+
+// Ruta para el registro de usuarios (código existente)
 app.post('/api/register', async (req, res) => {
-    // Extrae los datos del cuerpo de la solicitud
     const {
         nombre_usuario,
         correo_electronico,
         contrasena,
         tipo_perfil,
-        nombre_negocio, // Solo para Emprendedor
+        nombre_negocio,
         localidad,
-        tipo_negocio, // Solo para Emprendedor (Tienda Virtual/Física)
-        modalidad_trabajo // Solo para Diseñador/Marketing (Remoto/Semi-Presencial)
+        tipo_negocio,
+        modalidad_trabajo
     } = req.body;
 
-    // Validación básica de los datos de entrada
     if (!nombre_usuario || !correo_electronico || !contrasena || !tipo_perfil) {
         return res.status(400).json({ message: 'Todos los campos obligatorios deben ser proporcionados.' });
     }
 
     try {
-        // Verifica si el correo electrónico ya está registrado
         const [users] = await pool.query('SELECT id_usuario FROM convenio_emprendimiento_usuarios WHERE correo_electronico = ?', [correo_electronico]);
         if (users.length > 0) {
             return res.status(409).json({ message: 'El correo electrónico ya está registrado.' });
         }
 
-        // Hashea la contraseña antes de guardarla en la base de datos
-        // El '10' es el número de rondas de sal, un valor común y seguro
         const contrasena_hash = await bcrypt.hash(contrasena, 10);
 
-        // Inicia una transacción para asegurar la consistencia de los datos
-        // Si algo falla, se revertirán todos los cambios
         const connection = await pool.getConnection();
         await connection.beginTransaction();
 
         try {
-            // Inserta el usuario principal en la tabla de usuarios
             const [userResult] = await connection.query(
                 'INSERT INTO convenio_emprendimiento_usuarios (nombre_usuario, correo_electronico, contrasena_hash, tipo_perfil, fecha_registro) VALUES (?, ?, ?, ?, NOW())',
                 [nombre_usuario, correo_electronico, contrasena_hash, tipo_perfil]
             );
 
-            // Obtiene el ID del usuario recién insertado
             const id_usuario = userResult.insertId;
 
-            // Inserta datos específicos del perfil según el tipo
             if (tipo_perfil === 'Emprendedor') {
                 if (!nombre_negocio || !localidad || !tipo_negocio) {
                     throw new Error('Faltan campos específicos para el perfil Emprendedor.');
                 }
-                // Asegúrate de que tipo_negocio sea un array si viene de checkboxes y únelo con comas
                 const tipoNegocioString = Array.isArray(tipo_negocio) ? tipo_negocio.join(',') : tipo_negocio;
                 await connection.query(
                     'INSERT INTO convenio_emprendimiento_emprendedor (id_usuario, nombre_negocio, localidad, tipo_negocio) VALUES (?, ?, ?, ?)',
@@ -101,22 +94,62 @@ app.post('/api/register', async (req, res) => {
                 throw new Error('Tipo de perfil no válido.');
             }
 
-            // Confirma la transacción
             await connection.commit();
             res.status(201).json({ message: 'Usuario registrado exitosamente', userId: id_usuario });
 
         } catch (transactionError) {
-            // Si hay un error en la transacción, revierte los cambios
             await connection.rollback();
             console.error('Error durante la transacción de registro:', transactionError);
             res.status(500).json({ message: 'Error al registrar el usuario', error: transactionError.message });
         } finally {
-            // Libera la conexión de vuelta al pool
             connection.release();
         }
 
     } catch (error) {
         console.error('Error en la ruta de registro:', error);
+        res.status(500).json({ message: 'Error interno del servidor', error: error.message });
+    }
+});
+
+// NUEVA RUTA PARA EL LOGIN DE USUARIOS
+app.post('/api/login', async (req, res) => {
+    const { correo_electronico, contrasena } = req.body;
+
+    if (!correo_electronico || !contrasena) {
+        return res.status(400).json({ message: 'Correo electrónico y contraseña son obligatorios.' });
+    }
+
+    try {
+        // Busca el usuario por correo electrónico
+        const [users] = await pool.query('SELECT id_usuario, nombre_usuario, contrasena_hash, tipo_perfil FROM convenio_emprendimiento_usuarios WHERE correo_electronico = ?', [correo_electronico]);
+
+        // Si no se encuentra el usuario
+        if (users.length === 0) {
+            return res.status(401).json({ message: 'Credenciales inválidas.' });
+        }
+
+        const user = users[0];
+
+        // Compara la contraseña proporcionada con el hash almacenado
+        const isMatch = await bcrypt.compare(contrasena, user.contrasena_hash);
+
+        // Si las contraseñas no coinciden
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Credenciales inválidas.' });
+        }
+
+        // Si las credenciales son válidas, genera un JWT
+        const token = jwt.sign(
+            { id_usuario: user.id_usuario, tipo_perfil: user.tipo_perfil, nombre_usuario: user.nombre_usuario },
+            JWT_SECRET,
+            { expiresIn: '1h' } // El token expirará en 1 hora
+        );
+
+        // Envía el token y un mensaje de éxito
+        res.status(200).json({ message: 'Inicio de sesión exitoso', token, tipo_perfil: user.tipo_perfil, id_usuario: user.id_usuario, nombre_usuario: user.nombre_usuario });
+
+    } catch (error) {
+        console.error('Error en la ruta de login:', error);
         res.status(500).json({ message: 'Error interno del servidor', error: error.message });
     }
 });

@@ -64,9 +64,76 @@
 </template>
 
 <script>
+
+import axios from 'axios';
 export default {
-  name: "InicioSesion"
-}
+  data() {
+    return {
+      correo_electronico: '',
+      contrasena: '',
+      recordar_contrasena: false // Para el checkbox de recordar contraseña
+    };
+  },
+  methods: {
+    async submitLogin() {
+      try {
+        const response = await axios.post('http://localhost:4000/api/login', {
+          correo_electronico: this.correo_electronico,
+          contrasena: this.contrasena
+        });
+
+        if (response.status === 200) {
+          const { token, tipo_perfil, id_usuario, nombre_usuario } = response.data;
+
+          // Almacenar el token y la información del usuario
+          // Usar localStorage si recordar_contrasena es true, de lo contrario sessionStorage
+          if (this.recordar_contrasena) {
+            localStorage.setItem('userToken', token);
+            localStorage.setItem('userProfile', tipo_perfil);
+            localStorage.setItem('userId', id_usuario);
+            localStorage.setItem('userName', nombre_usuario);
+          } else {
+            sessionStorage.setItem('userToken', token);
+            sessionStorage.setItem('userProfile', tipo_perfil);
+            sessionStorage.setItem('userId', id_usuario);
+            sessionStorage.setItem('userName', nombre_usuario);
+          }
+
+          alert('¡Inicio de sesión exitoso!');
+          this.$emit('cerrar'); // Cerrar el modal de login
+
+          // Opcional: Redirigir al usuario a la página central
+          // Dependiendo de cómo manejes las rutas en Vue (Vue Router o manejo manual)
+          // Si usas Vue Router: this.$router.push('/pagina-central');
+          // Si manejas la visibilidad de componentes: this.$emit('loginExitoso');
+          console.log('Usuario logueado:', response.data);
+
+        } else {
+          // Esto debería ser manejado por el bloque catch para errores de red o 4xx/5xx
+          alert('Error desconocido al iniciar sesión.');
+        }
+      } catch (error) {
+        console.error('Error al iniciar sesión:', error);
+        if (error.response) {
+          // El servidor respondió con un código de estado fuera del rango 2xx
+          if (error.response.status === 401) {
+            alert('Credenciales inválidas. Por favor, verifica tu correo y contraseña.');
+          } else if (error.response.status === 400) {
+            alert('Datos incompletos: ' + error.response.data.message);
+          } else {
+            alert('Error en el servidor: ' + (error.response.data.message || 'Error desconocido'));
+          }
+        } else if (error.request) {
+          // La solicitud fue hecha pero no se recibió respuesta (servidor no accesible)
+          alert('No se pudo conectar con el servidor. Asegúrate de que el servidor Express esté corriendo en http://localhost:4000.');
+        } else {
+          // Algo más causó el error
+          alert('Error desconocido al iniciar sesión: ' + error.message);
+        }
+      }
+    }
+  }
+};
 </script>
 
 <style>
