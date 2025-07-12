@@ -22,14 +22,14 @@
             <!--OPcion de crear contraseña-->
             <div class="input-box">
               <span class="icon"> </span>
-              <input type="password" required />
+              <input type="password" v-model="contrasena" required />
               <label>Contraseña</label>
             </div>
 
             <!--OPcion de comprobar contraseña -->
             <div class="input-box">
               <span class="icon"> </span>
-              <input type="password" required />
+              <input type="password" v-model="validar_contrasena" required />
               <label>Validar contraseña</label>
             </div>
 

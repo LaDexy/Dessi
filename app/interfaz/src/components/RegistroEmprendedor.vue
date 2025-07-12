@@ -100,10 +100,45 @@
 
 <script>
 
+import axios from 'axios';
+
 export default {
-    name: "PruebaRegistro"
-  
-}
+  data() {
+    return {
+      nombre_usuario: '',
+      nombre_negocio: '',
+      localidad: '',
+      tipo_negocio: [], // Usar un array para checkboxes
+      correo_electronico: '',
+      tipo_perfil: 'Emprendedor' // Definido para este componente
+    };
+  },
+  methods: {
+    async submitRegistroEmprendedor() {
+      try {
+        // Guardar temporalmente los datos en localStorage
+        // La contraseña se manejará en el siguiente paso (CrearContrasena.vue)
+        localStorage.setItem('registroTempData', JSON.stringify({
+          nombre_usuario: this.nombre_usuario,
+          nombre_negocio: this.nombre_negocio,
+          localidad: this.localidad,
+          tipo_negocio: this.tipo_negocio,
+          correo_electronico: this.correo_electronico,
+          tipo_perfil: this.tipo_perfil
+        }));
+
+        // Emitir evento para mostrar el formulario de creación de contraseña
+        this.$emit('MostrarRegistro', 'Clave');
+        console.log('Datos de Emprendedor guardados temporalmente. Pasando a creación de contraseña.');
+
+      } catch (error) {
+        console.error('Error al preparar el registro de emprendedor:', error);
+        // Aquí podrías mostrar un mensaje de error al usuario
+        alert('Hubo un error al preparar el registro. Por favor, inténtalo de nuevo.');
+      }
+    }
+  }
+};
 
 
 </script>

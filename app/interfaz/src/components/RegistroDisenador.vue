@@ -31,7 +31,7 @@
 		<span class="icon">
      
     </span>
-		<input type="text" required>
+		<input type="text" v-model="nombre_usuario" required>
 		<label>Nombre de usuario</label>
 	</div>
 
@@ -42,20 +42,20 @@
 		<span class="icon">
      
     </span>
-		<input type="text" required>
+		<input type="text" v-model="localidad" required>
 		<label>Localidad</label>
 	</div>
 
 <!-- Opcion de Modalidad-->
 
 	<div class="remember-forgot">
-		<label><input type="checkbox">
+		<label><input type="checkbox" v-model="modalidad_trabajo" value="Totalmente_virtual">
 
 		Metodo remoto</label>
 	</div>
 
 	<div class="remember-forgot">
-		<label><input type="checkbox">
+		<label><input type="checkbox" v-model="modalidad_trabajo" value="Semi_presencial">
 
 		Metodo Semi-Presencial</label>
 	</div>
@@ -65,7 +65,7 @@
 		<span class="icon">
      
     </span>
-		<input type="email" required>
+		<input type="email" v-model="correo_electronico" required>
 		<label>Correo electronico</label>
 	</div>
 
@@ -93,11 +93,41 @@
 <script>
 
 
+import axios from 'axios';
+
 export default {
-    name: "RegistroDisenador"
-	
-  
-}
+  data() {
+    return {
+      nombre_usuario: '',
+      localidad: '',
+      modalidad_trabajo: [], // Usar un array para checkboxes
+      correo_electronico: '',
+      tipo_perfil: 'Diseñador' // Definido para este componente
+    };
+  },
+  methods: {
+    async submitRegistroDisenador() {
+      try {
+        // Guardar temporalmente los datos en localStorage
+        localStorage.setItem('registroTempData', JSON.stringify({
+          nombre_usuario: this.nombre_usuario,
+          localidad: this.localidad,
+          modalidad_trabajo: this.modalidad_trabajo.join(','), // Unir para guardar como string
+          correo_electronico: this.correo_electronico,
+          tipo_perfil: this.tipo_perfil
+        }));
+
+        // Emitir evento para mostrar el formulario de creación de contraseña
+        this.$emit('MostrarRegistro', 'Clave');
+        console.log('Datos de Diseñador guardados temporalmente. Pasando a creación de contraseña.');
+
+      } catch (error) {
+        console.error('Error al preparar el registro de diseñador:', error);
+        alert('Hubo un error al preparar el registro. Por favor, inténtalo de nuevo.');
+      }
+    }
+  }
+};
 
 
 </script>
