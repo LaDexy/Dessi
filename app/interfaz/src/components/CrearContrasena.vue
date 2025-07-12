@@ -46,9 +46,82 @@
 </template>
 
 <script>
+import axios from 'axios';
+
 export default {
-  name: "InicioSesion"
-}
+  data() {
+    return {
+      contrasena: '',
+      validar_contrasena: '',
+      registroTempData: null // Para almacenar los datos del registro inicial
+    };
+  },
+  mounted() {
+    // Recuperar los datos temporales al montar el componente
+    const temp = localStorage.getItem('registroTempData');
+    if (temp) {
+      this.registroTempData = JSON.parse(temp);
+    } else {
+      console.warn('No se encontraron datos de registro temporales. El usuario debería empezar por el formulario de perfil.');
+      // Opcional: redirigir al usuario a la página de registro inicial
+      this.$emit('MostrarRegistro', null); // O un evento para volver al inicio
+    }
+  },
+  methods: {
+    async submitCreacionContrasena() {
+      if (this.contrasena !== this.validar_contrasena) {
+        alert('Las contraseñas no coinciden. Por favor, inténtalo de nuevo.');
+        return;
+      }
+
+      if (!this.registroTempData) {
+        alert('Error: Datos de registro incompletos. Por favor, comienza el registro de nuevo.');
+        this.$emit('MostrarRegistro', null); // Redirigir o cerrar
+        return;
+      }
+
+      // Combinar los datos temporales con la contraseña
+      const userData = {
+        ...this.registroTempData,
+        contrasena: this.contrasena // Añadir la contraseña
+      };
+
+      try {
+        const response = await axios.post('http://localhost:4000/api/register', userData);
+
+        if (response.status === 201) {
+          alert('¡Registro exitoso! Ya puedes iniciar sesión.');
+          localStorage.removeItem('registroTempData'); // Limpiar datos temporales
+          this.$emit('cerrar'); // Cerrar el modal de registro/contraseña
+          // Opcional: Emitir un evento para mostrar el formulario de inicio de sesión
+          // this.$emit('MostrarLogin');
+        } else {
+          // Esto es más para errores de servidor que no son 409
+          alert('Hubo un error al registrar el usuario: ' + (response.data.message || 'Error desconocido'));
+          console.error('Error de registro (respuesta no 201):', response.data);
+        }
+      } catch (error) {
+        console.error('Error al enviar el registro:', error);
+        if (error.response) {
+          // El servidor respondió con un código de estado fuera del rango 2xx
+          if (error.response.status === 409) {
+            alert('El correo electrónico ya está registrado. Por favor, usa otro o inicia sesión.');
+          } else if (error.response.status === 400) {
+            alert('Datos incompletos o inválidos: ' + error.response.data.message);
+          } else {
+            alert('Error en el servidor: ' + (error.response.data.message || 'Error desconocido'));
+          }
+        } else if (error.request) {
+          // La solicitud fue hecha pero no se recibió respuesta (servidor no accesible)
+          alert('No se pudo conectar con el servidor. Asegúrate de que el servidor Express esté corriendo en http://localhost:4000.');
+        } else {
+          // Algo más causó el error
+          alert('Error desconocido al registrar: ' + error.message);
+        }
+      }
+    }
+  }
+};
 </script>
 
 <style>

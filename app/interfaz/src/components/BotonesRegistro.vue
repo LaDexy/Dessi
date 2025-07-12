@@ -15,13 +15,13 @@
 
     <div class="dropdown">
 
-        <button>Registrarse</button>
+        <button @click="toggleDropdown">Registrarse</button>
 
             <div class="content">
 
-                <div @click="$emit('MostrarRegistro', 'Emprendedor')"><a>Emprendedor</a></div>
-                <div @click="$emit('MostrarRegistro', 'Diseñador')"><a>Diseñador</a></div>
-                <div @click="$emit('MostrarRegistro', 'Marketing')"><a>Marketing</a></div>
+                <div @click="$emit('MostrarRegistro', 'Emprendedor'); toggleDropdown()"><a>Emprendedor</a></div>
+                <div @click="$emit('MostrarRegistro', 'Diseñador'); toggleDropdown()"><a>Diseñador</a></div>
+                <div @click="$emit('MostrarRegistro', 'Marketing'); toggleDropdown()"><a>Marketing</a></div>
 
             </div>
     </div>
@@ -33,11 +33,21 @@
 
 <script>
 
+
 export default {
-
-    name: "BotonesRegistro"
-
-}
+  // Ya no necesitamos importar los componentes de registro aquí
+  // components: { ... } // Eliminar esta sección si solo contenía los componentes de registro
+  data() {
+    return {
+      dropdownAbierto: false // Controla si el menú desplegable está abierto
+    };
+  },
+  methods: {
+    toggleDropdown() {
+      this.dropdownAbierto = !this.dropdownAbierto;
+    }
+  }
+};
 
 
 
