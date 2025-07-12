@@ -24,6 +24,7 @@
             <p>Descripcion</p>
           </div>
            <button class="Interes">Solicitud</button>
+             <button class="Interes">Ver perfil</button>
         </footer>
       </div>
 
@@ -50,6 +51,7 @@
             <p>Descripcion</p>
           </div>
           <button class="Interes">Solicitud</button>
+            <button class="Interes">Ver perfil</button>
         </footer>
       </div>
     </div>
@@ -76,6 +78,7 @@
             <p>Descripcion</p>
           </div>
           <button class="Interes">Solicitud</button>
+            <button class="Interes">Ver perfil</button>
         </footer>
       </div>
     </div>
@@ -101,6 +104,7 @@
             <p>Descripcion</p>
           </div>
           <button class="Interes">Solicitud</button>
+            <button class="Interes">Ver perfil</button>
         </footer>
       </div>
     </div>
@@ -126,6 +130,7 @@
             <p>Descripcion</p>
           </div>
           <button class="Interes">Solicitud</button>
+            <button class="Interes">Ver perfil</button>
         </footer>
       </div>
     </div>
@@ -151,6 +156,7 @@
             <p>Descripcion</p>
           </div>
           <button class="Interes">Solicitud</button>
+            <button class="Interes">Ver perfil</button>
         </footer>
       </div>
     </div>
@@ -176,6 +182,7 @@
             <p>Descripcion</p>
           </div>
           <button class="Interes">Solicitud</button>
+          <button class="Interes">Ver perfil</button>
         </footer>
       </div>
     </div>

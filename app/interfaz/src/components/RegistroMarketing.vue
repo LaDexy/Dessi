@@ -7,74 +7,74 @@
 
 
 
-<!--Requisitos para el registro-->
+	<!--Requisitos para el registro-->
 
 
 
-<div class="wrapper">
-<div class="form-box login">
-<h2>Marketing</h2>
-<form action="#">
+	<div class="wrapper">
+	<div class="form-box login">
+	<h2>Marketing</h2>
+	<form action="#">
 
-<!--Icono de Cerrar-->
-<div class="Cerrar" @click="$emit('cerrar')">
-	<span class="icon-close">
+	<!--Icono de Cerrar-->
+	<div class="Cerrar" @click="$emit('cerrar')">
+		<span class="icon-close">
 
-<i class="fa-regular fa-circle-xmark" style="color: #0a0f18;"></i>
+	<i class="fa-regular fa-circle-xmark" style="color: #0a0f18;"></i>
 
-</span>
-</div>
-
-<!-- Opcion de Nombre de usuario-->
-
-	<div class="input-box">
-		<span class="icon">
-     
-    </span>
-		<input type="text" required>
-		<label>Nombre de usuario</label>
+	</span>
 	</div>
 
+	<!-- Opcion de Nombre de usuario-->
 
-<!-- Opcion de Localidad-->
+		<div class="input-box">
+			<span class="icon">
+		
+		</span>
+			<input type="text" required>
+			<label>Nombre de usuario</label>
+		</div>
 
-	<div class="input-box">
-		<span class="icon">
-     
-    </span>
-		<input type="text" required>
-		<label>Localidad</label>
-	</div>
 
-<!-- Opcion de Modalidad-->
+	<!-- Opcion de Localidad-->
 
-	<div class="remember-forgot">
-		<label><input type="checkbox">
+		<div class="input-box">
+			<span class="icon">
+		
+		</span>
+			<input type="text" required>
+			<label>Localidad</label>
+		</div>
 
-		Metodo remoto</label>
-	</div>
+	<!-- Opcion de Modalidad-->
 
-	<div class="remember-forgot">
-		<label><input type="checkbox">
+		<div class="remember-forgot">
+			<label><input type="checkbox">
 
-		Metodo Semi-Presencial</label>
-	</div>
+			Metodo remoto</label>
+		</div>
 
-<!--Opcion de Correo electronico-->
-	<div class="input-box">
-		<span class="icon">
-     
-    </span>
-		<input type="email" required>
-		<label>Correo electronico</label>
-	</div>
+		<div class="remember-forgot">
+			<label><input type="checkbox">
 
-<!--Boton para registrar datos-->
+			Metodo Semi-Presencial</label>
+		</div>
 
-	<div @click="$emit('MostrarRegistro', 'Clave')"><button type="submit" class="Registro">Registrar</button></div>
+	<!--Opcion de Correo electronico-->
+		<div class="input-box">
+			<span class="icon">
+		
+		</span>
+			<input type="email" required>
+			<label>Correo electronico</label>
+		</div>
 
-	</form>
-	</div>
+	<!--Boton para registrar datos-->
+
+		<div @click="$emit('MostrarRegistro', 'Clave')"><button type="submit" class="Registro">Registrar</button></div>
+
+		</form>
+		</div>
 
 <!--Cierre de requisitos-->
 
