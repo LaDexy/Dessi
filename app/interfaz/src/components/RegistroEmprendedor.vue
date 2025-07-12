@@ -31,7 +31,7 @@
 		<span class="icon">
      
     </span>
-		<input type="text" required>
+		<input type="text" v-model="nombre_usuario" required>
 		<label>Nombre de usuario</label>
 	</div>
 
@@ -41,7 +41,7 @@
 		<span class="icon">
      
     </span>
-		<input type="text" required>
+		<input type="text" v-model="nombre_negocio" required>
 		<label>Nombre de negocio</label>
 	</div>
 
@@ -51,20 +51,20 @@
 		<span class="icon">
      
     </span>
-		<input type="text" required>
+		<input type="text" v-model="localidad" required>
 		<label>Localidad</label>
 	</div>
 
 <!-- Opcion de Modalidad-->
 
 	<div class="remember-forgot">
-		<label><input type="checkbox">
+		<label><input type="checkbox" v-model="tipo_negocio" value="Tienda_Virtual">
 
 		Tienda Virtual</label>
 	</div>
 
 	<div class="remember-forgot">
-		<label><input type="checkbox">
+		<label><input type="checkbox" v-model="tipo_negocio" value="Tienda_Firtual">
 
 		Tienda Fisica</label>
 	</div>
@@ -74,7 +74,7 @@
 		<span class="icon">
      
     </span>
-		<input type="email" required>
+		<input type="email" v-model="correo_electronico" required>
 		<label>Correo electronico</label>
 	</div>
 
