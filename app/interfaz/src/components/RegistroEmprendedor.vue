@@ -14,7 +14,7 @@
 <div class="wrapper">
 <div class="form-box login">
 <h2>Emprendedor</h2>
-<form action="#">
+<form @submit.prevent="submitRegistroEmprendedor">
 
 <!--Icono de Cerrar-->
 <div class="Cerrar" @click="$emit('cerrar')">
@@ -64,7 +64,7 @@
 	</div>
 
 	<div class="remember-forgot">
-		<label><input type="checkbox" v-model="tipo_negocio" value="Tienda_Firtual">
+		<label><input type="checkbox" v-model="tipo_negocio" value="Tienda_Fisica">
 
 		Tienda Fisica</label>
 	</div>
@@ -80,8 +80,9 @@
 
 <!--Boton para registrar datos-->
 
-	<div @click="$emit('MostrarRegistro', 'Clave')"><button type="submit" class="Registro">Registrar</button></div>
-
+<div>
+  <button type="submit" class="Registro">Siguiente (Crear Contraseña)</button>
+</div>
 	</form>
 	</div>
 

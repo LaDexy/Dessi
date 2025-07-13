@@ -14,7 +14,7 @@
 <div class="wrapper">
 <div class="form-box login">
 <h2>Diseñador</h2>
-<form action="#">
+<form @submit.prevent="submitRegistroDisenador">
 
 <!--Icono de Cerrar-->
 <div class="Cerrar" @click="$emit('cerrar')">
@@ -49,13 +49,13 @@
 <!-- Opcion de Modalidad-->
 
 	<div class="remember-forgot">
-		<label><input type="checkbox" v-model="modalidad_trabajo" value="Totalmente_virtual">
+		<label><input type="radio" v-model="modalidad_trabajo" value="Totalmente_virtual" name="modalidad">
 
 		Metodo remoto</label>
 	</div>
 
 	<div class="remember-forgot">
-		<label><input type="checkbox" v-model="modalidad_trabajo" value="Semi_presencial">
+		<label><input type="radio" v-model="modalidad_trabajo" value="Semi_presencial" name="modalidad">
 
 		Metodo Semi-Presencial</label>
 	</div>
@@ -71,8 +71,9 @@
 
 <!--Boton para registrar datos-->
 
-	<div @click="$emit('MostrarRegistro', 'Clave')"><button type="submit" class="Registro">Registrar</button></div>
-
+	<div>
+  <button type="submit" class="Registro">Siguiente (Crear Contraseña)</button>
+</div>
 	</form>
 	</div>
 

@@ -57,53 +57,58 @@ export default {
     };
   },
   mounted() {
+    console.log('CrearContrasena.vue montado.'); // LOG: Componente montado
     // Recuperar los datos temporales al montar el componente
     const temp = localStorage.getItem('registroTempData');
     if (temp) {
       this.registroTempData = JSON.parse(temp);
+      console.log('Datos temporales de registro recuperados:', this.registroTempData); // LOG: Datos recuperados
     } else {
       console.warn('No se encontraron datos de registro temporales. El usuario debería empezar por el formulario de perfil.');
-      // Opcional: redirigir al usuario a la página de registro inicial
-      this.$emit('MostrarRegistro', null); // O un evento para volver al inicio
+      this.$emit('MostrarRegistro', null);
     }
   },
   methods: {
     async submitCreacionContrasena() {
+      console.log('Método submitCreacionContrasena iniciado.'); // LOG: Método llamado
+
       if (this.contrasena !== this.validar_contrasena) {
         alert('Las contraseñas no coinciden. Por favor, inténtalo de nuevo.');
+        console.log('Error: Contraseñas no coinciden.'); // LOG
         return;
       }
 
       if (!this.registroTempData) {
         alert('Error: Datos de registro incompletos. Por favor, comienza el registro de nuevo.');
-        this.$emit('MostrarRegistro', null); // Redirigir o cerrar
+        console.log('Error: Datos temporales de registro faltantes.'); // LOG
+        this.$emit('MostrarRegistro', null);
         return;
       }
 
-      // Combinar los datos temporales con la contraseña
       const userData = {
         ...this.registroTempData,
-        contrasena: this.contrasena // Añadir la contraseña
+        contrasena: this.contrasena
       };
+
+      console.log('Enviando datos de registro al backend:', userData); // LOG: Datos a enviar
 
       try {
         const response = await axios.post('http://localhost:4000/api/register', userData);
+        console.log('Respuesta del backend recibida:', response.status, response.data); // LOG: Respuesta del backend
 
         if (response.status === 201) {
           alert('¡Registro exitoso! Ya puedes iniciar sesión.');
-          localStorage.removeItem('registroTempData'); // Limpiar datos temporales
-          this.$emit('cerrar'); // Cerrar el modal de registro/contraseña
-          // Opcional: Emitir un evento para mostrar el formulario de inicio de sesión
-          // this.$emit('MostrarLogin');
+          localStorage.removeItem('registroTempData');
+          this.$emit('cerrar');
+          console.log('Registro exitoso y datos temporales eliminados.'); // LOG
         } else {
-          // Esto es más para errores de servidor que no son 409
           alert('Hubo un error al registrar el usuario: ' + (response.data.message || 'Error desconocido'));
-          console.error('Error de registro (respuesta no 201):', response.data);
+          console.error('Error de registro (respuesta no 201):', response.data); // LOG
         }
       } catch (error) {
-        console.error('Error al enviar el registro:', error);
+        console.error('Error al enviar el registro (catch):', error); // LOG: Error en la solicitud
         if (error.response) {
-          // El servidor respondió con un código de estado fuera del rango 2xx
+          console.error('Respuesta de error del servidor:', error.response.status, error.response.data); // LOG
           if (error.response.status === 409) {
             alert('El correo electrónico ya está registrado. Por favor, usa otro o inicia sesión.');
           } else if (error.response.status === 400) {
@@ -112,10 +117,10 @@ export default {
             alert('Error en el servidor: ' + (error.response.data.message || 'Error desconocido'));
           }
         } else if (error.request) {
-          // La solicitud fue hecha pero no se recibió respuesta (servidor no accesible)
+          console.error('No se recibió respuesta del servidor. ¿Está corriendo el backend?', error.request); // LOG
           alert('No se pudo conectar con el servidor. Asegúrate de que el servidor Express esté corriendo en http://localhost:4000.');
         } else {
-          // Algo más causó el error
+          console.error('Error de configuración de la solicitud:', error.message); // LOG
           alert('Error desconocido al registrar: ' + error.message);
         }
       }
