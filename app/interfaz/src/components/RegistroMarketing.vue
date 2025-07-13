@@ -98,7 +98,7 @@ export default {
     return {
       nombre_usuario: '',
       localidad: '',
-      modalidad_trabajo: [], // Usar un array para checkboxes
+      modalidad_trabajo: '', // Usar un array para checkboxes
       correo_electronico: '',
       tipo_perfil: 'Marketing' // Definido para este componente
     };
@@ -110,7 +110,7 @@ export default {
         localStorage.setItem('registroTempData', JSON.stringify({
           nombre_usuario: this.nombre_usuario,
           localidad: this.localidad,
-          modalidad_trabajo: this.modalidad_trabajo.join(','), // Unir para guardar como string
+          modalidad_trabajo: this.modalidad_trabajo, // Unir para guardar como string
           correo_electronico: this.correo_electronico,
           tipo_perfil: this.tipo_perfil
         }));
