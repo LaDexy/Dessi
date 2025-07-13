@@ -114,22 +114,25 @@ export default {
   methods: {
     async submitRegistroEmprendedor() {
       try {
-        // LOG AQUI: Muestra los datos que se van a guardar en localStorage
+        // LOG: Muestra los datos que se van a guardar en localStorage
         console.log('Datos de Emprendedor ANTES de guardar en localStorage:', {
           nombre_usuario: this.nombre_usuario,
           nombre_negocio: this.nombre_negocio,
           localidad: this.localidad,
-          tipo_negocio: this.tipo_negocio,
+          tipo_negocio: this.tipo_negocio, // Esto es el Proxy, pero el JSON.stringify lo manejará mejor ahora
           correo_electronico: this.correo_electronico,
           tipo_perfil: this.tipo_perfil
         });
 
         // Guardar temporalmente los datos en localStorage
+        // IMPORTANTE: Al hacer JSON.stringify, el Proxy se convertirá en un objeto plano.
+        // Para arrays, JSON.stringify los maneja bien, pero si el Proxy causaba problemas,
+        // una copia explícita como [...this.tipo_negocio] asegura que sea un array simple.
         localStorage.setItem('registroTempData', JSON.stringify({
           nombre_usuario: this.nombre_usuario,
           nombre_negocio: this.nombre_negocio,
           localidad: this.localidad,
-          tipo_negocio: this.tipo_negocio,
+          tipo_negocio: [...this.tipo_negocio], // <-- AQUI LA CLAVE: Crear una copia plana del array
           correo_electronico: this.correo_electronico,
           tipo_perfil: this.tipo_perfil
         }));
@@ -146,6 +149,7 @@ export default {
   }
 };
 </script>
+
 
 <style>
 

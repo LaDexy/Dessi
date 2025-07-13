@@ -8,7 +8,7 @@
       <div class="General">
         <div class="form-box login">
           <h2>Creacion de contraseña</h2>
-          <form action="#">
+          <form @submit.prevent="submitCreacionContrasena">
             <!--Icono de Cerrar-->
             <div class="Cerrar" @click="$emit('cerrar')">
               <span class="icon-close">

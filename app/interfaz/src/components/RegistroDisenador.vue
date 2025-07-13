@@ -92,21 +92,28 @@
 
 
 <script>
-
-
 export default {
   data() {
     return {
       nombre_usuario: '',
       localidad: '',
-      modalidad_trabajo: '', // Usar un array para checkboxes
+      modalidad_trabajo: '', // Correcto para radio buttons
       correo_electronico: '',
-      tipo_perfil: 'Diseñador' // Definido para este componente
+      tipo_perfil: 'Diseñador' // O 'Marketing' según el componente
     };
   },
   methods: {
-    async submitRegistroDisenador() {
+    async submitRegistroDisenador() { // O submitRegistroMarketing()
       try {
+        // LOG AQUI: Muestra los datos que se van a guardar en localStorage
+        console.log('Datos de Diseñador/Marketing ANTES de guardar en localStorage:', {
+          nombre_usuario: this.nombre_usuario,
+          localidad: this.localidad,
+          modalidad_trabajo: this.modalidad_trabajo,
+          correo_electronico: this.correo_electronico,
+          tipo_perfil: this.tipo_perfil
+        });
+
         // Guardar temporalmente los datos en localStorage
         localStorage.setItem('registroTempData', JSON.stringify({
           nombre_usuario: this.nombre_usuario,
@@ -118,17 +125,15 @@ export default {
 
         // Emitir evento para mostrar el formulario de creación de contraseña
         this.$emit('MostrarRegistro', 'Clave');
-        console.log('Datos de Diseñador guardados temporalmente. Pasando a creación de contraseña.');
+        console.log('Datos de Diseñador/Marketing guardados temporalmente. Pasando a creación de contraseña.');
 
       } catch (error) {
-        console.error('Error al preparar el registro de diseñador:', error);
+        console.error('Error al preparar el registro de Diseñador/Marketing:', error);
         alert('Hubo un error al preparar el registro. Por favor, inténtalo de nuevo.');
       }
     }
   }
 };
-
-
 </script>
 
 <style>
