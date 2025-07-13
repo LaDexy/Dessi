@@ -9,7 +9,7 @@
       <div class="Boton">
         <div class="form-box login">
           <h2>Iniciar Sesion</h2>
-          <form action="#">
+          <form @submit.prevent="submitLogin">
             <!--Icono de Cerrar-->
             <div class="Cerrar" @click="$emit('cerrar')">
               <span class="icon-close">
@@ -24,21 +24,21 @@
 
             <div class="input-box">
               <span class="icon"> </span>
-              <input type="Email" required />
+              <input type="Email" v-model="correo_electronico" required />
               <label>Correo electronico</label>
             </div>
 
             <!--OPcion de contraseña-->
             <div class="input-box">
               <span class="icon"> </span>
-              <input type="password" required />
+              <input type="password" v-model="contrasena" required />
               <label>Password</label>
             </div>
 
             <!--Opcion para recordar contraseña-->
             <div class="remember-forgot">
               <label
-                ><input type="checkbox" />
+                ><input type="checkbox" v-model="recordar_contrasena" />
 
                 Recordar contraseña</label
               >
@@ -64,8 +64,8 @@
 </template>
 
 <script>
-
 import axios from 'axios';
+
 export default {
   data() {
     return {
@@ -76,46 +76,46 @@ export default {
   },
   methods: {
     async submitLogin() {
+      console.log('Método submitLogin iniciado.'); // LOG: Método llamado
+      console.log('Datos a enviar al backend:', {
+        correo_electronico: this.correo_electronico,
+        // No loguear la contraseña en producción, solo para depuración
+        contrasena: this.contrasena.replace(/./g, '*') // Ocultar contraseña en log
+      }); // LOG: Datos a enviar
+
       try {
         const response = await axios.post('http://localhost:4000/api/login', {
           correo_electronico: this.correo_electronico,
           contrasena: this.contrasena
         });
 
+        console.log('Respuesta del backend recibida:', response.status, response.data); // LOG: Respuesta del backend
+
         if (response.status === 200) {
           const { token, tipo_perfil, id_usuario, nombre_usuario } = response.data;
 
           // Almacenar el token y la información del usuario
           // Usar localStorage si recordar_contrasena es true, de lo contrario sessionStorage
-          if (this.recordar_contrasena) {
-            localStorage.setItem('userToken', token);
-            localStorage.setItem('userProfile', tipo_perfil);
-            localStorage.setItem('userId', id_usuario);
-            localStorage.setItem('userName', nombre_usuario);
-          } else {
-            sessionStorage.setItem('userToken', token);
-            sessionStorage.setItem('userProfile', tipo_perfil);
-            sessionStorage.setItem('userId', id_usuario);
-            sessionStorage.setItem('userName', nombre_usuario);
-          }
+          const storage = this.recordar_contrasena ? localStorage : sessionStorage;
+          storage.setItem('userToken', token);
+          storage.setItem('userProfile', tipo_perfil);
+          storage.setItem('userId', id_usuario);
+          storage.setItem('userName', nombre_usuario);
 
           alert('¡Inicio de sesión exitoso!');
           this.$emit('cerrar'); // Cerrar el modal de login
 
-          // Opcional: Redirigir al usuario a la página central
-          // Dependiendo de cómo manejes las rutas en Vue (Vue Router o manejo manual)
-          // Si usas Vue Router: this.$router.push('/pagina-central');
-          // Si manejas la visibilidad de componentes: this.$emit('loginExitoso');
-          console.log('Usuario logueado:', response.data);
+          // Emitir un evento para que PaginaPrincipal.vue sepa que el login fue exitoso
+          this.$emit('loginExitoso');
+          console.log('Usuario logueado y datos almacenados:', response.data);
 
         } else {
-          // Esto debería ser manejado por el bloque catch para errores de red o 4xx/5xx
           alert('Error desconocido al iniciar sesión.');
         }
       } catch (error) {
-        console.error('Error al iniciar sesión:', error);
+        console.error('Error al iniciar sesión (catch):', error); // LOG: Error en la solicitud
         if (error.response) {
-          // El servidor respondió con un código de estado fuera del rango 2xx
+          console.error('Respuesta de error del servidor:', error.response.status, error.response.data); // LOG
           if (error.response.status === 401) {
             alert('Credenciales inválidas. Por favor, verifica tu correo y contraseña.');
           } else if (error.response.status === 400) {
@@ -124,10 +124,10 @@ export default {
             alert('Error en el servidor: ' + (error.response.data.message || 'Error desconocido'));
           }
         } else if (error.request) {
-          // La solicitud fue hecha pero no se recibió respuesta (servidor no accesible)
+          console.error('No se recibió respuesta del servidor. ¿Está corriendo el backend?', error.request); // LOG
           alert('No se pudo conectar con el servidor. Asegúrate de que el servidor Express esté corriendo en http://localhost:4000.');
         } else {
-          // Algo más causó el error
+          console.error('Error de configuración de la solicitud:', error.message); // LOG
           alert('Error desconocido al iniciar sesión: ' + error.message);
         }
       }

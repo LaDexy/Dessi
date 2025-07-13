@@ -11,7 +11,7 @@
             <div class="content">
 
                 <div><a>Editar perfil</a></div>
-                <div><a>Cerrar sesion</a></div>
+                <div @click="logout" class="logout-button"><a>Cerrar sesion</a></div>
 
             </div>
     </div>

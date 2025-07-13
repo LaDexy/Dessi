@@ -1,5 +1,7 @@
 <template>
   <div>
+
+
     <!--Componentes de pagina central-->
 
     <BarraPerfil/>

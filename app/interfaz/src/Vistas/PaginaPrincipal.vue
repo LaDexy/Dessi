@@ -1,5 +1,6 @@
 <template>
   <div>
+
     <!--Componentes de pagina principal-->
 
     <TituloInicial />
