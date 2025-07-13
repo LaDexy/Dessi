@@ -62,12 +62,14 @@
 
 <!--Opcion de Correo electronico-->
 	<div class="input-box">
-		<span class="icon">
-     
-    </span>
-		<input type="email" v-model="correo_electronico" required>
-		<label>Correo electronico</label>
-	</div>
+			<span class="icon">
+		
+		</span>
+			<input type="email" v-model="correo_electronico" required>
+			<label>Correo electronico</label>
+		</div>
+
+  
 
 <!--Boton para registrar datos-->
 
