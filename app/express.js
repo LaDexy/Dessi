@@ -100,7 +100,8 @@ app.post('/api/register', async (req, res) => {
 
     try {
         console.log('Verificando si el correo electrónico ya está registrado:', correo_electronico); // LOG
-        const [users] = await pool.query('SELECT id_usuario FROM convenio_emprendimiento_usuarios WHERE correo_electronico = ?', [correo_electronico]);
+        // CORRECCIÓN: Cambiar 'convenio_emprendimiento_usuarios' a 'usuarios'
+        const [users] = await pool.query('SELECT id_usuario FROM usuarios WHERE correo_electronico = ?', [correo_electronico]);
         if (users.length > 0) {
             console.log('Error 409: Correo electrónico ya registrado.'); // LOG
             return res.status(409).json({ message: 'El correo electrónico ya está registrado.' });
@@ -116,8 +117,9 @@ app.post('/api/register', async (req, res) => {
 
         try {
             console.log('Insertando usuario principal...'); // LOG
+            // CORRECCIÓN: Cambiar 'convenio_emprendimiento_usuarios' a 'usuarios'
             const [userResult] = await connection.query(
-                'INSERT INTO convenio_emprendimiento_usuarios (nombre_usuario, correo_electronico, contrasena_hash, tipo_perfil, fecha_registro) VALUES (?, ?, ?, ?, NOW())',
+                'INSERT INTO usuarios (nombre_usuario, correo_electronico, contrasena_hash, tipo_perfil, fecha_registro) VALUES (?, ?, ?, ?, NOW())',
                 [nombre_usuario, correo_electronico, contrasena_hash, tipo_perfil]
             );
             const id_usuario = userResult.insertId;
@@ -130,8 +132,9 @@ app.post('/api/register', async (req, res) => {
                 }
                 const tipoNegocioString = Array.isArray(tipo_negocio) ? tipo_negocio.join(',') : tipo_negocio;
                 console.log('Insertando datos de Emprendedor:', { id_usuario, nombre_negocio, localidad, tipoNegocioString }); // LOG
+                // CORRECCIÓN: Cambiar 'convenio_emprendimiento_emprendedor' a 'emprendedor'
                 await connection.query(
-                    'INSERT INTO convenio_emprendimiento_emprendedor (id_usuario, nombre_negocio, localidad, tipo_negocio) VALUES (?, ?, ?, ?)',
+                    'INSERT INTO emprendedor (id_usuario, nombre_negocio, localidad, tipo_negocio) VALUES (?, ?, ?, ?)',
                     [id_usuario, nombre_negocio, localidad, tipoNegocioString]
                 );
                 console.log('Datos de Emprendedor insertados.'); // LOG
@@ -139,11 +142,11 @@ app.post('/api/register', async (req, res) => {
                 if (!localidad || !modalidad_trabajo) {
                     throw new Error('Faltan campos específicos para el perfil Diseñador/Marketing.');
                 }
-                // Asegurarse de que modalidad_trabajo sea un string si viene de un array de checkboxes
                 const modalidadTrabajoString = Array.isArray(modalidad_trabajo) ? modalidad_trabajo.join(',') : modalidad_trabajo;
                 console.log('Insertando datos de Diseñador/Marketing:', { id_usuario, localidad, modalidadTrabajoString }); // LOG
+                // CORRECCIÓN: Cambiar 'convenio_emprendimiento_disenador_marketing' a 'disenador_marketing'
                 await connection.query(
-                    'INSERT INTO convenio_emprendimiento_disenador_marketing (id_usuario, localidad, modalidad_trabajo) VALUES (?, ?, ?)',
+                    'INSERT INTO disenador_marketing (id_usuario, localidad, modalidad_trabajo) VALUES (?, ?, ?)',
                     [id_usuario, localidad, modalidadTrabajoString]
                 );
                 console.log('Datos de Diseñador/Marketing insertados.'); // LOG
@@ -184,7 +187,8 @@ app.post('/api/login', async (req, res) => {
 
     try {
         console.log('Buscando usuario por correo electrónico:', correo_electronico); // LOG
-        const [users] = await pool.query('SELECT id_usuario, nombre_usuario, contrasena_hash, tipo_perfil FROM convenio_emprendimiento_usuarios WHERE correo_electronico = ?', [correo_electronico]);
+        // CORRECCIÓN: Cambiar 'convenio_emprendimiento_usuarios' a 'usuarios'
+        const [users] = await pool.query('SELECT id_usuario, nombre_usuario, contrasena_hash, tipo_perfil FROM usuarios WHERE correo_electronico = ?', [correo_electronico]);
 
         if (users.length === 0) {
             console.log('Error 401: Usuario no encontrado.'); // LOG
@@ -225,8 +229,9 @@ app.get('/api/profile/me', authenticateToken, async (req, res) => {
     try {
         let profileData = {};
         console.log('Consultando datos de usuario principal...'); // LOG
+        // CORRECCIÓN: Cambiar 'convenio_emprendimiento_usuarios' a 'usuarios'
         const [users] = await pool.query(
-            'SELECT id_usuario, nombre_usuario, correo_electronico, tipo_perfil, foto_perfil_url, descripcion_perfil FROM convenio_emprendimiento_usuarios WHERE id_usuario = ?',
+            'SELECT id_usuario, nombre_usuario, correo_electronico, tipo_perfil, foto_perfil_url, descripcion_perfil FROM usuarios WHERE id_usuario = ?',
             [userId]
         );
 
@@ -240,8 +245,9 @@ app.get('/api/profile/me', authenticateToken, async (req, res) => {
         // Consulta los datos específicos del perfil (emprendedor o diseñador_marketing)
         if (userProfileType === 'Emprendedor') {
             console.log('Consultando datos de emprendedor...'); // LOG
+            // CORRECCIÓN: Cambiar 'convenio_emprendimiento_emprendedor' a 'emprendedor'
             const [emprendedorData] = await pool.query(
-                'SELECT nombre_negocio, localidad, tipo_negocio FROM convenio_emprendimiento_emprendedor WHERE id_usuario = ?',
+                'SELECT nombre_negocio, localidad, tipo_negocio FROM emprendedor WHERE id_usuario = ?',
                 [userId]
             );
             if (emprendedorData.length > 0) {
@@ -250,8 +256,9 @@ app.get('/api/profile/me', authenticateToken, async (req, res) => {
             }
         } else if (userProfileType === 'Diseñador' || userProfileType === 'Marketing') {
             console.log('Consultando datos de diseñador/marketing...'); // LOG
+            // CORRECCIÓN: Cambiar 'convenio_emprendimiento_disenador_marketing' a 'disenador_marketing'
             const [dmData] = await pool.query(
-                'SELECT localidad, modalidad_trabajo FROM convenio_emprendimiento_disenador_marketing WHERE id_usuario = ?',
+                'SELECT localidad, modalidad_trabajo FROM disenador_marketing WHERE id_usuario = ?',
                 [userId]
             );
             if (dmData.length > 0) {
@@ -261,8 +268,10 @@ app.get('/api/profile/me', authenticateToken, async (req, res) => {
         }
 
         console.log('Consultando proyectos y fotos del usuario...'); // LOG
+        // CORRECCIÓN: Cambiar 'convenio_emprendimiento_proyecto' a 'proyecto'
+        // CORRECCIÓN: Cambiar 'convenio_emprendimiento_imagen' a 'imagen'
         const [projects] = await pool.query(
-            'SELECT p.id_proyecto, p.titulo_proyecto, p.descripcion_proyecto, p.fecha_creacion, p.estado, i.id_imagen, i.url_imagen, i.descripcion_imagen FROM convenio_emprendimiento_proyecto p LEFT JOIN convenio_emprendimiento_imagen i ON p.id_proyecto = i.id_proyecto WHERE p.id_usuario = ? ORDER BY p.fecha_creacion DESC, i.orden ASC',
+            'SELECT p.id_proyecto, p.titulo_proyecto, p.descripcion_proyecto, p.fecha_creacion, p.estado, i.id_imagen, i.url_imagen, i.descripcion_imagen FROM proyecto p LEFT JOIN imagen i ON p.id_proyecto = i.id_proyecto WHERE p.id_usuario = ? ORDER BY p.fecha_creacion DESC, i.orden ASC',
             [userId]
         );
         console.log('Proyectos y fotos obtenidos. Agrupando...'); // LOG
