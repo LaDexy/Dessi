@@ -100,8 +100,6 @@
 
 
 <script>
-
-
 export default {
   data() {
     return {
@@ -116,8 +114,17 @@ export default {
   methods: {
     async submitRegistroEmprendedor() {
       try {
+        // LOG AQUI: Muestra los datos que se van a guardar en localStorage
+        console.log('Datos de Emprendedor ANTES de guardar en localStorage:', {
+          nombre_usuario: this.nombre_usuario,
+          nombre_negocio: this.nombre_negocio,
+          localidad: this.localidad,
+          tipo_negocio: this.tipo_negocio,
+          correo_electronico: this.correo_electronico,
+          tipo_perfil: this.tipo_perfil
+        });
+
         // Guardar temporalmente los datos en localStorage
-        // La contraseña se manejará en el siguiente paso (CrearContrasena.vue)
         localStorage.setItem('registroTempData', JSON.stringify({
           nombre_usuario: this.nombre_usuario,
           nombre_negocio: this.nombre_negocio,
@@ -133,14 +140,11 @@ export default {
 
       } catch (error) {
         console.error('Error al preparar el registro de emprendedor:', error);
-        // Aquí podrías mostrar un mensaje de error al usuario
         alert('Hubo un error al preparar el registro. Por favor, inténtalo de nuevo.');
       }
     }
   }
 };
-
-
 </script>
 
 <style>
