@@ -2,6 +2,7 @@
   <div>
     <!--Componentes de pagina de perfil-->
     
+    <IconoEditar/>
     <BarraPerfil/>
     <BotonesDesafios @MostrarRegistro="MostrarRegistro"/>
     <ImagenPerfil/>
@@ -29,6 +30,7 @@ import PortafolioPerfil from '../components/PortafolioPerfil.vue';
 import BotonesDesafios from '../components/BotonesDesafios.vue';
 import CrearDesafio from '@/components/CrearDesafio.vue';
 import VerDesafio from '@/components/VerDesafio.vue';
+import IconoEditar from '@/components/IconoEditar.vue';
 
 export default{
 
@@ -77,7 +79,8 @@ export default{
         PortafolioPerfil,
         BotonesDesafios,
         CrearDesafio,
-        VerDesafio
+        VerDesafio,
+        IconoEditar
         
     
   }
