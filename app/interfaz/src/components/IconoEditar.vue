@@ -2,7 +2,7 @@
 
 <div>
 
-<div class="Lapiz">
+<div class="LapizPerfil">
 
 <i class="fa-solid fa-pencil"></i>
 
@@ -24,11 +24,11 @@ export default{
 
 <style>
 
-.Lapiz{
+.LapizPerfil{
 
 position: absolute;
-top: 100px;
-
+top: 150px;
+left: 850px;
 
 }
 
