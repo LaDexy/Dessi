@@ -10,7 +10,7 @@
 
             <div class="content">
 
-                <div><a>Editar perfil</a></div>
+               <router-link to="/perfil" @click="closeDropdownAndNavigate">Editar perfil</router-link>
                 <div @click="logout" class="logout-button"><a>Cerrar sesion</a></div>
 
             </div>

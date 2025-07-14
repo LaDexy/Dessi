@@ -1,19 +1,13 @@
 <template>
-  <div>
-    <nav>
-      <router-link to="/"></router-link>
-      <router-link to="/central"></router-link>
-      <router-link to="/perfil"></router-link>
-    </nav>
-
+  <div id="app">
     <router-view></router-view>
   </div>
 </template>
 
 <script>
-
 export default {
-  name: "App",
+  name: 'App',
+  // No necesitas importar tus páginas aquí, el router las manejará.
 };
 </script>
 
