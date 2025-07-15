@@ -1,6 +1,6 @@
 <template>
   <div>
-     <!-- Contenedor principal de la foto de perfil y el lápiz -->
+    <!-- Contenedor principal de la foto de perfil -->
     <div class="Perfil">
       <div class="circulo">
         <!-- La imagen de perfil se muestra dinámicamente -->
@@ -8,24 +8,16 @@
         <img :src="profileImageSrc || require('../assets/Usuario.png')" alt="Foto de perfil">
         
         <!-- Input de tipo archivo oculto -->
+        <!-- Este input será activado por un método llamado desde el componente padre -->
         <input type="file" ref="fileInput" @change="onFileSelected" accept="image/*" style="display: none;">
-
-        <!-- ¡CAMBIO AQUÍ! Usamos el componente IconoEditar y escuchamos su evento @click -->
-        <IconoEditar @click="triggerFileInput" />
       </div>
     </div>
   </div>
 </template>
 
 <script>
-// ¡CORRECCIÓN! Importa el componente IconoEditar
-import IconoEditar from './IconoEditar.vue'; 
-
 export default {
   name: "ImagenPerfil",
-  components: {
-    IconoEditar // ¡CORRECCIÓN! Declara el componente para poder usarlo en el template
-  },
   props: {
     // Prop para la URL de la imagen de perfil actual
     profileImageSrc: {
@@ -34,8 +26,8 @@ export default {
     }
   },
   methods: {
-    // Método para simular un clic en el input de archivo
-    triggerFileInput() {
+    // ¡NUEVO! Este método será llamado por el componente padre (PaginaPerfil)
+    openFileInput() {
       this.$refs.fileInput.click();
     },
     // Método que se ejecuta cuando se selecciona un archivo
@@ -44,7 +36,7 @@ export default {
       if (file) {
         // Emitir un evento al componente padre con el archivo seleccionado
         this.$emit('imageSelected', file);
-        console.log('Archivo de imagen seleccionado:', file.name);
+        console.log('Archivo de imagen seleccionado en ImagenPerfil:', file.name);
       }
     }
   }
