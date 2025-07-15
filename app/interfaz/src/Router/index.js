@@ -4,6 +4,7 @@ import PaginaPrincipal from '../Vistas/PaginaPrincipal.vue';
 import PaginaCentral from '../Vistas/PaginaCentral.vue';
 import PaginaPerfil from '@/Vistas/PaginaPerfil.vue';
 import PaginaForo from '@/Vistas/PaginaForo.vue';
+import PaginaPerfilDM from '@/Vistas/PaginaPerfilDM.vue';
 
 const routes = [
   {
@@ -27,6 +28,12 @@ const routes = [
     path: '/foro', // Ruta para la página del foro
     name: 'Foro',
     component: PaginaForo,
+    meta: { requiresAuth: true } // ¡NUEVO! Esta ruta requiere autenticación
+  },
+  {
+    path: '/DM', // Ruta para la página del foro
+    name: 'DM',
+    component: PaginaPerfilDM,
     meta: { requiresAuth: true } // ¡NUEVO! Esta ruta requiere autenticación
   },
 ];
