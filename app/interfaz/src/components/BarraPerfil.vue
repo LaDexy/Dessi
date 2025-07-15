@@ -4,7 +4,11 @@
 
     <!--Rectangulo de arriba de barra de perfil-->
     <div class="Barra">
-      <div class="rectangulo"></div>
+      <div class="rectangulo">
+
+          
+
+      </div>
     </div>
 
     <!--Texto de nombre de perfil-->

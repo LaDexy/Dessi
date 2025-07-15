@@ -48,11 +48,19 @@ export default {
 
 .Perfil .circulo {
   position: absolute;
-  width: 100px;
-  height: 100px;
+  width: 200px;
+  height: 200px;
   background-color: rgb(199, 127, 199);
-  border-radius: 50%;
+  border-radius: 10%;
   left: 700px;
-  top: 50px;
+  top: 30px;
+}
+
+.circulo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* CAMBIO AQUÍ */
+    border-radius: 10%;
+    position: relative;
 }
 </style>
