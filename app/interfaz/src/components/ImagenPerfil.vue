@@ -44,23 +44,29 @@ export default {
 </script>
 
 <style>
-/*Circulo de referencia para foto de perfil*/
+.Perfil {
+  display: flex;
+  justify-content: center; /* Centra el círculo horizontalmente */
+  /* margin-top se manejará en PaginaPerfil para el espaciado general */
+}
 
+/* Círculo de referencia para foto de perfil */
 .Perfil .circulo {
-  position: absolute;
+  position: relative; /* Necesario para posicionar el icono de lápiz sobre él */
   width: 200px;
   height: 200px;
-  background-color: rgb(199, 127, 199);
-  border-radius: 10%;
-  left: 700px;
-  top: 30px;
+  background-color: rgb(199, 127, 199); /* Tu color de fondo */
+  border-radius: 50%; /* ¡CLAVE! Para un círculo perfecto */
+  overflow: hidden; /* Recorta la imagen dentro del círculo */
+  border: 5px solid white; /* Borde blanco para el círculo */
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.3); /* Sombra más pronunciada */
+  z-index: 2; /* ¡CLAVE! Asegura que la imagen esté por encima de la barra rosa */
 }
 
 .circulo img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* CAMBIO AQUÍ */
-    border-radius: 10%;
-    position: relative;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Mantiene la imagen cubriendo el círculo, recortando si es necesario */
+  border-radius: 50%; /* ¡CLAVE! También redondea la imagen misma */
 }
 </style>
