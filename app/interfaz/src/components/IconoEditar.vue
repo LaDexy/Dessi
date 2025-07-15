@@ -1,35 +1,32 @@
 <template>
+  <div>
+    <div class="LapizPerfil" @click="$emit('click')">
+      <i class="fa-solid fa-pencil"></i>
+    </div>
 
-<div>
-
-<div class="LapizPerfil">
-
-<i class="fa-solid fa-pencil"></i>
-
-</div>
-
-</div>
-
+    <div class="LapizDescripcion">
+      <i class="fa-solid fa-pencil"></i>
+    </div>
+  </div>
 </template>
 
 <script>
-
-export default{
-
-    name: "IconoEditar"
-
-}
-
+export default {
+  name: "IconoEditar",
+  emits: ["click"],
+};
 </script>
 
 <style>
-
-.LapizPerfil{
-
-position: absolute;
-top: 150px;
-left: 850px;
-
+.LapizPerfil {
+  position: absolute;
+  top: 130px;
+  left: 790px;
 }
 
+.LapizDescripcion {
+  position: absolute;
+  top: 360px;
+  left: 955px;
+}
 </style>
