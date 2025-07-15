@@ -22,6 +22,7 @@ export default {
   position: absolute;
   top: 130px;
   left: 790px;
+  padding: 8px;
 }
 
 .LapizDescripcion {
