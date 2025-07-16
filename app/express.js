@@ -16,9 +16,6 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // Configura los middlewares
-// ====================================================================
-// Configuración de CORS - ¡Debe ir al principio!
-// ====================================================================
 app.use(cors({
     origin: 'http://localhost:8080', // Permite solicitudes SÓLO desde tu frontend Vue.js
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Asegúrate de incluir todos los métodos que usas
@@ -84,209 +81,7 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
-// --- RUTA PARA SUBIR FOTO DE PERFIL ---
-app.post('/api/upload-profile-image', authenticateToken, upload.single('profileImage'), async (req, res) => {
-    const userId = req.user.id_usuario; // Obtenemos el userId del token autenticado
-
-    if (!req.file) {
-        console.error('Error: No se ha subido ningún archivo.');
-        return res.status(400).json({ message: 'No se ha subido ningún archivo.' });
-    }
-
-    const imageUrl = `/uploads/${req.file.filename}`;
-
-    try {
-        const [result] = await pool.query(
-            'UPDATE usuarios SET foto_perfil_url = ? WHERE id_usuario = ?',
-            [imageUrl, userId]
-        );
-
-        if (result.affectedRows === 0) {
-            console.warn(`No se encontró usuario con ID ${userId} para actualizar la imagen.`);
-            return res.status(404).json({ message: 'Usuario no encontrado.' });
-        }
-        console.log(`URL de imagen actualizada para userId ${userId}: ${imageUrl}`);
-        const fullImageUrl = `${req.protocol}://${req.get('host')}${imageUrl}`;
-        res.status(200).json({ message: 'Imagen subida y URL actualizada!', imageUrl: fullImageUrl });
-
-    } catch (error) {
-        console.error('Error al actualizar la URL de la imagen en la DB:', error);
-        res.status(500).json({ message: 'Error interno del servidor al guardar la URL de la imagen.', error: error.message });
-    }
-});
-
-// --- NUEVA RUTA: Subir imagen de portafolio ---
-app.post('/api/portfolio/upload-image', authenticateToken, upload.single('portfolioImage'), async (req, res) => {
-    console.log('Solicitud POST /api/portfolio/upload-image recibida.');
-    const userId = req.user.id_usuario; // El ID del usuario que sube la imagen
-
-    if (!req.file) {
-        console.error('Error: No se ha subido ningún archivo para el portafolio.');
-        return res.status(400).json({ message: 'No se ha subido ningún archivo.' });
-    }
-
-    const imageUrl = req.file.filename; // Guardamos solo el nombre del archivo, Multer ya lo puso en 'uploads'
-    const defaultTitle = `Proyecto de Portafolio - ${new Date().toLocaleDateString('es-ES')}`; // Título por defecto para el proyecto
-    const defaultDescription = 'Imagen de portafolio subida.';
-    const defaultState = 'completado'; // Puedes definir un estado por defecto
-
-    let connection;
-    try {
-        connection = await pool.getConnection();
-        await connection.beginTransaction(); // Inicia una transacción para asegurar la consistencia
-
-        // 1. Insertar un nuevo proyecto genérico para esta imagen de portafolio
-        const [projectResult] = await connection.query(
-            'INSERT INTO proyecto (id_usuario, titulo_proyecto, descripcion_proyecto, fecha_creacion, estado) VALUES (?, ?, ?, NOW(), ?)',
-            [userId, defaultTitle, defaultDescription, defaultState]
-        );
-        const projectId = projectResult.insertId;
-        console.log(`Nuevo proyecto creado para el portafolio con ID: ${projectId}`);
-
-        // 2. Insertar la imagen asociada a este nuevo proyecto
-        const [imageResult] = await connection.query(
-            'INSERT INTO imagen (id_proyecto, url_imagen, descripcion_imagen, orden) VALUES (?, ?, ?, 1)', // 'orden' 1 por defecto
-            [projectId, imageUrl, defaultDescription]
-        );
-        console.log(`Imagen insertada para el proyecto ${projectId}. ID Imagen: ${imageResult.insertId}`);
-
-        await connection.commit(); // Confirma la transacción
-        console.log('Transacción de subida de imagen de portafolio completada.');
-
-        // Construye la URL completa de la imagen para enviarla al frontend si es necesario
-        const fullImageUrl = `${req.protocol}://${req.get('host')}/uploads/${imageUrl}`;
-        res.status(200).json({ message: 'Imagen de portafolio subida y registrada!', imageUrl: fullImageUrl, projectId: projectId });
-
-    } catch (error) {
-        if (connection) {
-            await connection.rollback(); // Si algo falla, revierte la transacción
-            console.log('Transacción de subida de imagen de portafolio revertida.');
-        }
-        console.error('Error al subir la imagen del portafolio:', error);
-        res.status(500).json({ message: 'Error interno del servidor al subir la imagen del portafolio.', error: error.message });
-    } finally {
-        if (connection) {
-            connection.release(); // Libera la conexión de vuelta al pool
-        }
-    }
-});
-
-
-// --- RUTA PARA OBTENER EL PERFIL DEL USUARIO (incluyendo foto_perfil_url) ---
-app.get('/api/profile/me', authenticateToken, async (req, res) => {
-    console.log('Solicitud GET /api/profile/me recibida para usuario:', req.user.id_usuario);
-    const userId = req.user.id_usuario;
-    const userProfileType = req.user.tipo_perfil;
-
-    try {
-        let profileData = {};
-        const [users] = await pool.query(
-            'SELECT id_usuario, nombre_usuario, correo_electronico, tipo_perfil, foto_perfil_url, descripcion_perfil FROM usuarios WHERE id_usuario = ?',
-            [userId]
-        );
-
-        if (users.length === 0) {
-            console.log('Error 404: Perfil de usuario no encontrado para ID:', userId);
-            return res.status(404).json({ message: 'Perfil de usuario no encontrado.' });
-        }
-        profileData = users[0];
-        console.log('Datos de usuario principal obtenidos:', profileData.nombre_usuario);
-
-        // Si la foto_perfil_url existe, conviértela a una URL completa
-        if (profileData.foto_perfil_url) {
-            profileData.foto_perfil_url = `${req.protocol}://${req.get('host')}${profileData.foto_perfil_url}`;
-        } else {
-            profileData.foto_perfil_url = ''; // Asegúrate de que siempre haya un string vacío si no hay imagen
-        }
-
-        // Consulta los datos específicos del perfil (emprendedor o diseñador_marketing)
-        if (userProfileType === 'Emprendedor') {
-            const [emprendedorData] = await pool.query(
-                'SELECT nombre_negocio, localidad, tipo_negocio FROM emprendedor WHERE id_usuario = ?',
-                [userId]
-            );
-            if (emprendedorData.length > 0) {
-                profileData = { ...profileData, ...emprendedorData[0] };
-            }
-        } else if (userProfileType === 'Diseñador' || userProfileType === 'Marketing') {
-            const [dmData] = await pool.query(
-                'SELECT localidad, modalidad_trabajo FROM disenador_marketing WHERE id_usuario = ?',
-                [userId]
-            );
-            if (dmData.length > 0) {
-                profileData = { ...profileData, ...dmData[0] };
-            }
-        }
-
-        const [projects] = await pool.query(
-            'SELECT p.id_proyecto, p.titulo_proyecto, p.descripcion_proyecto, p.fecha_creacion, p.estado, i.id_imagen, i.url_imagen, i.descripcion_imagen FROM proyecto p LEFT JOIN imagen i ON p.id_proyecto = i.id_proyecto WHERE p.id_usuario = ? ORDER BY p.fecha_creacion DESC, i.orden ASC',
-            [userId]
-        );
-
-        const groupedProjects = projects.reduce((acc, row) => {
-            if (!acc[row.id_proyecto]) {
-                acc[row.id_proyecto] = {
-                    id_proyecto: row.id_proyecto,
-                    titulo_proyecto: row.titulo_proyecto,
-                    descripcion_proyecto: row.descripcion_proyecto,
-                    fecha_creacion: row.fecha_creacion,
-                    estado: row.estado,
-                    imagenes: []
-                };
-            }
-            if (row.id_imagen) {
-                // Aquí también construimos la URL completa para las imágenes de proyectos
-                acc[row.id_proyecto].imagenes.push({
-                    id_imagen: row.id_imagen,
-                    url_imagen: `${req.protocol}://${req.get('host')}/uploads/${row.url_imagen}`,
-                    descripcion_imagen: row.descripcion_imagen
-                });
-            }
-            return acc;
-        }, {});
-
-        profileData.proyectos = Object.values(groupedProjects);
-        console.log('Perfil completo enviado al frontend.');
-        res.status(200).json(profileData);
-
-    } catch (error) {
-        console.error('Error general al obtener el perfil del usuario:', error);
-        res.status(500).json({ message: 'Error interno del servidor', error: error.message });
-    }
-});
-
-// --- NUEVA RUTA: Actualizar la descripción del perfil ---
-app.patch('/api/profile/description', authenticateToken, async (req, res) => {
-    console.log('Solicitud PATCH /api/profile/description recibida.');
-    const userId = req.user.id_usuario;
-    const { description } = req.body;
-
-    if (description === undefined || description === null) {
-        console.log('Error 400: Descripción no proporcionada.');
-        return res.status(400).json({ message: 'La descripción es obligatoria.' });
-    }
-
-    try {
-        const [result] = await pool.query(
-            'UPDATE usuarios SET descripcion_perfil = ? WHERE id_usuario = ?',
-            [description, userId]
-        );
-
-        if (result.affectedRows === 0) {
-            console.warn(`No se encontró usuario con ID ${userId} para actualizar la descripción.`);
-            return res.status(404).json({ message: 'Usuario no encontrado.' });
-        }
-        console.log(`Descripción actualizada para userId ${userId}. Nueva descripción: "${description}"`);
-        res.status(200).json({ message: 'Descripción actualizada exitosamente!' });
-
-    } catch (error) {
-        console.error('Error al actualizar la descripción en la DB:', error);
-        res.status(500).json({ message: 'Error interno del servidor al actualizar la descripción.', error: error.message });
-    }
-});
-
-
-// Ruta para el registro de usuarios (mantenida como la tienes)
+// --- RUTA PARA REGISTRO DE USUARIOS ---
 app.post('/api/register', async (req, res) => {
     console.log('Solicitud de registro recibida. Datos:', req.body);
 
@@ -378,7 +173,7 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-// Ruta para el login de usuarios (código existente)
+// --- RUTA PARA LOGIN DE USUARIOS ---
 app.post('/api/login', async (req, res) => {
     console.log('Solicitud de login recibida. Datos:', req.body);
     const { correo_electronico, contrasena } = req.body;
@@ -419,6 +214,383 @@ app.post('/api/login', async (req, res) => {
     } catch (error) {
         console.error('Error general en la ruta de login:', error);
         res.status(500).json({ message: 'Error interno del servidor', error: error.message });
+    }
+});
+
+// --- RUTA PROTEGIDA: OBTENER EL PERFIL DEL USUARIO LOGUEADO ---
+app.get('/api/profile/me', authenticateToken, async (req, res) => {
+    console.log('Solicitud GET /api/profile/me recibida para usuario:', req.user.id_usuario);
+    const userId = req.user.id_usuario;
+    const userProfileType = req.user.tipo_perfil;
+
+    try {
+        let profileData = {};
+        console.log('Consultando datos de usuario principal...');
+        const [users] = await pool.query(
+            'SELECT id_usuario, nombre_usuario, correo_electronico, tipo_perfil, foto_perfil_url, descripcion_perfil FROM usuarios WHERE id_usuario = ?',
+            [userId]
+        );
+
+        if (users.length === 0) {
+            console.log('Error 404: Perfil de usuario no encontrado para ID:', userId);
+            return res.status(404).json({ message: 'Perfil de usuario no encontrado.' });
+        }
+        profileData = users[0];
+        console.log('Datos de usuario principal obtenidos:', profileData.nombre_usuario);
+
+        // Si la foto_perfil_url existe, conviértela a una URL completa
+        if (profileData.foto_perfil_url) {
+            profileData.foto_perfil_url = `${req.protocol}://${req.get('host')}${profileData.foto_perfil_url}`;
+        } else {
+            profileData.foto_perfil_url = ''; // Asegúrate de que siempre haya un string vacío si no hay imagen
+        }
+
+        // Consulta los datos específicos del perfil (emprendedor o diseñador_marketing)
+        if (userProfileType === 'Emprendedor') {
+            console.log('Consultando datos de emprendedor...');
+            const [emprendedorData] = await pool.query(
+                'SELECT nombre_negocio, localidad, tipo_negocio FROM emprendedor WHERE id_usuario = ?',
+                [userId]
+            );
+            if (emprendedorData.length > 0) {
+                profileData = { ...profileData, ...emprendedorData[0] };
+            }
+        } else if (userProfileType === 'Diseñador' || userProfileType === 'Marketing') {
+            console.log('Consultando datos de diseñador/marketing...');
+            const [dmData] = await pool.query(
+                'SELECT localidad, modalidad_trabajo FROM disenador_marketing WHERE id_usuario = ?',
+                [userId]
+            );
+            if (dmData.length > 0) {
+                profileData = { ...profileData, ...dmData[0] };
+            }
+        }
+
+        console.log('Consultando proyectos y fotos del usuario...');
+        const [projects] = await pool.query(
+            'SELECT p.id_proyecto, p.titulo_proyecto, p.descripcion_proyecto, p.fecha_creacion, p.estado, i.id_imagen, i.url_imagen, i.descripcion_imagen FROM proyecto p LEFT JOIN imagen i ON p.id_proyecto = i.id_proyecto WHERE p.id_usuario = ? ORDER BY p.fecha_creacion DESC, i.orden ASC',
+            [userId]
+        );
+        console.log('Proyectos y fotos obtenidos. Agrupando...');
+
+        const groupedProjects = projects.reduce((acc, row) => {
+            if (!acc[row.id_proyecto]) {
+                acc[row.id_proyecto] = {
+                    id_proyecto: row.id_proyecto,
+                    titulo_proyecto: row.titulo_proyecto,
+                    descripcion_proyecto: row.descripcion_proyecto,
+                    fecha_creacion: row.fecha_creacion,
+                    estado: row.estado,
+                    imagenes: []
+                };
+            }
+            if (row.id_imagen) {
+                acc[row.id_proyecto].imagenes.push({
+                    id_imagen: row.id_imagen,
+                    url_imagen: `${req.protocol}://${req.get('host')}/uploads/${row.url_imagen}`,
+                    descripcion_imagen: row.descripcion_imagen
+                });
+            }
+            return acc;
+        }, {});
+
+        profileData.proyectos = Object.values(groupedProjects);
+        console.log('Perfil completo enviado al frontend.');
+        res.status(200).json(profileData);
+
+    } catch (error) {
+        console.error('Error general al obtener el perfil del usuario:', error);
+        res.status(500).json({ message: 'Error interno del servidor', error: error.message });
+    }
+});
+
+// --- RUTA PARA SUBIR FOTO DE PERFIL (INDIVIDUAL) ---
+app.post('/api/upload-profile-image', authenticateToken, upload.single('profileImage'), async (req, res) => {
+    const userId = req.user.id_usuario;
+
+    if (!req.file) {
+        console.error('Error: No se ha subido ningún archivo para la foto de perfil.');
+        return res.status(400).json({ message: 'No se ha subido ningún archivo.' });
+    }
+
+    const imageUrl = `/uploads/${req.file.filename}`;
+
+    try {
+        const [result] = await pool.query(
+            'UPDATE usuarios SET foto_perfil_url = ? WHERE id_usuario = ?',
+            [imageUrl, userId]
+        );
+
+        if (result.affectedRows === 0) {
+            console.warn(`No se encontró usuario con ID ${userId} para actualizar la imagen de perfil.`);
+            return res.status(404).json({ message: 'Usuario no encontrado.' });
+        }
+        console.log(`URL de imagen de perfil actualizada para userId ${userId}: ${imageUrl}`);
+        const fullImageUrl = `${req.protocol}://${req.get('host')}${imageUrl}`;
+        res.status(200).json({ message: 'Imagen de perfil subida y URL actualizada!', imageUrl: fullImageUrl });
+
+    } catch (error) {
+        console.error('Error al actualizar la URL de la imagen de perfil en la DB:', error);
+        res.status(500).json({ message: 'Error interno del servidor al guardar la URL de la imagen de perfil.', error: error.message });
+    }
+});
+
+// --- RUTA: PARA ACTUALIZAR LA DESCRIPCIÓN DEL PERFIL ---
+app.patch('/api/profile/description', authenticateToken, async (req, res) => {
+    console.log('Solicitud PATCH /api/profile/description recibida para usuario:', req.user.id_usuario);
+    const userId = req.user.id_usuario;
+    const { description } = req.body;
+
+    if (description === undefined || description === null) {
+        console.warn('Error 400: Descripción no proporcionada.');
+        return res.status(400).json({ message: 'La descripción es requerida.' });
+    }
+
+    try {
+        const [result] = await pool.query(
+            'UPDATE usuarios SET descripcion_perfil = ? WHERE id_usuario = ?',
+            [description, userId]
+        );
+
+        if (result.affectedRows === 0) {
+            console.warn(`No se encontró usuario con ID ${userId} para actualizar la descripción.`);
+            return res.status(404).json({ message: 'Usuario no encontrado o descripción no cambiada.' });
+        }
+
+        console.log(`Descripción actualizada para userId ${userId}. Nueva descripción: "${description}"`);
+        res.status(200).json({ message: 'Descripción actualizada exitosamente!' });
+
+    } catch (error) {
+        console.error('Error al actualizar la descripción en la DB:', error);
+        res.status(500).json({ message: 'Error interno del servidor al actualizar la descripción.', error: error.message });
+    }
+});
+
+// --- RUTA: SUBIR MÚLTIPLES IMÁGENES AL PORTAFOLIO ---
+// 'portfolioImages' es el nombre del campo esperado en el FormData del frontend
+app.post('/api/upload-portfolio-images', authenticateToken, upload.array('portfolioImages', 10), async (req, res) => {
+    console.log('Solicitud POST /api/upload-portfolio-images recibida para usuario:', req.user.id_usuario);
+    const userId = req.user.id_usuario;
+
+    if (!req.files || req.files.length === 0) {
+        console.error('Error: No se han subido archivos para el portafolio.');
+        return res.status(400).json({ message: 'No se han subido archivos de imagen.' });
+    }
+
+    const connection = await pool.getConnection();
+    await connection.beginTransaction();
+    const uploadedImageUrls = [];
+
+    try {
+        // 1. Buscar o crear un proyecto genérico para el portafolio del usuario
+        let projectId;
+        const [existingProjects] = await connection.query(
+            'SELECT id_proyecto FROM proyecto WHERE id_usuario = ? AND titulo_proyecto = ?',
+            [userId, 'Mi Portafolio']
+        );
+
+        if (existingProjects.length > 0) {
+            projectId = existingProjects[0].id_proyecto;
+            console.log(`Proyecto 'Mi Portafolio' existente encontrado para userId ${userId}: ${projectId}`);
+        } else {
+            // Si no existe, crear un nuevo proyecto genérico
+            console.log(`Creando nuevo proyecto 'Mi Portafolio' para userId ${userId}...`);
+            const [newProjectResult] = await connection.query(
+                'INSERT INTO proyecto (id_usuario, titulo_proyecto, descripcion_proyecto, fecha_creacion, estado) VALUES (?, ?, ?, NOW(), ?)',
+                [userId, 'Mi Portafolio', 'Imágenes de mi portafolio personal.', 'Activo']
+            );
+            projectId = newProjectResult.insertId;
+            console.log(`Proyecto 'Mi Portafolio' creado con ID: ${projectId}`);
+        }
+
+        // 2. Insertar cada imagen en la tabla 'imagen' y asociarla al proyecto
+        for (const file of req.files) {
+            const imageUrl = `/uploads/${file.filename}`;
+            const [imageResult] = await connection.query(
+                'INSERT INTO imagen (id_proyecto, url_imagen, descripcion_imagen) VALUES (?, ?, ?)',
+                [projectId, imageUrl, 'Imagen de portafolio'] // Puedes añadir una descripción por defecto
+            );
+            const id_imagen = imageResult.insertId;
+            const fullImageUrl = `${req.protocol}://${req.get('host')}${imageUrl}`;
+            uploadedImageUrls.push({ id_imagen, url_imagen: fullImageUrl, descripcion_imagen: 'Imagen de portafolio' });
+            console.log(`Imagen de portafolio insertada: ${fullImageUrl} para proyecto ${projectId}`);
+        }
+
+        await connection.commit();
+        console.log('Imágenes de portafolio subidas y guardadas exitosamente.');
+        res.status(200).json({ message: 'Imágenes subidas exitosamente!', images: uploadedImageUrls });
+
+    } catch (error) {
+        await connection.rollback();
+        console.error('Error al subir imágenes al portafolio:', error);
+        res.status(500).json({ message: 'Error interno del servidor al subir imágenes.', error: error.message });
+    } finally {
+        connection.release();
+    }
+});
+
+// --- RUTA: ELIMINAR IMAGEN DEL PORTAFOLIO ---
+app.delete('/api/delete-portfolio-image/:id_imagen', authenticateToken, async (req, res) => {
+    console.log('Solicitud DELETE /api/delete-portfolio-image recibida para imagen ID:', req.params.id_imagen);
+    const imageId = req.params.id_imagen;
+    const userId = req.user.id_usuario;
+
+    const connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    try {
+        // 1. Obtener la URL de la imagen y verificar que pertenece al usuario
+        const [images] = await connection.query(
+            'SELECT i.url_imagen FROM imagen i JOIN proyecto p ON i.id_proyecto = p.id_proyecto WHERE i.id_imagen = ? AND p.id_usuario = ?',
+            [imageId, userId]
+        );
+
+        if (images.length === 0) {
+            console.warn(`Error 404/403: Imagen con ID ${imageId} no encontrada o no pertenece al usuario ${userId}.`);
+            await connection.rollback();
+            return res.status(404).json({ message: 'Imagen no encontrada o no tienes permiso para eliminarla.' });
+        }
+
+        const imageUrlToDelete = images[0].url_imagen;
+        const filePath = path.join(__dirname, imageUrlToDelete); // Obtener la ruta física del archivo
+
+        // 2. Eliminar la imagen de la base de datos
+        const [result] = await connection.query(
+            'DELETE FROM imagen WHERE id_imagen = ?',
+            [imageId]
+        );
+
+        if (result.affectedRows === 0) {
+            console.warn(`No se eliminó ninguna imagen con ID ${imageId}.`);
+            await connection.rollback();
+            return res.status(404).json({ message: 'Imagen no encontrada.' });
+        }
+
+        // 3. Eliminar el archivo físico del servidor (opcional, pero recomendado)
+        // Asegúrate de que la URL no sea un path absoluto fuera de 'uploads' por seguridad
+        if (filePath.startsWith(path.join(__dirname, 'uploads'))) {
+            fs.unlink(filePath, (err) => {
+                if (err) {
+                    console.error(`Error al eliminar el archivo físico ${filePath}:`, err);
+                    // No revertimos la DB si falla la eliminación del archivo, solo loggeamos
+                } else {
+                    console.log(`Archivo físico eliminado: ${filePath}`);
+                }
+            });
+        } else {
+            console.warn(`Intento de eliminar archivo fuera del directorio de uploads: ${filePath}`);
+        }
+
+        await connection.commit();
+        console.log(`Imagen con ID ${imageId} eliminada exitosamente de la DB.`);
+        res.status(200).json({ message: 'Imagen eliminada exitosamente!' });
+
+    } catch (error) {
+        await connection.rollback();
+        console.error('Error al eliminar la imagen del portafolio:', error);
+        res.status(500).json({ message: 'Error interno del servidor al eliminar la imagen.', error: error.message });
+    } finally {
+        connection.release();
+    }
+});
+
+// --- RUTA: CREAR UN NUEVO DESAFÍO ---
+app.post('/api/challenges', authenticateToken, async (req, res) => {
+    console.log('Solicitud POST /api/challenges recibida para usuario:', req.user.id_usuario);
+    const userId = req.user.id_usuario; // ID del usuario autenticado
+    const userProfileType = req.user.tipo_perfil; // Tipo de perfil del usuario autenticado
+    const { nombre_desafio, descripcion_desafio, beneficios, duracion_dias } = req.body;
+
+    // 1. Verificar que el usuario sea un Emprendedor
+    if (userProfileType !== 'Emprendedor') {
+        console.warn('Error 403: Usuario no autorizado para crear desafíos. Tipo de perfil:', userProfileType);
+        return res.status(403).json({ message: 'Solo los usuarios Emprendedores pueden crear desafíos.' });
+    }
+
+    // 2. Validación de campos del desafío
+    if (!nombre_desafio || !descripcion_desafio || !beneficios || !duracion_dias) {
+        console.warn('Error 400: Campos de desafío incompletos.');
+        return res.status(400).json({ message: 'Todos los campos del desafío son obligatorios.' });
+    }
+    if (typeof duracion_dias !== 'number' || duracion_dias <= 0) {
+        console.warn('Error 400: Duración de días inválida.');
+        return res.status(400).json({ message: 'La duración del desafío debe ser un número positivo de días.' });
+    }
+
+    try {
+        // 3. Obtener el id_emprendedor a partir del id_usuario
+        console.log('Buscando id_emprendedor para id_usuario:', userId);
+        const [emprendedorResult] = await pool.query(
+            'SELECT id_emprendedor FROM emprendedor WHERE id_usuario = ?',
+            [userId]
+        );
+
+        if (emprendedorResult.length === 0) {
+            console.warn('Error 404: No se encontró el id_emprendedor asociado al id_usuario.', userId);
+            return res.status(404).json({ message: 'No se encontró el perfil de emprendedor asociado a este usuario.' });
+        }
+        const id_emprendedor = emprendedorResult[0].id_emprendedor;
+        console.log('id_emprendedor encontrado:', id_emprendedor);
+
+        // 4. Calcular fecha_fin
+        const fechaCreacion = new Date();
+        const fechaFin = new Date(fechaCreacion);
+        fechaFin.setDate(fechaCreacion.getDate() + duracion_dias);
+
+        // 5. Insertar el desafío en la tabla 'desafios'
+        const [result] = await pool.query(
+            'INSERT INTO desafios (id_emprendedor, nombre_desafio, descripcion_desafio, beneficios, dias_duracion, fecha_creacion, fecha_fin) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [id_emprendedor, nombre_desafio, descripcion_desafio, beneficios, duracion_dias, fechaCreacion, fechaFin]
+        );
+
+        console.log(`Desafío creado exitosamente para id_emprendedor ${id_emprendedor}. ID: ${result.insertId}`);
+        res.status(201).json({ message: 'Desafío creado exitosamente!', id_desafio: result.insertId });
+
+    } catch (error) {
+        console.error('Error al crear el desafío en la DB:', error);
+        res.status(500).json({ message: 'Error interno del servidor al crear el desafío.', error: error.message });
+    }
+});
+
+// --- RUTA: OBTENER DESAFÍOS CREADOS POR EL USUARIO LOGUEADO ---
+app.get('/api/challenges/me', authenticateToken, async (req, res) => {
+    console.log('Solicitud GET /api/challenges/me recibida para usuario:', req.user.id_usuario);
+    const userId = req.user.id_usuario; // ID del usuario autenticado
+    const userProfileType = req.user.tipo_perfil; // Tipo de perfil del usuario autenticado
+
+    // 1. Verificar que el usuario sea un Emprendedor
+    if (userProfileType !== 'Emprendedor') {
+        console.warn('Error 403: Usuario no autorizado para ver desafíos. Tipo de perfil:', userProfileType);
+        return res.status(403).json({ message: 'Solo los usuarios Emprendedores pueden ver sus desafíos.' });
+    }
+
+    try {
+        // 2. Obtener el id_emprendedor a partir del id_usuario
+        console.log('Buscando id_emprendedor para id_usuario:', userId);
+        const [emprendedorResult] = await pool.query(
+            'SELECT id_emprendedor FROM emprendedor WHERE id_usuario = ?',
+            [userId]
+        );
+
+        if (emprendedorResult.length === 0) {
+            console.warn('Error 404: No se encontró el id_emprendedor asociado al id_usuario.', userId);
+            return res.status(404).json({ message: 'No se encontró el perfil de emprendedor asociado a este usuario.' });
+        }
+        const id_emprendedor = emprendedorResult[0].id_emprendedor;
+        console.log('id_emprendedor encontrado para obtener desafíos:', id_emprendedor);
+
+        // 3. Obtener los desafíos asociados a ese id_emprendedor
+        const [challenges] = await pool.query(
+            'SELECT id_desafio, id_emprendedor, nombre_desafio, descripcion_desafio, beneficios, dias_duracion, fecha_creacion, fecha_fin, estado FROM desafios WHERE id_emprendedor = ? ORDER BY fecha_creacion DESC',
+            [id_emprendedor]
+        );
+
+        console.log(`Desafíos obtenidos para id_emprendedor ${id_emprendedor}: ${challenges.length} desafíos.`);
+        res.status(200).json(challenges);
+
+    } catch (error) {
+        console.error('Error al obtener los desafíos del usuario:', error);
+        res.status(500).json({ message: 'Error interno del servidor al obtener desafíos.', error: error.message });
     }
 });
 

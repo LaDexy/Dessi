@@ -1,33 +1,41 @@
 <template>
   <div class="pagina-perfil-container">
+    <!-- Contenedor para ImagenPerfil y IconoEditar -->
     <div class="profile-image-section">
       <ImagenPerfil
         ref="imagenPerfilComponent"
         :profileImageSrc="profileImageSrc"
         @imageSelected="handleImageSelected"
       />
+      <!-- IconoEditar se posiciona absolutamente dentro de profile-image-section -->
       <IconoEditar @click="activateImageUpload" class="edit-icon-overlay" />
     </div>
 
+    <!-- Este es el h1 que mostrará el nombre de usuario -->
     <div class="user-name-display-wrapper"> 
       <h1 class="user-name-display">{{ userName }}</h1>
     </div>
 
+    <!-- Barra de perfil (rectángulo rosa) -->
     <BarraPerfil />
 
+    <!-- Tipo de perfil y descripción -->
     <TipoPerfil
       :profileType="userProfile"
       :description="userDescription"
       @update-description="handleDescriptionUpdate"
     />
 
+    <!-- Botones para los desafíos -->
     <BotonesDesafios @MostrarRegistro="MostrarRegistro" />
     
+    <!-- Sección de carga de portafolio y componente PortafolioPerfil -->
     <div class="portfolio-section-wrapper">
       <IconoCamara @imageSelected="handlePortfolioImageSelected" class="portfolio-camera-icon" />
       <PortafolioPerfil :projects="userProjects" />
     </div>
 
+    <!-- Modales de desafíos (se muestran/ocultan según el estado) -->
     <CrearDesafio
       v-if="CrearDesafioNuevo"
       :userId="userId"
@@ -53,7 +61,7 @@ import BarraPerfil from "../components/BarraPerfil.vue";
 import TipoPerfil from "../components/TipoPerfil.vue";
 import PortafolioPerfil from "../components/PortafolioPerfil.vue";
 import BotonesDesafios from "../components/BotonesDesafios.vue";
-import IconoCamara from "@/components/IconoCamara.vue"; // ¡Importa el nuevo componente!
+import IconoCamara from "@/components/IconoCamara.vue";
 import axios from "axios";
 
 export default {
@@ -65,7 +73,7 @@ export default {
       userId: null,
       userProfile: "",
       userDescription: "",
-      userProjects: [], // ¡NUEVO! Para almacenar los proyectos/imágenes del portafolio
+      userProjects: [],
       CrearDesafioNuevo: false,
       VerDesafiosCreados: false,
     };
@@ -79,7 +87,7 @@ export default {
     TipoPerfil,
     PortafolioPerfil,
     BotonesDesafios,
-    IconoCamara, // ¡Añádelo a la lista de componentes!
+    IconoCamara,
   },
   mounted() {
     this.loadUserProfileData();
@@ -107,7 +115,7 @@ export default {
           this.profileImageSrc = profile.foto_perfil_url || require("../assets/Usuario.png");
           this.userProfile = profile.tipo_perfil;
           this.userDescription = profile.descripcion_perfil || "Aca va una breve descripcion";
-          this.userProjects = profile.proyectos || []; // ¡Asigna los proyectos cargados!
+          this.userProjects = profile.proyectos || [];
           
           console.log("URL de imagen de perfil obtenida del backend:", this.profileImageSrc);
           console.log("Datos de perfil cargados desde el backend:", {
@@ -116,7 +124,7 @@ export default {
             userId: this.userId,
             userProfile: this.userProfile,
             userDescription: this.userDescription,
-            userProjects: this.userProjects // ¡Verifica este log para el portafolio!
+            userProjects: this.userProjects
           });
         } else {
           alert("Error al cargar el perfil: " + (response.data.message || "Error desconocido."));
@@ -216,14 +224,10 @@ export default {
         }
       }
     },
-    /**
-     * @brief Maneja la subida de una nueva imagen al portafolio.
-     * @param {File} file - El archivo de imagen seleccionado por el usuario.
-     */
     async handlePortfolioImageSelected(file) {
       console.log("Archivo recibido en PaginaPerfil para subir al portafolio:", file.name);
       const formData = new FormData();
-      formData.append("portfolioImage", file); // El nombre 'portfolioImage' debe coincidir con el campo de Multer en el backend
+      formData.append("portfolioImage", file);
       
       try {
         const token = localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
@@ -234,7 +238,7 @@ export default {
         }
 
         const response = await axios.post(
-          "http://localhost:4000/api/portfolio/upload-image", // ¡Nueva ruta en el backend!
+          "http://localhost:4000/api/portfolio/upload-image",
           formData,
           {
             headers: {
@@ -246,7 +250,6 @@ export default {
 
         if (response.status === 200) {
           alert("Imagen de portafolio subida exitosamente!");
-          // Vuelve a cargar los datos del perfil para que la nueva imagen aparezca en el portafolio
           await this.loadUserProfileData(); 
         } else {
           alert("Error al subir la imagen del portafolio: " + (response.data.message || "Error desconocido."));
