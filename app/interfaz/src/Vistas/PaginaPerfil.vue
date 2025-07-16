@@ -1,24 +1,33 @@
 <template>
-  <div>
-    <!--Componentes de pagina de perfil-->
+  <div class="pagina-perfil-container">
+    <!-- Contenedor para ImagenPerfil y IconoEditar -->
+    <div class="profile-image-section">
+      <ImagenPerfil
+        ref="imagenPerfilComponent"
+        :profileImageSrc="profileImageSrc"
+        @imageSelected="handleImageSelected"
+      />
+      <!-- IconoEditar se posiciona absolutamente dentro de profile-image-section -->
+      <IconoEditar @click="activateImageUpload" class="edit-icon-overlay" />
+    </div>
 
-    <!-- IconoEditar ahora escucha el click y activa el selector de ImagenPerfil -->
-    <IconoEditar @click="activateImageUpload" />
+    <!-- Texto de nombre de usuario (visible y debajo de la imagen) -->
+    <!-- Este es el h1 que mostrará el nombre de usuario -->
+    <h1 class="user-name-display">{{ userName }}</h1>
 
-    <!-- ImagenPerfil ahora tiene una ref y escucha el evento imageSelected -->
-    <ImagenPerfil
-      ref="imagenPerfilComponent"
-      :profileImageSrc="profileImageSrc"
-      @imageSelected="handleImageSelected"
-    />
+    <!-- Barra de perfil (rectángulo rosa, ahora debajo del nombre de usuario) -->
+    <!-- Ya no le pasamos userName, profileType, description -->
+    <BarraPerfil />
 
-    <BarraPerfil :userName="userName" />
-    <!-- Asegúrate de pasar userName si lo necesitas aquí -->
-    <BotonesDesafios @MostrarRegistro="MostrarRegistro" />
-    <TipoPerfil />
-    <PortafolioPerfil />
+    <!-- Tipo de perfil y descripción (ahora debajo de la barra rosa) -->
+    <!-- Asegúrate de pasar las props profileType y description aquí -->
+    <TipoPerfil :profileType="userProfile" :description="userDescription" />
 
-    <CrearDesafio
+    <!-- El resto de tus componentes -->
+    <BotonesDesafios @MostrarRegistro="MostrarRegistro"/>
+    <PortafolioPerfil/>
+
+    <CrearDesafio  
       v-if="CrearDesafioNuevo"
       @cerrar="CrearDesafioNuevo = false"
       @MostrarRegistro="MostrarRegistro"

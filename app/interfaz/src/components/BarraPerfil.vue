@@ -4,18 +4,10 @@
 
     <!--Rectangulo de arriba de barra de perfil-->
     <div class="Barra">
-      <div class="rectangulo">
-
-          
+      <div class="rectangulo"></div>
 
       </div>
     </div>
-
-    <!--Texto de nombre de perfil-->
-    <div>
-      <h1 class="Encabezado">Aca ira el nombre de perfil</h1>
-    </div>
-  </div>
 </template>
 
 <script>
@@ -25,30 +17,20 @@ export default {
 </script>
 
 <style>
-.Barra {
  
+ /* Rectángulo de barra superior */
+.Barra {
   width: 100%; /* Ocupa el 100% del ancho disponible */
-  height: 180px; /* Altura fija, ajusta según sea necesario */
+  height: 180px; /* Altura fija para la barra */
   background-color: hsl(300, 29%, 78%); /* Tu color rosado */
-  display: flex;
-  flex-direction: column; /* Apila el texto verticalmente */
-  justify-content: center; /* Centra verticalmente el contenido */
-  align-items: center; /* Centra horizontalmente el contenido */
-  padding: 20px;
-  box-sizing: border-box; /* Incluye padding en el ancho/alto */
-  /* Eliminamos 'position: absolute' y 'top: 0%' para que fluya naturalmente */
-  /* z-index no es necesario aquí si no se superpone a otros elementos */
-
+  /* Eliminamos cualquier posicionamiento absoluto (position: absolute, top, left) */
+  /* para que fluya naturalmente en el documento. */
+  /* También eliminamos display: flex, flex-direction, justify-content, align-items, padding */
+  /* ya que no hay contenido interno que necesite ser centrado. */
+  box-sizing: border-box; /* Incluye padding en el ancho/alto si lo añades en el futuro. */
+  margin-top: 20px; /* Espacio entre el nombre de usuario y esta barra */
 }
 
-/* Estilos para el texto dentro de la barra */
-.profile-type-text,
-.profile-description-text {
-  color: #333; /* Color más oscuro para mejor visibilidad sobre el rosa */
-  font-size: 1.2em; /* Ajusta el tamaño de fuente */
-  margin: 5px 0; /* Espacio entre los textos */
-  text-align: center;
-}
 
 
 </style>

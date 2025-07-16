@@ -52,9 +52,10 @@ export default {
 
 /* Círculo de referencia para foto de perfil */
 .Perfil .circulo {
-  position: relative; /* Necesario para posicionar el icono de lápiz sobre él */
-  width: 200px;
-  height: 200px;
+  top: 5%;
+  position: absolute; /* Necesario para posicionar el icono de lápiz sobre él */
+  width: 180px;
+  height: 180px;
   background-color: rgb(199, 127, 199); /* Tu color de fondo */
   border-radius: 50%; /* ¡CLAVE! Para un círculo perfecto */
   overflow: hidden; /* Recorta la imagen dentro del círculo */
