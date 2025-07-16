@@ -1,8 +1,17 @@
 <template>
-  <div class="crear-desafio-container p-4 sm:p-6 lg:p-8 bg-gray-100 min-h-screen flex items-center justify-center">
-    <div class="form-card bg-white p-6 sm:p-8 rounded-lg shadow-xl w-full max-w-md">
+
+  <div class="TodoDesafio">
+  <!-- Este es el modal overlay que cubre toda la pantalla -->
+  <div class="modal-overlay" @click.self="cerrarModal">
+    <!-- Este es el contenido principal del modal -->
+    <div class="modal-content">
+      <!-- Botón de cerrar el modal -->
+      <span class="close-button" @click="cerrarModal">&times;</span>
+      
       <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Crear Nuevo Desafío</h2>
+      
       <form @submit.prevent="crearDesafio">
+        <!-- Campo: Nombre del Desafío -->
         <div class="mb-4">
           <label for="nombre_desafio" class="block text-gray-700 text-sm font-semibold mb-2">Nombre del Desafío:</label>
           <input
@@ -14,6 +23,7 @@
           />
         </div>
 
+        <!-- Campo: Descripción -->
         <div class="mb-4">
           <label for="descripcion_desafio" class="block text-gray-700 text-sm font-semibold mb-2">Descripción:</label>
           <textarea
@@ -25,6 +35,7 @@
           ></textarea>
         </div>
 
+        <!-- Campo: Beneficios -->
         <div class="mb-4">
           <label for="beneficios" class="block text-gray-700 text-sm font-semibold mb-2">Beneficios:</label>
           <textarea
@@ -36,18 +47,20 @@
           ></textarea>
         </div>
 
+        <!-- Campo: Duración (días) -->
         <div class="mb-6">
           <label for="duracion_dias" class="block text-gray-700 text-sm font-semibold mb-2">Duración (días):</label>
           <input
             type="number"
             id="duracion_dias"
-            v-model.number="desafio.duracion_dias" <!-- IMPORTANTE: .number para asegurar que sea un número -->
+            v-model.number="desafio.duracion_dias" 
             class="shadow-sm appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             required
             min="1"
           />
         </div>
 
+        <!-- Botón de Crear Desafío -->
         <button
           type="submit"
           class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 transition duration-300 ease-in-out"
@@ -56,9 +69,11 @@
           {{ loading ? 'Creando...' : 'Crear Desafío' }}
         </button>
 
+        <!-- Mensajes de error/éxito -->
         <p v-if="error" class="text-red-500 text-center mt-4">{{ error }}</p>
         <p v-if="success" class="text-green-500 text-center mt-4">{{ success }}</p>
       </form>
+    </div>
     </div>
   </div>
 </template>
@@ -67,35 +82,48 @@
 import axios from 'axios';
 
 export default {
-  name: 'CreaDesafio',
+  name: 'CrearDesafio', // Nombre del componente
+  props: {
+    userId: { // Propiedad para el ID del usuario, aunque el token ya lo tiene
+      type: [Number, String],
+      required: true
+    }
+  },
   data() {
     return {
       desafio: {
         nombre_desafio: '',
         descripcion_desafio: '',
         beneficios: '',
-        duracion_dias: null, // Inicializar como null o 0 para un campo numérico
+        duracion_dias: null, // Inicializado como null
       },
-      loading: false,
-      error: null,
-      success: null,
+      loading: false, // Estado de carga para el botón
+      error: null,    // Mensaje de error
+      success: null,  // Mensaje de éxito
     };
   },
   methods: {
+    // Emite un evento para cerrar el modal
+    cerrarModal() {
+      this.$emit('cerrar');
+    },
+    // Lógica para crear el desafío
     async crearDesafio() {
       this.loading = true;
       this.error = null;
       this.success = null;
 
-      // Obtener el token del localStorage
-      const token = localStorage.getItem('token');
+      // Obtener el token de autenticación
+      const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
       if (!token) {
         this.error = 'No autenticado. Por favor, inicia sesión.';
         this.loading = false;
+        // Opcional: Redirigir al login si no hay token
+        // this.$router.push({ name: 'Principal' }); 
         return;
       }
 
-      // Validar que duracion_dias sea un número y mayor que 0
+      // Validar que la duración sea un número positivo
       if (typeof this.desafio.duracion_dias !== 'number' || this.desafio.duracion_dias <= 0) {
         this.error = 'La duración del desafío debe ser un número positivo de días.';
         this.loading = false;
@@ -104,34 +132,53 @@ export default {
 
       try {
         console.log('Enviando datos para crear desafío:', this.desafio);
+        // Realiza la solicitud POST al backend
         const response = await axios.post('http://localhost:4000/api/challenges', this.desafio, {
           headers: {
-            Authorization: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`, // Envía el token en la cabecera
           },
         });
-        this.success = response.data.message;
-        console.log('Desafío creado exitosamente:', response.data);
-        // Opcional: limpiar el formulario o redirigir
-        this.desafio = {
-          nombre_desafio: '',
-          descripcion_desafio: '',
-          beneficios: '',
-          duracion_dias: null,
-        };
+
+        // Si la solicitud es exitosa (código 201 Created)
+        if (response.status === 201) {
+          this.success = response.data.message;
+          console.log('Desafío creado exitosamente:', response.data);
+          // Emite un evento para que el componente padre sepa que un desafío fue creado
+          this.$emit('challengeCreated'); 
+          // Cierra el modal después de un breve retraso para que el usuario vea el mensaje de éxito
+          setTimeout(() => {
+            this.cerrarModal();
+            // Limpia el formulario
+            this.desafio = {
+              nombre_desafio: '',
+              descripcion_desafio: '',
+              beneficios: '',
+              duracion_dias: null,
+            };
+          }, 1500); // 1.5 segundos
+        } else {
+          // Maneja otras respuestas exitosas pero inesperadas
+          this.error = response.data.message || 'Error desconocido al crear el desafío.';
+        }
       } catch (err) {
         console.error('Error al crear el desafío:', err);
         if (err.response) {
-          // El servidor respondió con un estado de error (ej. 400, 403, 500)
+          // El servidor respondió con un estado de error
           this.error = err.response.data.message || 'Error al crear el desafío.';
+          if (err.response.status === 403) {
+            this.error = 'Tu sesión ha expirado o no tienes permiso para crear desafíos.';
+            // Opcional: Redirigir al login
+            // this.$router.push({ name: 'Principal' });
+          }
         } else if (err.request) {
-          // La solicitud fue hecha pero no se recibió respuesta (ej. red caída)
+          // La solicitud fue hecha pero no se recibió respuesta
           this.error = 'No se pudo conectar con el servidor. Por favor, verifica tu conexión.';
         } else {
           // Algo más causó el error
           this.error = 'Ocurrió un error inesperado.';
         }
       } finally {
-        this.loading = false;
+        this.loading = false; // Siempre desactiva el estado de carga
       }
     },
   },

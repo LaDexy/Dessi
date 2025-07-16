@@ -1,4 +1,5 @@
 <template>
+    <div class="VerDesafios">
   <div class="modal-overlay" @click.self="cerrarModal">
     <div class="modal-content">
       <span class="close-button" @click="cerrarModal">&times;</span>
@@ -25,6 +26,7 @@
                de unión (desafio_imagen) o una FK de imagen a desafio. Por ahora, no hay imágenes aquí. -->
         </div>
       </div>
+    </div>
     </div>
   </div>
 </template>
