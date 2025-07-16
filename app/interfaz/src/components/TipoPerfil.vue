@@ -70,7 +70,7 @@ export default {
 };
 </script>
 
-<style> /* ¡IMPORTANTE! Se agregó 'scoped' */
+<style scoped> /* ¡IMPORTANTE! Se agregó 'scoped' */
 .tipo-perfil-container {
   display: flex;
   flex-direction: column;

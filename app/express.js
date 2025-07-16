@@ -115,6 +115,63 @@ app.post('/api/upload-profile-image', authenticateToken, upload.single('profileI
     }
 });
 
+// --- NUEVA RUTA: Subir imagen de portafolio ---
+app.post('/api/portfolio/upload-image', authenticateToken, upload.single('portfolioImage'), async (req, res) => {
+    console.log('Solicitud POST /api/portfolio/upload-image recibida.');
+    const userId = req.user.id_usuario; // El ID del usuario que sube la imagen
+
+    if (!req.file) {
+        console.error('Error: No se ha subido ningún archivo para el portafolio.');
+        return res.status(400).json({ message: 'No se ha subido ningún archivo.' });
+    }
+
+    const imageUrl = req.file.filename; // Guardamos solo el nombre del archivo, Multer ya lo puso en 'uploads'
+    const defaultTitle = `Proyecto de Portafolio - ${new Date().toLocaleDateString('es-ES')}`; // Título por defecto para el proyecto
+    const defaultDescription = 'Imagen de portafolio subida.';
+    const defaultState = 'completado'; // Puedes definir un estado por defecto
+
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction(); // Inicia una transacción para asegurar la consistencia
+
+        // 1. Insertar un nuevo proyecto genérico para esta imagen de portafolio
+        const [projectResult] = await connection.query(
+            'INSERT INTO proyecto (id_usuario, titulo_proyecto, descripcion_proyecto, fecha_creacion, estado) VALUES (?, ?, ?, NOW(), ?)',
+            [userId, defaultTitle, defaultDescription, defaultState]
+        );
+        const projectId = projectResult.insertId;
+        console.log(`Nuevo proyecto creado para el portafolio con ID: ${projectId}`);
+
+        // 2. Insertar la imagen asociada a este nuevo proyecto
+        const [imageResult] = await connection.query(
+            'INSERT INTO imagen (id_proyecto, url_imagen, descripcion_imagen, orden) VALUES (?, ?, ?, 1)', // 'orden' 1 por defecto
+            [projectId, imageUrl, defaultDescription]
+        );
+        console.log(`Imagen insertada para el proyecto ${projectId}. ID Imagen: ${imageResult.insertId}`);
+
+        await connection.commit(); // Confirma la transacción
+        console.log('Transacción de subida de imagen de portafolio completada.');
+
+        // Construye la URL completa de la imagen para enviarla al frontend si es necesario
+        const fullImageUrl = `${req.protocol}://${req.get('host')}/uploads/${imageUrl}`;
+        res.status(200).json({ message: 'Imagen de portafolio subida y registrada!', imageUrl: fullImageUrl, projectId: projectId });
+
+    } catch (error) {
+        if (connection) {
+            await connection.rollback(); // Si algo falla, revierte la transacción
+            console.log('Transacción de subida de imagen de portafolio revertida.');
+        }
+        console.error('Error al subir la imagen del portafolio:', error);
+        res.status(500).json({ message: 'Error interno del servidor al subir la imagen del portafolio.', error: error.message });
+    } finally {
+        if (connection) {
+            connection.release(); // Libera la conexión de vuelta al pool
+        }
+    }
+});
+
+
 // --- RUTA PARA OBTENER EL PERFIL DEL USUARIO (incluyendo foto_perfil_url) ---
 app.get('/api/profile/me', authenticateToken, async (req, res) => {
     console.log('Solicitud GET /api/profile/me recibida para usuario:', req.user.id_usuario);
