@@ -80,6 +80,7 @@ export default {
 
 <style>
 .tipo-perfil-container {
+
   display: flex;
   flex-direction: column;
   align-items: center; /* Centra el texto horizontalmente */
@@ -89,6 +90,8 @@ export default {
 }
 
 .TipoPerfil h2 {
+    position: absolute;
+    top: 250px;
   color: #333; /* Color oscuro para el texto */
   font-size: 1.8em;
   margin-bottom: 10px;
@@ -96,6 +99,7 @@ export default {
 }
 
 .Descripcion h3 {
+    position: absolute;
   color: #555; /* Color ligeramente más claro para la descripción */
   font-size: 1.1em;
   text-align: center;

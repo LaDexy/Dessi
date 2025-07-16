@@ -21,7 +21,7 @@ export default {
 .LapizPerfil {
   position: absolute;
   top: 130px;
-  left: 790px;
+  left: 890px;
   padding: 8px;
 }
 

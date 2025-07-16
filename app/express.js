@@ -330,7 +330,8 @@ app.post('/api/login', async (req, res) => {
         const token = jwt.sign(
             { id_usuario: user.id_usuario, tipo_perfil: user.tipo_perfil, nombre_usuario: user.nombre_usuario },
             JWT_SECRET,
-            { expiresIn: '1h' }
+            // ¡CAMBIO AQUÍ! Extender la expiración del token para depuración
+            { expiresIn: '24h' } // Cambiado de '1h' a '24h' (o más si lo necesitas para pruebas)
         );
         console.log('JWT generado. Enviando respuesta de login.');
 
