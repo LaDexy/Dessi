@@ -45,13 +45,6 @@ const dbConfig = {
 // Crea un pool de conexiones para la base de datos
 const pool = mysql.createPool(dbConfig);
 
-// ====================================================================
-// ¡IMPORTANTE! Elimina estas líneas si estás usando mysql2/promise con el pool
-// No necesitas una conexión 'db' separada con 'db.connect'
-// const db = mysql.createConnection({ ... });
-// db.connect(err => { ... });
-// ====================================================================
-
 // Clave secreta para firmar los JWT
 const JWT_SECRET = 'tu_super_secreto_jwt_muy_seguro_y_largo_1234567890'; // Asegúrate de haberla cambiado
 
@@ -205,6 +198,36 @@ app.get('/api/profile/me', authenticateToken, async (req, res) => {
     }
 });
 
+// --- NUEVA RUTA: Actualizar la descripción del perfil ---
+app.patch('/api/profile/description', authenticateToken, async (req, res) => {
+    console.log('Solicitud PATCH /api/profile/description recibida.');
+    const userId = req.user.id_usuario;
+    const { description } = req.body;
+
+    if (description === undefined || description === null) {
+        console.log('Error 400: Descripción no proporcionada.');
+        return res.status(400).json({ message: 'La descripción es obligatoria.' });
+    }
+
+    try {
+        const [result] = await pool.query(
+            'UPDATE usuarios SET descripcion_perfil = ? WHERE id_usuario = ?',
+            [description, userId]
+        );
+
+        if (result.affectedRows === 0) {
+            console.warn(`No se encontró usuario con ID ${userId} para actualizar la descripción.`);
+            return res.status(404).json({ message: 'Usuario no encontrado.' });
+        }
+        console.log(`Descripción actualizada para userId ${userId}. Nueva descripción: "${description}"`);
+        res.status(200).json({ message: 'Descripción actualizada exitosamente!' });
+
+    } catch (error) {
+        console.error('Error al actualizar la descripción en la DB:', error);
+        res.status(500).json({ message: 'Error interno del servidor al actualizar la descripción.', error: error.message });
+    }
+});
+
 
 // Ruta para el registro de usuarios (mantenida como la tienes)
 app.post('/api/register', async (req, res) => {
@@ -330,7 +353,6 @@ app.post('/api/login', async (req, res) => {
         const token = jwt.sign(
             { id_usuario: user.id_usuario, tipo_perfil: user.tipo_perfil, nombre_usuario: user.nombre_usuario },
             JWT_SECRET,
-            // ¡CAMBIO AQUÍ! Extender la expiración del token para depuración
             { expiresIn: '24h' } // Cambiado de '1h' a '24h' (o más si lo necesitas para pruebas)
         );
         console.log('JWT generado. Enviando respuesta de login.');
