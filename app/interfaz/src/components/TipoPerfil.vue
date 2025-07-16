@@ -1,28 +1,29 @@
 <template>
-
- <div class="tipo-perfil-container">
-    <div class="TipoPerfil"><h2>{{ profileType }}</h2></div>
-
+  <div class="tipo-perfil-container">
+    <h2>{{ profileType }}</h2>
     <div class="Descripcion-editable-wrapper">
-      <h3 v-if="!isEditingDescription">{{ description }}</h3>
+      <h3 v-if="!isEditing">
+        {{ description || 'Aca va una breve descripcion' }}
+      </h3>
       <textarea
         v-else
-        v-model="editedDescription"
-        @blur="saveDescription"  @keyup.enter="saveDescription" class="description-textarea"
+        v-model="editableDescription"
+        class="description-textarea"
+        ref="descriptionInput"
       ></textarea>
+      
+      <IconoEditar v-if="!isEditing" @click="startEditing" class="edit-description-icon-position" />
 
-      <IconoEditar @click="toggleEditMode" class="edit-description-icon" />
-
-      <div v-if="isEditingDescription" class="edit-actions">
+      <div v-if="isEditing" class="edit-actions">
         <button @click="saveDescription">Guardar</button>
-        <button @click="cancelEdit">Cancelar</button>
+        <button @click="cancelEditing">Cancelar</button>
       </div>
     </div>
   </div>
 </template>
 
 <script>
-import IconoEditar from '@/components/IconoEditar.vue'; // Asegúrate de la ruta correcta
+import IconoEditar from './IconoEditar.vue'; 
 
 export default {
   name: "TipoPerfil",
@@ -32,78 +33,119 @@ export default {
   props: {
     profileType: {
       type: String,
-      default: 'Tipo de Perfil'
+      default: "Tipo de Perfil", // Valor por defecto si no se pasa la prop
     },
-    description: { // La descripción inicial que viene de PaginaPerfil
+    description: {
       type: String,
-      default: 'Aca va una breve descripcion'
-    }
+      default: "Aca va una breve descripcion",
+    },
   },
   data() {
     return {
-      isEditingDescription: false, // Controla si estamos en modo edición
-      editedDescription: this.description // Una copia editable de la descripción
+      isEditing: false,
+      editableDescription: this.description,
     };
   },
   watch: {
-    // Observa si la prop 'description' cambia desde el padre
-    // Esto es importante si la descripción se carga async o se actualiza externamente
     description(newVal) {
-      this.editedDescription = newVal;
+      this.editableDescription = newVal;
     }
   },
   methods: {
-    toggleEditMode() {
-      // Si entramos en modo edición, aseguramos que editedDescription tenga el valor actual
-      if (!this.isEditingDescription) {
-        this.editedDescription = this.description;
-      }
-      this.isEditingDescription = !this.isEditingDescription;
+    startEditing() {
+      this.isEditing = true;
+      this.$nextTick(() => {
+        this.$refs.descriptionInput.focus();
+      });
     },
     saveDescription() {
-      // Solo guardamos si el texto realmente ha cambiado
-      if (this.editedDescription.trim() !== this.description.trim()) {
-        // Emitimos un evento al componente padre (PaginaPerfil)
-        // para que sea él quien maneje la actualización con el backend.
-        this.$emit('update-description', this.editedDescription.trim());
-      }
-      this.isEditingDescription = false; // Salimos del modo edición
+      this.$emit('update-description', this.editableDescription);
+      this.isEditing = false;
     },
-    cancelEdit() {
-      this.editedDescription = this.description; // Revertimos los cambios
-      this.isEditingDescription = false; // Salimos del modo edición
-    }
-  }
+    cancelEditing() {
+      this.editableDescription = this.description;
+      this.isEditing = false;
+    },
+  },
 };
 </script>
 
-
-<style>
+<style> /* ¡IMPORTANTE! Se agregó 'scoped' */
 .tipo-perfil-container {
-
   display: flex;
   flex-direction: column;
-  align-items: center; /* Centra el texto horizontalmente */
+  align-items: center; /* Centra el contenido horizontalmente */
   width: 100%;
-  margin-top: 20px; /* Espacio entre la BarraPerfil y este componente */
-  margin-bottom: 20px; /* Espacio debajo de este componente */
+  margin-top: 20px;
+  margin-bottom: 20px;
 }
 
-.TipoPerfil h2 {
-    position: absolute;
-    top: 250px;
-  color: #333; /* Color oscuro para el texto */
+/* Selector corregido para el h2 y eliminación de posicionamiento absoluto */
+.tipo-perfil-container h2 {
+  color: #333;
   font-size: 1.8em;
   margin-bottom: 10px;
   text-align: center;
+  /* Se eliminó position: absolute y top: 250px; */
 }
 
-.Descripcion h3 {
-    position: absolute;
-  color: #555; /* Color ligeramente más claro para la descripción */
+/* Selector corregido para el h3 y eliminación de posicionamiento absoluto */
+.Descripcion-editable-wrapper h3 {
+  color: #555;
   font-size: 1.1em;
   text-align: center;
-  max-width: 80%; /* Limita el ancho del texto para mejor lectura */
+  max-width: 100%; /* Ajustado para que ocupe el ancho completo del wrapper */
   line-height: 1.5;
+  padding-right: 30px; /* Espacio para el icono de edición */
+  /* Se eliminó position: absolute; */
+}
+
+.description-textarea {
+  width: calc(100% - 40px);
+  min-height: 80px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1em;
+  resize: vertical;
+  margin-bottom: 10px;
+}
+
+.edit-description-icon-position {
+  top: 0;
+  right: 0;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.edit-actions button {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.3s ease;
+}
+
+.edit-actions button:first-child {
+  background-color: #6a0dad;
+  color: white;
+}
+
+.edit-actions button:first-child:hover {
+  background-color: #5a0c9d;
+}
+
+.edit-actions button:last-child {
+  background-color: #ccc;
+  color: #333;
+}
+
+.edit-actions button:last-child:hover {
+  background-color: #bbb;
 }
 </style>

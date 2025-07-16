@@ -12,12 +12,15 @@
     </div>
 
     <!-- Este es el h1 que mostrará el nombre de usuario -->
-    <div class="NombreUsuario">
+    <div class="user-name-display-wrapper"> 
       <h1 class="user-name-display">{{ userName }}</h1>
     </div>
 
+    <!-- Barra de perfil (rectángulo rosa) -->
     <BarraPerfil />
 
+    <!-- Tipo de perfil y descripción -->
+    <!-- Asegúrate de pasar la prop 'description' y escuchar el evento 'update-description' -->
     <TipoPerfil
       :profileType="userProfile"
       :description="userDescription"
@@ -30,13 +33,15 @@
 
     <CrearDesafio
       v-if="CrearDesafioNuevo"
+      :userId="userId"
       @cerrar="CrearDesafioNuevo = false"
-      @MostrarRegistro="MostrarRegistro"
+      @challengeCreated="handleChallengeCreated"
     />
     <VerDesafio
       v-if="VerDesafiosCreados"
+      :userId="userId"
       @cerrar="VerDesafiosCreados = false"
-      @MostrarRegistro="MostrarRegistro"
+      ref="verDesafioComponent"
     />
   </div>
 </template>
@@ -60,6 +65,8 @@ export default {
       userName: "",
       profileImageSrc: "",
       userId: null,
+      userProfile: "",
+      userDescription: "", // Aquí se almacenará la descripción del usuario
       CrearDesafioNuevo: false,
       VerDesafiosCreados: false,
     };
@@ -97,16 +104,18 @@ export default {
           const profile = response.data;
           this.userId = profile.id_usuario;
           this.userName = profile.nombre_usuario;
-          // Asigna la URL de la imagen desde el backend o una por defecto
           this.profileImageSrc = profile.foto_perfil_url || require("../assets/Usuario.png");
+          this.userProfile = profile.tipo_perfil;
+          // Asigna la descripción obtenida del backend, si no existe, usa un valor por defecto
+          this.userDescription = profile.descripcion_perfil || "Aca va una breve descripcion"; 
           
-          // LOG ADICIONAL: Verifica la URL de la imagen aquí
           console.log("URL de imagen de perfil obtenida del backend:", this.profileImageSrc);
-
-          console.log("Datos de perfil (nombre e imagen) cargados desde el backend:", {
+          console.log("Datos de perfil cargados desde el backend:", {
             userName: this.userName,
             profileImageSrc: this.profileImageSrc,
-            userId: this.userId
+            userId: this.userId,
+            userProfile: this.userProfile,
+            userDescription: this.userDescription // ¡Verifica este log!
           });
         } else {
           alert("Error al cargar el perfil: " + (response.data.message || "Error desconocido."));
@@ -163,6 +172,52 @@ export default {
         alert("Error al subir la imagen. Por favor, inténtalo de nuevo.");
         if (error.response) {
           console.error("Respuesta de error:", error.response.status, error.response.data);
+        }
+      }
+    },
+    /**
+     * @brief Maneja la actualización de la descripción del perfil.
+     * @param {string} newDescription - La nueva descripción enviada desde TipoPerfil.
+     */
+    async handleDescriptionUpdate(newDescription) {
+      console.log("Recibido evento update-description en PaginaPerfil. Nueva descripción:", newDescription); // ¡Verifica este log!
+      try {
+        const token = localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
+        if (!token) {
+          alert("No estás autenticado. Por favor, inicia sesión.");
+          this.$router.push({ name: "Principal" });
+          return;
+        }
+
+        // Realiza la solicitud PATCH al backend para actualizar la descripción
+        const response = await axios.patch(
+          "http://localhost:4000/api/profile/description", // Endpoint para actualizar la descripción
+          { description: newDescription }, // Envía la nueva descripción en el cuerpo de la solicitud
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.status === 200) {
+          this.userDescription = newDescription; // ¡CRUCIAL! Actualiza la descripción en el estado local de PaginaPerfil
+          alert("Descripción actualizada exitosamente!");
+          console.log("Descripción de perfil actualizada a:", newDescription);
+        } else {
+          alert("Error al actualizar la descripción: " + (response.data.message || "Error desconocido."));
+          console.error("Error en la respuesta del backend:", response.data);
+        }
+      } catch (error) {
+        console.error("Error al actualizar la descripción:", error);
+        alert("Error al actualizar la descripción. Por favor, inténtalo de nuevo.");
+        if (error.response) {
+          console.error("Respuesta de error:", error.response.status, error.response.data);
+          // Si el token es inválido o expirado, redirigir al login
+          if (error.response.status === 403) {
+            alert("Tu sesión ha expirado. Por favor, inicia sesión de nuevo.");
+            this.$router.push({ name: "Principal" });
+          }
         }
       }
     },
