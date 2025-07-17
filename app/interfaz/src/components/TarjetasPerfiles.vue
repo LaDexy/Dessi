@@ -1,4 +1,5 @@
 <template>
+  <div class="TarjetasPerfiles">
   <div class="TarjetasPerfiles-container">
     <div class="TarjetasPerfiles-grid">
       <!-- Usamos v-for para iterar sobre el array 'profiles' que viene como prop -->
@@ -34,6 +35,7 @@
         </div>
       </div>
     </div>
+  </div>
   </div>
 </template>
 
