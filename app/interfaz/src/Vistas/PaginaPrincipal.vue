@@ -1,40 +1,36 @@
 <template>
   <div>
-    <div v-if="!isLoggedIn">
-      <TituloInicial />
-      <BotonesRegistro @MostrarRegistro="MostrarRegistro" />
-      <TextoMotivador />
-      <CarruselImagenes />
-      <LogrosUsuarios />
-      <ImagenCentral />
-      <OpcionesBarra />
-      <PatenteAdmin />
+    <!-- Este componente ahora solo muestra el contenido de la página de inicio -->
+    <TituloInicial />
+    <BotonesRegistro @MostrarRegistro="MostrarRegistro" />
+    <TextoMotivador />
+    <CarruselImagenes />
+    <LogrosUsuarios />
+    <ImagenCentral />
+    <OpcionesBarra />
+    <PatenteAdmin />
 
-      <RegistroEmprendedor
-        v-if="MostrarRegistroEmpre"
-        @cerrar="MostrarRegistroEmpre = false"
-        @MostrarRegistro="MostrarRegistro"
-      />
-      <RegistroDisenador
-        v-if="MostrarRegistroDise"
-        @cerrar="MostrarRegistroDise = false"
-        @MostrarRegistro="MostrarRegistro"
-      />
-      <RegistroMarketing
-        v-if="MostrarRegistroMar"
-        @cerrar="MostrarRegistroMar = false"
-        @MostrarRegistro="MostrarRegistro"
-      />
-      <InicioSesion
-        v-if="MostrarInicioSes"
-        @cerrar="MostrarInicioSes = false"
-        @loginExitoso="handleLoginSuccess"
-      /> <CrearContrasena v-if="MostrarClave" @cerrar="MostrarClave = false" />
-    </div>
-
-    <div v-else>
-      <PaginaCentral @logoutExitoso="handleLogoutSuccess" />
-    </div>
+    <RegistroEmprendedor
+      v-if="MostrarRegistroEmpre"
+      @cerrar="MostrarRegistroEmpre = false"
+      @MostrarRegistro="MostrarRegistro"
+    />
+    <RegistroDisenador
+      v-if="MostrarRegistroDise"
+      @cerrar="MostrarRegistroDise = false"
+      @MostrarRegistro="MostrarRegistro"
+    />
+    <RegistroMarketing
+      v-if="MostrarRegistroMar"
+      @cerrar="MostrarRegistroMar = false"
+      @MostrarRegistro="MostrarRegistro"
+    />
+    <InicioSesion
+      v-if="MostrarInicioSes"
+      @cerrar="MostrarInicioSes = false"
+      @loginExitoso="handleLoginSuccess"
+    />
+    <CrearContrasena v-if="MostrarClave" @cerrar="MostrarClave = false" />
   </div>
 </template>
 
@@ -53,8 +49,6 @@ import RegistroMarketing from "../components/RegistroMarketing.vue";
 import RegistroEmprendedor from "../components/RegistroEmprendedor.vue";
 import InicioSesion from "../components/InicioSesion.vue";
 import CrearContrasena from "../components/CrearContrasena.vue";
-// IMPORTANTE: Importamos PaginaCentral
-import PaginaCentral from "./PaginaCentral.vue"; // Asegúrate que la ruta sea correcta
 
 export default {
   name: "PaginaPrincipal",
@@ -65,18 +59,8 @@ export default {
       MostrarRegistroMar: false,
       MostrarInicioSes: false,
       MostrarClave: false,
-      isLoggedIn: false, // ¡NUEVO! Controla si el usuario ha iniciado sesión
+      // isLoggedIn ya no es necesario aquí, el router lo manejará
     };
-  },
-  // NUEVO: Método para verificar la sesión al cargar la página
-  mounted() {
-    // Comprueba si hay un token de usuario en localStorage o sessionStorage
-    if (localStorage.getItem('userToken') || sessionStorage.getItem('userToken')) {
-      this.isLoggedIn = true; // Si hay un token, el usuario está logueado
-      console.log('Sesión detectada al cargar PaginaPrincipal.');
-    } else {
-      console.log('No hay sesión detectada al cargar PaginaPrincipal.');
-    }
   },
   methods: {
     MostrarRegistro(Tipo) {
@@ -98,17 +82,11 @@ export default {
         this.MostrarRegistroMar = true;
       }
     },
-    // NUEVO: Método llamado cuando InicioSesion emite 'loginExitoso'
+    // Cuando el login es exitoso, navegamos a la ruta 'Central'
     handleLoginSuccess() {
-      this.isLoggedIn = true; // Establece el estado a logueado
-      this.MostrarInicioSes = false; // Oculta el modal de inicio de sesión
-      console.log('Login exitoso. Mostrando PaginaCentral.');
+      console.log('Login exitoso. Navegando a /central.');
+      this.$router.push({ name: 'Central' }); // Redirige a la ruta de PaginaCentral
     },
-    // NUEVO: Método llamado cuando PaginaCentral emite 'logoutExitoso'
-    handleLogoutSuccess() {
-      this.isLoggedIn = false; // Establece el estado a no logueado
-      console.log('Logout exitoso. Volviendo a la página principal.');
-    }
   },
   components: {
     PatenteAdmin,
@@ -124,11 +102,11 @@ export default {
     RegistroMarketing,
     InicioSesion,
     CrearContrasena,
-    PaginaCentral, // ¡NUEVO! Declaramos PaginaCentral como un componente
+    // PaginaCentral ya no se importa ni se renderiza aquí
   },
 };
 </script>
 
 <style>
-
+/* Puedes añadir estilos globales aquí si es necesario */
 </style>

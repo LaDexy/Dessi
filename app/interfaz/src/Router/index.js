@@ -8,27 +8,27 @@ import PaginaForo from '@/Vistas/PaginaForo.vue';
 
 const routes = [
   {
-    path: '/',
-    name: 'Principal', // Nombre para la ruta de la página principal
+    path: '/', // La ruta raíz será para la página de inicio (no autenticada)
+    name: 'Principal',
     component: PaginaPrincipal
   },
   {
-    path: '/central', // Ruta para la página central (dashboard)
+    path: '/central', // Esta es la ruta para la página central (dashboard)
     name: 'Central',
     component: PaginaCentral,
-    meta: { requiresAuth: true } // ¡NUEVO! Esta ruta requiere autenticación
+    meta: { requiresAuth: true } // Esta ruta requiere autenticación
   },
   {
     path: '/perfil', // Ruta para la página de perfil del usuario
     name: 'Perfil',
     component: PaginaPerfil,
-    meta: { requiresAuth: true } // ¡NUEVO! Esta ruta requiere autenticación
+    meta: { requiresAuth: true } // Esta ruta requiere autenticación
   },
   {
     path: '/foro', // Ruta para la página del foro
     name: 'Foro',
     component: PaginaForo,
-    meta: { requiresAuth: true } // ¡NUEVO! Esta ruta requiere autenticación
+    meta: { requiresAuth: true } // Esta ruta requiere autenticación
   },
   
 ];
@@ -38,23 +38,30 @@ const router = createRouter({
   routes
 });
 
-// ¡NUEVO! Guardia de navegación global para proteger rutas
+// Guardia de navegación global para proteger rutas
 router.beforeEach((to, from, next) => {
-  // Verifica si la ruta a la que se intenta acceder requiere autenticación
+  const userToken = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+
+  // Si la ruta a la que se intenta acceder requiere autenticación
   if (to.meta.requiresAuth) {
-    // Comprueba si existe un token de usuario en localStorage o sessionStorage
-    const userToken = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
     if (userToken) {
       // Si el usuario está autenticado, permite el acceso a la ruta
       next();
     } else {
-      // Si no está autenticado, redirige a la página principal (Home)
+      // Si no está autenticado, redirige a la página principal (login/registro)
       console.warn('Acceso denegado: Ruta protegida sin autenticación. Redirigiendo a Principal.');
       next({ name: 'Principal' }); // Redirige por nombre de ruta
     }
   } else {
-    // Si la ruta no requiere autenticación, permite el acceso
-    next();
+    // Si la ruta NO requiere autenticación (como la página principal '/')
+    // y el usuario YA está autenticado, redirige a la página central
+    if (userToken && to.name === 'Principal') {
+      console.log('Usuario ya autenticado. Redirigiendo a Central.');
+      next({ name: 'Central' });
+    } else {
+      // Si la ruta no requiere autenticación y el usuario no está autenticado (o ya está en otra ruta no protegida), permite el acceso
+      next();
+    }
   }
 });
 

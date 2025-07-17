@@ -119,9 +119,10 @@ app.post('/api/register', async (req, res) => {
 
         try {
             console.log('Insertando usuario principal...');
+            // Se añaden foto_perfil_url y descripcion_perfil a la inserción con valores por defecto
             const [userResult] = await connection.query(
-                'INSERT INTO usuarios (nombre_usuario, correo_electronico, contrasena_hash, tipo_perfil, fecha_registro) VALUES (?, ?, ?, ?, NOW())',
-                [nombre_usuario, correo_electronico, contrasena_hash, tipo_perfil]
+                'INSERT INTO usuarios (nombre_usuario, correo_electronico, contrasena_hash, tipo_perfil, fecha_registro, foto_perfil_url, descripcion_perfil) VALUES (?, ?, ?, ?, NOW(), ?, ?)',
+                [nombre_usuario, correo_electronico, contrasena_hash, tipo_perfil, null, null] // Valores por defecto para foto y descripción
             );
             const id_usuario = userResult.insertId;
             console.log('Usuario principal insertado. ID:', id_usuario);
@@ -142,7 +143,7 @@ app.post('/api/register', async (req, res) => {
                     throw new Error('Faltan campos específicos para el perfil Diseñador/Marketing.');
                 }
                 const modalidadTrabajoString = Array.isArray(modalidad_trabajo) ? modalidad_trabajo.join(',') : modalidad_trabajo;
-                console.log('Insertando datos de Diseñador/Marketing:', { id_usuario, localidad, modalidadTrabajoString });
+                console.log('Insertando datos de Diseñador/Marketing:', { id_usuario, localidad, modalityTrabajoString });
                 await connection.query(
                     'INSERT INTO disenador_marketing (id_usuario, localidad, modalidad_trabajo) VALUES (?, ?, ?)',
                     [id_usuario, localidad, modalidadTrabajoString]
@@ -593,6 +594,84 @@ app.get('/api/challenges/me', authenticateToken, async (req, res) => {
         res.status(500).json({ message: 'Error interno del servidor al obtener desafíos.', error: error.message });
     }
 });
+
+
+// --- NUEVA RUTA: OBTENER TODOS LOS PERFILES (EXCEPTO EL DEL USUARIO LOGUEADO) ---
+app.get('/api/profiles', authenticateToken, async (req, res) => {
+    console.log('Solicitud GET /api/profiles recibida para usuario:', req.user.id_usuario);
+    const currentUserId = req.user.id_usuario;
+
+    try {
+        // Consulta para obtener todos los usuarios, uniéndolos con sus tablas de perfil específicas
+        // Excluimos al usuario actualmente logueado
+        const [allProfiles] = await pool.query(
+            `SELECT
+                u.id_usuario,
+                u.nombre_usuario,
+                u.tipo_perfil,
+                u.foto_perfil_url,
+                u.descripcion_perfil,
+                e.nombre_negocio,
+                e.localidad AS emprendedor_localidad,
+                e.tipo_negocio,
+                dm.localidad AS dm_localidad,
+                dm.modalidad_trabajo
+            FROM
+                usuarios u
+            LEFT JOIN
+                emprendedor e ON u.id_usuario = e.id_usuario
+            LEFT JOIN
+                disenador_marketing dm ON u.id_usuario = dm.id_usuario
+            WHERE
+                u.id_usuario != ?`, // Excluye el perfil del usuario logueado
+            [currentUserId]
+        );
+
+        console.log(`Perfiles obtenidos (excluyendo el actual): ${allProfiles.length}`);
+
+        // Procesar los resultados para un formato consistente
+        const formattedProfiles = allProfiles.map(profile => {
+            let profession = profile.tipo_perfil;
+            let location = '';
+            let description = profile.descripcion_perfil || 'Aún no ha añadido una descripción.'; // Default description
+
+            // Determinar la profesión y la localidad basada en el tipo de perfil
+            if (profile.tipo_perfil === 'Emprendedor') {
+                profession = profile.nombre_negocio || 'Emprendedor';
+                location = profile.emprendedor_localidad || '';
+            } else if (profile.tipo_perfil === 'Diseñador') {
+                profession = 'Diseñador';
+                location = profile.dm_localidad || '';
+            } else if (profile.tipo_perfil === 'Marketing') {
+                profession = 'Especialista en Marketing';
+                location = profile.dm_localidad || '';
+            }
+
+            // Construir la URL completa de la imagen de perfil
+            const fullImageUrl = profile.foto_perfil_url
+                ? `${req.protocol}://${req.get('host')}${profile.foto_perfil_url}`
+                : ''; // Dejar vacío si no hay URL, el frontend usará el default
+
+            return {
+                id_usuario: profile.id_usuario,
+                nombre_usuario: profile.nombre_usuario,
+                tipo_perfil: profile.tipo_perfil, // Mantener el tipo de perfil original
+                foto_perfil_url: fullImageUrl,
+                descripcion_perfil: description,
+                profesion_display: profession, // Campo para mostrar en la tarjeta
+                localidad: location,
+                // Puedes añadir más campos si los necesitas para la tarjeta
+            };
+        });
+
+        res.status(200).json(formattedProfiles);
+
+    } catch (error) {
+        console.error('Error al obtener todos los perfiles de usuarios:', error);
+        res.status(500).json({ message: 'Error interno del servidor al obtener perfiles.', error: error.message });
+    }
+});
+
 
 // Configura el puerto y lanza el servidor
 app.set("port", 4000);

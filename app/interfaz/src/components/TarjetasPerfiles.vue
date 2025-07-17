@@ -1,192 +1,38 @@
 <template>
-  <div>
+  <div class="TarjetasPerfiles-container">
+    <div class="TarjetasPerfiles-grid">
+      <!-- Usamos v-for para iterar sobre el array 'profiles' que viene como prop -->
+      <div class="Exterior" v-for="profile in profiles" :key="profile.id_usuario">
+        <div class="Tarjeta">
+          <header class="Inicio-Tarjeta">
+            <!-- La imagen de perfil será dinámica. Usamos una imagen por defecto si no hay URL. -->
+            <img :src="profile.foto_perfil_url || require('../assets/Usuario.png')" :alt="`Foto de perfil de ${profile.nombre_usuario}`" />
+          </header>
 
-    <div class="TarjetasPerfiles">
+          <footer class="Final-Tarjeta">
+            <div class="Categoria-Tarjeta">
+              <!-- Nombre de usuario dinámico -->
+              <span>{{ profile.nombre_usuario }}</span>
+            </div>
 
-    <!--Primera tarjeta-->
-    <div class="Exterior">
-      
-      <div class="Tarjeta">
-        <header class="Inicio-Tarjeta">
-          <img src="../assets/Perfil.png" alt="" />
-        </header>
+            <div class="Texto-Tarjeta">
+              <!-- Profesión (tipo_perfil) dinámica -->
+              <h3>{{ profile.tipo_perfil }}</h3>
+            </div>
 
-        <footer class="Final-Tarjeta">
-          <div class="Categoria-Tarjeta">
-            <span>Nombre de usuario</span>
-          </div>
-
-          <div class="Texto-Tarjeta">
-            <h3>Profesion</h3>
-          </div>
-
-           <div class="Descripcion-Tarjeta">
-            <p>Descripcion</p>
-          </div>
-           <button class="Interes">Solicitud</button>
-             <button class="Interes">Ver perfil</button>
-        </footer>
+            <div class="Descripcion-Tarjeta">
+              <!-- Descripción dinámica -->
+              <p>{{ profile.descripcion_perfil || 'Aún no ha añadido una descripción.' }}</p>
+            </div>
+            
+            <!-- Botones (pueden tener lógica de click más adelante si lo necesitas) -->
+            <div class="buttons-container">
+                <button class="Interes">Solicitud</button>
+                <button class="Interes">Ver perfil</button>
+            </div>
+          </footer>
+        </div>
       </div>
-
-     
-    </div>
-    <!--Segunda tarjeta-->
-
-<div class="Exterior">
-      <div class="Tarjeta">
-        <header class="Inicio-Tarjeta">
-          <img src="../assets/Perfil.png" alt="" />
-        </header>
-
-        <footer class="Final-Tarjeta">
-          <div class="Categoria-Tarjeta">
-            <span>Nombre de usuario</span>
-          </div>
-
-          <div class="Texto-Tarjeta">
-            <h3>Profesion</h3>
-          </div>
-
-           <div class="Descripcion-Tarjeta">
-            <p>Descripcion</p>
-          </div>
-          <button class="Interes">Solicitud</button>
-            <button class="Interes">Ver perfil</button>
-        </footer>
-      </div>
-    </div>
-
-
-      <!--Tercera tarjeta-->
-
-      <div class="Exterior">
-      <div class="Tarjeta">
-        <header class="Inicio-Tarjeta">
-          <img src="../assets/Perfil.png" alt="" />
-        </header>
-
-        <footer class="Final-Tarjeta">
-          <div class="Categoria-Tarjeta">
-            <span>Nombre de usuario</span>
-          </div>
-
-          <div class="Texto-Tarjeta">
-            <h3>Profesion</h3>
-          </div>
-
-           <div class="Descripcion-Tarjeta">
-            <p>Descripcion</p>
-          </div>
-          <button class="Interes">Solicitud</button>
-            <button class="Interes">Ver perfil</button>
-        </footer>
-      </div>
-    </div>
-
-    <!--Cuarta tarjeta-->
-
-      <div class="Exterior">
-      <div class="Tarjeta">
-        <header class="Inicio-Tarjeta">
-          <img src="../assets/Perfil.png" alt="" />
-        </header>
-
-        <footer class="Final-Tarjeta">
-          <div class="Categoria-Tarjeta">
-            <span>Nombre de usuario</span>
-          </div>
-
-          <div class="Texto-Tarjeta">
-            <h3>Profesion</h3>
-          </div>
-
-           <div class="Descripcion-Tarjeta">
-            <p>Descripcion</p>
-          </div>
-          <button class="Interes">Solicitud</button>
-            <button class="Interes">Ver perfil</button>
-        </footer>
-      </div>
-    </div>
-
-    <!--Quinta tarjeta-->
-
-      <div class="Exterior">
-      <div class="Tarjeta">
-        <header class="Inicio-Tarjeta">
-          <img src="../assets/Perfil.png" alt="" />
-        </header>
-
-        <footer class="Final-Tarjeta">
-          <div class="Categoria-Tarjeta">
-            <span>Nombre de usuario</span>
-          </div>
-
-          <div class="Texto-Tarjeta">
-            <h3>Profesion</h3>
-          </div>
-
-          <div class="Descripcion-Tarjeta">
-            <p>Descripcion</p>
-          </div>
-          <button class="Interes">Solicitud</button>
-            <button class="Interes">Ver perfil</button>
-        </footer>
-      </div>
-    </div>
-
-    <!--Sesta tarjeta-->
-
-      <div class="Exterior">
-      <div class="Tarjeta">
-        <header class="Inicio-Tarjeta">
-          <img src="../assets/Perfil.png" alt="" />
-        </header>
-
-        <footer class="Final-Tarjeta">
-          <div class="Categoria-Tarjeta">
-            <span>Nombre de usuario</span>
-          </div>
-
-          <div class="Texto-Tarjeta">
-            <h3>Profesion</h3>
-          </div>
-
-           <div class="Descripcion-Tarjeta">
-            <p>Descripcion</p>
-          </div>
-          <button class="Interes">Solicitud</button>
-            <button class="Interes">Ver perfil</button>
-        </footer>
-      </div>
-    </div>
-
-    <!--Septima tarjeta-->
-
-      <div class="Exterior">
-      <div class="Tarjeta">
-        <header class="Inicio-Tarjeta">
-          <img src="../assets/Perfil.png" alt="" />
-        </header>
-
-        <footer class="Final-Tarjeta">
-          <div class="Categoria-Tarjeta">
-            <span>Nombre de usuario</span>
-          </div>
-
-          <div class="Texto-Tarjeta">
-            <h3>Profesion</h3>
-          </div>
-
-           <div class="Descripcion-Tarjeta">
-            <p>Descripcion</p>
-          </div>
-          <button class="Interes">Solicitud</button>
-          <button class="Interes">Ver perfil</button>
-        </footer>
-      </div>
-    </div>
-
     </div>
   </div>
 </template>
@@ -194,6 +40,14 @@
 <script>
 export default {
   name: "TarjetasPerfiles",
+  props: {
+    // Definimos la prop 'profiles' que esperamos recibir
+    profiles: {
+      type: Array, // Esperamos un array de objetos de perfil
+      required: true,
+      default: () => [], // Valor por defecto si no se pasa nada
+    },
+  },
 };
 </script>
 

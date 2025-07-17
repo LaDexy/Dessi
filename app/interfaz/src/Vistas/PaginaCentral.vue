@@ -1,12 +1,19 @@
 <template>
   <div>
     <BarraPerfil :userName="userName" />
-    <ImagenPerfil :profileImageSrc="userImage" />
+    <div class="profile-image-section">
+      <ImagenPerfil
+        ref="imagenPerfilComponent"
+        :profileImageSrc="profileImageSrc"
+        @imageSelected="handleImageSelected"
+      />
     <!-- Este es el h1 que mostrará el nombre de usuario -->
     <div class="user-name-display-wrapper">
       <h1 class="user-name-display">{{ userName }}</h1>
     </div>
-    <OpcionPerfil :logout="logout" /> <ContenidoMenu />
+    <!-- OpcionPerfil ya no necesita la prop 'logout', maneja su propia lógica -->
+    <OpcionPerfil />
+    <ContenidoMenu />
     <BarraBusqueda />
     <BotonesFiltro />
     <TarjetasPerfiles :profiles="profiles" />
@@ -79,19 +86,17 @@ export default {
       });
     },
     async fetchProfiles() {
-      // Simulación de carga de perfiles (reemplaza con tu API real)
-      // En un escenario real, harías una llamada a tu backend para obtener los perfiles
       try {
         const token =
           localStorage.getItem("userToken") ||
           sessionStorage.getItem("userToken");
         if (!token) {
           console.warn("No hay token de autenticación para obtener perfiles.");
-          // Podrías redirigir al login si no hay token
+          // **CAMBIO CLAVE AQUÍ:** Redirige usando el nombre de la ruta 'Principal'
+          this.$router.push({ name: "Principal" });
           return;
         }
 
-        // Ejemplo de llamada a la API (ajusta la URL a tu endpoint real)
         const response = await axios.get("http://localhost:4000/api/profiles", {
           headers: {
             Authorization: `Bearer ${token}`, // Envía el token en la cabecera
@@ -113,32 +118,18 @@ export default {
         console.error("Error en la solicitud de perfiles:", error);
         this.profiles = [];
         if (error.response && error.response.status === 401) {
-          alert(
-            "Sesión expirada o no autorizada. Por favor, inicia sesión de nuevo."
+          console.log(
+            "Token expirado o no autorizado en fetchProfiles. Redirigiendo a PaginaPrincipal."
           );
-          this.logout(); // Forzar logout si el token no es válido
+          // **CAMBIO CLAVE AQUÍ:** Redirige usando el nombre de la ruta 'Principal'
+          this.$router.push({ name: "Principal" });
         }
       }
     },
-    logout() {
-      // Limpiar todos los datos de la sesión
-      localStorage.removeItem("userToken");
-      localStorage.removeItem("userProfile");
-      localStorage.removeItem("userId");
-      localStorage.removeItem("userName");
-      localStorage.removeItem("userImage"); // Si guardaste la imagen
-
-      sessionStorage.removeItem("userToken");
-      sessionStorage.removeItem("userProfile");
-      sessionStorage.removeItem("userId");
-      sessionStorage.removeItem("userName");
-      sessionStorage.removeItem("userImage");
-
-      alert("¡Has cerrado sesión exitosamente!");
-      console.log("Sesión cerrada. Emitiendo logoutExitoso a PaginaPrincipal.");
-      // Emitir un evento para que PaginaPrincipal.vue sepa que la sesión se cerró
-      this.$emit("logoutExitoso");
-    },
+    // El método logout ya no es necesario aquí, ya que OpcionPerfil lo maneja internamente.
+    // logout() {
+    //   // ... (código anterior de logout si lo tuvieras aquí)
+    // }
   },
 };
 </script>
