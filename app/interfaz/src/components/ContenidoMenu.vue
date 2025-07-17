@@ -38,16 +38,12 @@
 
     <div class="Foro">
     <p>
-        <a class="btn btn-primary" data-bs-toggle="collapse" href="#collapseExample2" role="button" aria-expanded="false" aria-controls="collapseExample">
+        <a class="btn btn-primary"  @click="goToForo" role="button" aria-expanded="false" aria-controls="collapseExample">
     Foro
         </a>
     </p>
 
-    <div class="collapse" id="collapseExample2">
-        <div class="card card-body">
-    Aca saldran los foros abiertos
-        </div>
-    </div> 
+   
     </div>
 
     <!--Boton de convenios-->
@@ -94,13 +90,27 @@
 </template>
 
 <script>
-
-export default{
-
-    name: "ContenidoMenu"
-
+export default {
+  name: "ContenidoMenu",
+  methods: {
+    /**
+     * @description Navega a la ruta de PaginaForo.
+     * Importante: Este método no intenta cerrar el Offcanvas programáticamente.
+     * Requiere que 'Foro' esté definido como un nombre de ruta en tu Vue Router.
+     */
+    goToForo() {
+      // Simplemente navega a la ruta con el nombre 'Foro'
+      this.$router.push({ name: 'Foro' })
+        .catch(err => {
+          // Captura el error si la navegación es a la misma ruta (evita advertencias en consola)
+          if (err.name !== 'NavigationDuplicated') {
+            console.error('Error de navegación al Foro:', err);
+          }
+        });
+      console.log('Intentando navegar a PaginaForo...');
+    }
+  }
 }
-
 </script>
 
 <style>
