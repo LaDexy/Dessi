@@ -16,6 +16,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // Configura los middlewares
+// Middleware de CORS: ¡Este es el que permite la comunicación entre tu frontend y backend!
 app.use(cors({
     origin: 'http://localhost:8080', // Permite solicitudes SÓLO desde tu frontend Vue.js
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], // Asegúrate de incluir todos los métodos que usas
@@ -86,6 +87,10 @@ app.post('/api/register', async (req, res) => {
     console.log('Solicitud de registro recibida. Datos:', req.body);
 
     const {
+        nombre_desafio, // No deberían estar aquí, son de desafíos
+        descripcion_desafio, // No deberían estar aquí, son de desafíos
+        beneficios, // No deberían estar aquí, son de desafíos
+        duracion_dias, // No deberían estar aquí, son de desafíos
         nombre_usuario,
         correo_electronico,
         contrasena,
@@ -120,9 +125,10 @@ app.post('/api/register', async (req, res) => {
         try {
             console.log('Insertando usuario principal...');
             // Se añaden foto_perfil_url y descripcion_perfil a la inserción con valores por defecto
+            // CAMBIO CLAVE AQUÍ: Usamos '' (cadena vacía) en lugar de null para evitar el error NOT NULL
             const [userResult] = await connection.query(
                 'INSERT INTO usuarios (nombre_usuario, correo_electronico, contrasena_hash, tipo_perfil, fecha_registro, foto_perfil_url, descripcion_perfil) VALUES (?, ?, ?, ?, NOW(), ?, ?)',
-                [nombre_usuario, correo_electronico, contrasena_hash, tipo_perfil, null, null] // Valores por defecto para foto y descripción
+                [nombre_usuario, correo_electronico, contrasena_hash, tipo_perfil, '', ''] // Valores por defecto: cadena vacía
             );
             const id_usuario = userResult.insertId;
             console.log('Usuario principal insertado. ID:', id_usuario);
@@ -143,7 +149,7 @@ app.post('/api/register', async (req, res) => {
                     throw new Error('Faltan campos específicos para el perfil Diseñador/Marketing.');
                 }
                 const modalidadTrabajoString = Array.isArray(modalidad_trabajo) ? modalidad_trabajo.join(',') : modalidad_trabajo;
-                console.log('Insertando datos de Diseñador/Marketing:', { id_usuario, localidad, modalityTrabajoString });
+                console.log('Insertando datos de Diseñador/Marketing:', { id_usuario, localidad, modalidadTrabajoString });
                 await connection.query(
                     'INSERT INTO disenador_marketing (id_usuario, localidad, modalidad_trabajo) VALUES (?, ?, ?)',
                     [id_usuario, localidad, modalidadTrabajoString]
@@ -500,7 +506,6 @@ app.post('/api/challenges', authenticateToken, async (req, res) => {
     console.log('Solicitud POST /api/challenges recibida para usuario:', req.user.id_usuario);
     const userId = req.user.id_usuario; // ID del usuario autenticado
     const userProfileType = req.user.tipo_perfil; // Tipo de perfil del usuario autenticado
-    const { nombre_desafio, descripcion_desafio, beneficios, duracion_dias } = req.body;
 
     // 1. Verificar que el usuario sea un Emprendedor
     if (userProfileType !== 'Emprendedor') {
@@ -509,6 +514,8 @@ app.post('/api/challenges', authenticateToken, async (req, res) => {
     }
 
     // 2. Validación de campos del desafío
+    const { nombre_desafio, descripcion_desafio, beneficios, duracion_dias } = req.body; // Mover la desestructuración aquí
+
     if (!nombre_desafio || !descripcion_desafio || !beneficios || !duracion_dias) {
         console.warn('Error 400: Campos de desafío incompletos.');
         return res.status(400).json({ message: 'Todos los campos del desafío son obligatorios.' });
@@ -668,18 +675,13 @@ app.get('/api/profiles', authenticateToken, async (req, res) => {
 
     } catch (error) {
         console.error('Error al obtener todos los perfiles de usuarios:', error);
-        res.status(500).json({ message: 'Error interno del servidor al obtener perfiles.', error: error.message });
+        res.status(500).json({ message: 'Error interno del servidor', error: error.message });
     }
 });
 
-
-// Configura el puerto y lanza el servidor
-app.set("port", 4000);
-app.listen(app.get("port"), () => {
-    console.log("Servidor ejecutando en puerto", app.get("port"));
-});
-
-// Manejo de errores del pool de conexiones (opcional, pero buena práctica)
-pool.on('error', (err) => {
-    console.error('Error en el pool de conexiones de MySQL:', err);
+// --- Iniciar el servidor ---
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => {
+    console.log(`Servidor backend corriendo en el puerto ${PORT}`);
+    console.log(`Accede a http://localhost:${PORT}`);
 });
