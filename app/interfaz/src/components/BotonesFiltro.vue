@@ -1,51 +1,45 @@
 <template>
-
-<div>
-
- <!--Boton para filtrar a todos los perfiles-->
-
+  <div>
+    <!--Boton para filtrar a todos los perfiles-->
     <div class="Todos">
-
-        <div><button>Todos</button></div>
-
+      <!-- AÑADIDO: @click para emitir el filtro 'Todos' -->
+      <div><button @click="emitFilter('Todos')">Todos</button></div>
     </div>
 
     <!--Boton para filtrar a todos los emprendedores-->
-
     <div class="PerEmprendedores">
-
-        <div><button>Emprendedor</button></div>
-
+      <!-- AÑADIDO: @click para emitir el filtro 'Emprendedor' -->
+      <div><button @click="emitFilter('Emprendedor')">Emprendedor</button></div>
     </div>
 
     <!--Boton para filtrar a todos los diseñadores-->
-
     <div class="PerDiseñadores">
-
-        <div><button>Diseñador</button></div>
-
+      <!-- AÑADIDO: @click para emitir el filtro 'Diseñador' -->
+      <div><button @click="emitFilter('Diseñador')">Diseñador</button></div>
     </div>
 
     <!--Boton para filtrar a todos los de marketing-->
-
     <div class="PerMarketing">
-
-        <div><button>Marketing</button></div>
-
+      <!-- AÑADIDO: @click para emitir el filtro 'Marketing' -->
+      <div><button @click="emitFilter('Marketing')">Marketing</button></div>
     </div>
-
-</div>
-
+  </div>
 </template>
 
 <script>
-
-export default{
-
-    name: "BotonesFiltro"
-
+export default {
+  name: "BotonesFiltro",
+  methods: {
+    /**
+     * @description Emite el tipo de filtro seleccionado al componente padre.
+     * @param {string} filterType - El tipo de perfil a filtrar ('Todos', 'Emprendedor', 'Diseñador', 'Marketing').
+     */
+    emitFilter(filterType) {
+      this.$emit('filter', filterType);
+      console.log('Filtro de tipo de perfil emitido:', filterType);
+    }
+  }
 }
-
 </script>
 
 <style>

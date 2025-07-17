@@ -1,36 +1,37 @@
 <template>
+  <div>
+    <div class="buscar">
+      <input
+        type="text"
+        placeholder="Buscar"
+        required
+        v-model="searchTerm"          @input="emitSearch"           @keyup.enter="emitSearch"     >
 
-<div>
-
-    <!--Barra de busqueda de perfiles de usuario-->
-
-<div class="buscar">
-	<input type="text" placeholder="Buscar" required>
-
-<!--Boton con icono de busqueda-->
-
-<div class="Busqueda">
-	<i class="fa-solid fa-magnifying-glass icon"></i>
-</div>
-
-</div>
-
-
-
-
-
-</div>
-
+      <div class="Busqueda" @click="emitSearch"> <i class="fa-solid fa-magnifying-glass icon"></i>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script>
-
-export default{
-
-    name: "BarraBusqueda"
-
+export default {
+  name: "BarraBusqueda",
+  data() {
+    return {
+      searchTerm: '' // Nuevo: Almacena el término de búsqueda
+    };
+  },
+  methods: {
+    /**
+     * @description Emite el término de búsqueda actual al componente padre.
+     */
+    emitSearch() {
+      // Usamos trim() para eliminar espacios en blanco al inicio y al final
+      this.$emit('search', this.searchTerm.trim());
+      console.log('Término de búsqueda emitido desde BarraBusqueda:', this.searchTerm.trim());
+    }
+  }
 }
-
 </script>
 
 <style>

@@ -22,13 +22,18 @@
       <!-- OpcionPerfil ya no necesita la prop 'logout', maneja su propia lógica -->
       <OpcionPerfil class="component-margin-bottom"/>
       <ContenidoMenu class="component-margin-bottom"/>
-      <BarraBusqueda class="component-margin-bottom"/>
-      <BotonesFiltro class="buttons-filter-margin-bottom"/>
+      
+      <!-- Barra de Búsqueda: Escucha el evento 'search' -->
+      <BarraBusqueda @search="handleSearch" class="component-margin-bottom"/>
+      
+      <!-- Botones de Filtro: Escucha el evento 'filter' -->
+      <BotonesFiltro @filter="handleFilter" class="buttons-filter-margin-bottom"/>
 
       <!-- Sección de Perfiles de Otros Usuarios -->
       <h2 class="section-title">Perfiles de Usuarios</h2>
-      <div v-if="profiles.length > 0" class="profiles-grid">
-        <div v-for="profile in profiles" :key="profile.id_usuario" class="profile-card">
+      <!-- CAMBIADO: Ahora itera sobre filteredProfiles en lugar de profiles -->
+      <div v-if="filteredProfiles.length > 0" class="profiles-grid">
+        <div v-for="profile in filteredProfiles" :key="profile.id_usuario" class="profile-card">
           <div class="profile-card-header">
             <img v-if="profile.foto_perfil_url" :src="profile.foto_perfil_url" alt="Foto de Perfil" class="profile-card-image">
             <svg v-else class="profile-card-placeholder-icon" fill="currentColor" viewBox="0 0 24 24">
@@ -53,7 +58,8 @@
           </div>
         </div>
       </div>
-      <p v-else class="no-profiles-message">No hay otros perfiles disponibles para mostrar en este momento.</p>
+      <!-- CAMBIADO: Mensaje si no hay perfiles filtrados -->
+      <p v-else class="no-profiles-message">No se encontraron perfiles que coincidan con su búsqueda o filtro.</p>
     </div>
 
     <!-- Modal de Mensaje (para errores o éxitos) -->
@@ -77,9 +83,7 @@ import OpcionPerfil from "../components/OpcionPerfil.vue";
 import ContenidoMenu from "../components/ContenidoMenu.vue";
 import ImagenPerfil from "../components/ImagenPerfil.vue";
 import BarraBusqueda from "../components/BarraBusqueda.vue";
-import BotonesFiltro from "../components/BotonesFiltro.vue";
-// TarjetasPerfiles ya no se usa directamente en este componente, su lógica está integrada.
-// import TarjetasPerfiles from "../components/TarjetasPerfiles.vue"; // Esta línea fue eliminada.
+import BotonesFiltro from "../components/BotonesFiltro.vue"; // Asegúrate de que esta ruta sea correcta
 
 export default {
   name: 'PaginaCentral',
@@ -89,20 +93,48 @@ export default {
     ContenidoMenu,
     ImagenPerfil,
     BarraBusqueda,
-    BotonesFiltro,
-    // TarjetasPerfiles, // Esta línea fue eliminada.
+    BotonesFiltro, // Asegúrate de registrar BotonesFiltro
   },
   data() {
     return {
       userName: "Cargando...", // Nombre de usuario
       profileImageSrc: "", // URL de la imagen de perfil
       userProfileType: "", // Tipo de perfil del usuario logueado
-      profiles: [], // Almacena los perfiles de otros usuarios
+      allProfiles: [],   // Almacena todos los perfiles sin filtrar
+      searchTerm: '',    // Almacena el término de búsqueda actual
+      activeFilter: 'Todos', // NUEVO: Almacena el filtro de tipo de perfil activo
       // Estados para el modal de mensaje
       showMessageModal: false,
       messageModalTitle: '',
       messageModalMessage: ''
     };
+  },
+  computed: {
+    /**
+     * @description Propiedad computada que filtra los perfiles basados en el término de búsqueda
+     * y el tipo de perfil seleccionado.
+     * @returns {Array} Array de perfiles filtrados.
+     */
+    filteredProfiles() {
+      let profilesToFilter = this.allProfiles;
+
+      // 1. Aplicar filtro por término de búsqueda (si existe)
+      if (this.searchTerm) {
+        const lowerCaseSearchTerm = this.searchTerm.toLowerCase();
+        profilesToFilter = profilesToFilter.filter(profile => {
+          return profile.nombre_usuario.toLowerCase().includes(lowerCaseSearchTerm);
+        });
+      }
+
+      // 2. Aplicar filtro por tipo de perfil (si no es 'Todos')
+      if (this.activeFilter !== 'Todos') {
+        profilesToFilter = profilesToFilter.filter(profile => {
+          return profile.tipo_perfil === this.activeFilter;
+        });
+      }
+
+      return profilesToFilter;
+    }
   },
   async created() {
     // Al cargar el componente, obtenemos los datos del perfil del usuario logueado
@@ -171,8 +203,8 @@ export default {
             Authorization: `Bearer ${token}`
           }
         });
-        this.profiles = response.data;
-        console.log('Perfiles de otros usuarios cargados:', this.profiles);
+        this.allProfiles = response.data; 
+        console.log('Perfiles de otros usuarios cargados:', this.allProfiles);
       } catch (error) {
         console.error('Error al obtener todos los perfiles:', error);
         if (error.response && (error.response.status === 401 || error.response.status === 403)) {
@@ -185,16 +217,35 @@ export default {
     },
 
     /**
+     * @description Maneja el evento 'search' emitido por BarraBusqueda.
+     * Actualiza el término de búsqueda y, gracias a la propiedad computada,
+     * los perfiles mostrados se actualizarán automáticamente.
+     * @param {string} term - El término de búsqueda.
+     */
+    handleSearch(term) {
+      this.searchTerm = term;
+      console.log('Término de búsqueda recibido en PaginaCentral:', term);
+    },
+
+    /**
+     * @description Maneja el evento 'filter' emitido por BotonesFiltro.
+     * Actualiza el filtro de tipo de perfil activo.
+     * @param {string} filterType - El tipo de perfil a filtrar.
+     */
+    handleFilter(filterType) {
+      this.activeFilter = filterType;
+      console.log('Filtro de tipo de perfil recibido en PaginaCentral:', filterType);
+      // Opcional: Si quieres limpiar el término de búsqueda al aplicar un filtro, descomenta la siguiente línea:
+      // this.searchTerm = '';
+    },
+
+    /**
      * @description Maneja el evento cuando se selecciona una imagen en el componente ImagenPerfil.
      * En PaginaCentral, esto podría ser un placeholder o una acción de registro.
      * @param {File} imageFile - El archivo de imagen seleccionado.
      */
     handleImageSelected(imageFile) {
       console.log("Imagen seleccionada en PaginaCentral:", imageFile.name);
-      // Aquí podrías añadir lógica si PaginaCentral necesita hacer algo con la imagen seleccionada,
-      // como previsualizarla temporalmente o iniciar una subida.
-      // Sin embargo, la lógica principal de subida y guardado de la imagen de perfil
-      // debería residir en PaginaPerfil, que es donde se edita el perfil.
       this.showMessage('Imagen Seleccionada', `Se ha seleccionado la imagen: ${imageFile.name}. La gestión de la imagen de perfil se realiza en la página de tu perfil.`);
     },
 
@@ -203,8 +254,6 @@ export default {
      * @param {Object} profile - El objeto de perfil a mostrar.
      */
     viewProfileDetails(profile) {
-      // Implementa la lógica para ver los detalles de un perfil.
-      // Podrías redirigir a una ruta de perfil público o abrir un modal.
       console.log('Ver detalles del perfil:', profile);
       this.showMessage('Funcionalidad Pendiente', `Aquí se mostrarían los detalles completos de ${profile.nombre_usuario}.`);
     },
