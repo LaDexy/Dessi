@@ -15,7 +15,7 @@ import ForoUsuarios from '@/components/ForoUsuarios.vue';
 
 export default{
 
-    name: "PaginaPerfil",
+    name: "PaginaForo",
 
     components: {
 

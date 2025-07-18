@@ -34,7 +34,7 @@ const dbConfig = {
     host: 'localhost',
     user: 'root',
     password: '',
-    database: 'convenio_emprendimiento',
+    database: 'convenio_emprendimiento', // Nombre de tu base de datos
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
@@ -87,10 +87,6 @@ app.post('/api/register', async (req, res) => {
     console.log('Solicitud de registro recibida. Datos:', req.body);
 
     const {
-        nombre_desafio, // No deberían estar aquí, son de desafíos
-        descripcion_desafio, // No deberían estar aquí, son de desafíos
-        beneficios, // No deberían estar aquí, son de desafíos
-        duracion_dias, // No deberían estar aquí, son de desafíos
         nombre_usuario,
         correo_electronico,
         contrasena,
@@ -662,26 +658,315 @@ app.get('/api/profiles', authenticateToken, async (req, res) => {
             return {
                 id_usuario: profile.id_usuario,
                 nombre_usuario: profile.nombre_usuario,
-                tipo_perfil: profile.tipo_perfil, // Mantener el tipo de perfil original
+                tipo_perfil: profile.tipo_perfil, // Mantener el tipo de perfil
                 foto_perfil_url: fullImageUrl,
                 descripcion_perfil: description,
-                profesion_display: profession, // Campo para mostrar en la tarjeta
-                localidad: location,
-                // Puedes añadir más campos si los necesitas para la tarjeta
+                profession: profession, // Nombre del negocio o tipo de profesional
+                location: location, // Localidad específica
+                // Incluir campos específicos si existen
+                ...(profile.tipo_perfil === 'Emprendedor' && {
+                    nombre_negocio: profile.nombre_negocio,
+                    tipo_negocio: profile.tipo_negocio
+                }),
+                ...( (profile.tipo_perfil === 'Diseñador' || profile.tipo_perfil === 'Marketing') && {
+                    modalidad_trabajo: profile.modalidad_trabajo
+                })
             };
         });
-
         res.status(200).json(formattedProfiles);
 
     } catch (error) {
-        console.error('Error al obtener todos los perfiles de usuarios:', error);
-        res.status(500).json({ message: 'Error interno del servidor', error: error.message });
+        console.error('Error al obtener todos los perfiles:', error);
+        res.status(500).json({ message: 'Error interno del servidor al obtener perfiles.', error: error.message });
     }
 });
 
-// --- Iniciar el servidor ---
-const PORT = process.env.PORT || 4000;
+
+// --- INICIO DE LAS RUTAS DEL FORO ---
+
+// Helper para obtener el nombre de usuario y reputación (ajusta según tu tabla de usuarios)
+// Asumo que tu tabla 'usuarios' tiene 'nombre_usuario' y quizás una columna de 'reputacion'
+async function getUserDetails(userId) {
+    try {
+        const [users] = await pool.query(
+            'SELECT nombre_usuario, tipo_perfil FROM usuarios WHERE id_usuario = ?',
+            [userId]
+        );
+        if (users.length > 0) {
+            // Puedes añadir una lógica de reputación aquí si tienes una columna 'reputacion'
+            // Por ahora, simularemos una reputación basada en el tipo de perfil
+            let reputation = 0;
+            if (users[0].tipo_perfil === 'Emprendedor') {
+                reputation = 100; // Ejemplo
+            } else if (users[0].tipo_perfil === 'Diseñador') {
+                reputation = 80; // Ejemplo
+            } else if (users[0].tipo_perfil === 'Marketing') {
+                reputation = 70; // Ejemplo
+            } else {
+                reputation = 50; // Usuario general
+            }
+            return {
+                nombre_usuario: users[0].nombre_usuario,
+                reputation: reputation
+            };
+        }
+        return { nombre_usuario: 'Usuario Desconocido', reputation: 0 };
+    } catch (error) {
+        console.error('Error al obtener detalles del usuario:', error);
+        return { nombre_usuario: 'Usuario Desconocido', reputation: 0 };
+    }
+}
+
+// 1. OBTENER TODOS LOS TEMAS DEL FORO (THREADS)
+app.get('/api/forum/threads', async (req, res) => {
+    console.log('Solicitud GET /api/forum/threads recibida.');
+    try {
+        const [threads] = await pool.query(
+            `SELECT
+                f.id_foro,
+                f.id_usuario,
+                f.titulo,
+                f.descripcion,
+                f.fecha_creacion,
+                COUNT(fm.id_mensaje) AS replies_count
+            FROM
+                foro f
+            LEFT JOIN
+                foro_mensaje fm ON f.id_foro = fm.id_foro
+            GROUP BY
+                f.id_foro
+            ORDER BY
+                f.fecha_creacion DESC`
+        );
+
+        const formattedThreads = await Promise.all(threads.map(async (thread) => {
+            const authorDetails = await getUserDetails(thread.id_usuario);
+            return {
+                id: thread.id_foro,
+                title: thread.titulo,
+                author: authorDetails.nombre_usuario,
+                authorReputation: authorDetails.reputation,
+                date: thread.fecha_creacion,
+                content: thread.descripcion, // El contenido principal del thread
+                replies: thread.replies_count // Cantidad de respuestas
+            };
+        }));
+
+        console.log(`Se encontraron ${formattedThreads.length} temas.`);
+        res.status(200).json(formattedThreads);
+    } catch (error) {
+        console.error('Error al obtener temas del foro:', error);
+        res.status(500).json({ message: 'Error interno del servidor al obtener temas del foro.', error: error.message });
+    }
+});
+
+// 2. OBTENER UN TEMA ESPECÍFICO Y SUS MENSAJES (REPLIES)
+app.get('/api/forum/threads/:id', async (req, res) => {
+    const threadId = req.params.id;
+    console.log(`Solicitud GET /api/forum/threads/${threadId} recibida.`);
+
+    try {
+        const [threads] = await pool.query(
+            'SELECT id_foro, id_usuario, titulo, descripcion, fecha_creacion FROM foro WHERE id_foro = ?',
+            [threadId]
+        );
+
+        if (threads.length === 0) {
+            console.log(`Error 404: Tema con ID ${threadId} no encontrado.`);
+            return res.status(404).json({ message: 'Tema no encontrado.' });
+        }
+
+        const thread = threads[0];
+        const threadAuthorDetails = await getUserDetails(thread.id_usuario);
+
+        // Obtener todos los mensajes (replies) para este tema
+        const [messages] = await pool.query(
+            `SELECT
+                fm.id_mensaje,
+                fm.id_usuario,
+                fm.contenido,
+                fm.fecha_publicacion,
+                (SELECT COUNT(*) FROM foro_reaccion fr WHERE fr.id_mensaje = fm.id_mensaje AND fr.tipo_reaccion = 'like') as likes_count
+            FROM
+                foro_mensaje fm
+            WHERE
+                fm.id_foro = ?
+            ORDER BY
+                fm.fecha_publicacion ASC`,
+            [threadId]
+        );
+
+        const formattedMessages = await Promise.all(messages.map(async (message) => {
+            const authorDetails = await getUserDetails(message.id_usuario);
+            return {
+                id: message.id_mensaje,
+                author: authorDetails.nombre_usuario,
+                authorReputation: authorDetails.reputation,
+                date: message.fecha_publicacion,
+                content: message.contenido,
+                likes: message.likes_count // Número de likes
+            };
+        }));
+
+        const formattedThread = {
+            id: thread.id_foro,
+            title: thread.titulo,
+            author: threadAuthorDetails.nombre_usuario,
+            authorReputation: threadAuthorDetails.reputation,
+            date: thread.fecha_creacion,
+            content: thread.descripcion,
+            replies: formattedMessages
+        };
+
+        console.log(`Tema ${threadId} y sus ${formattedMessages.length} mensajes obtenidos.`);
+        res.status(200).json(formattedThread);
+
+    } catch (error) {
+        console.error(`Error al obtener el tema ${threadId}:`, error);
+        res.status(500).json({ message: 'Error interno del servidor al obtener el tema.', error: error.message });
+    }
+});
+
+// 3. CREAR UN NUEVO TEMA EN EL FORO
+app.post('/api/forum/threads', authenticateToken, async (req, res) => {
+    console.log('Solicitud POST /api/forum/threads recibida para usuario:', req.user.id_usuario);
+    const userId = req.user.id_usuario;
+    const { title, content } = req.body;
+
+    if (!title || !content) {
+        console.log('Error 400: Título o contenido del tema faltante.');
+        return res.status(400).json({ message: 'Título y contenido son obligatorios para crear un tema.' });
+    }
+
+    try {
+        const [result] = await pool.query(
+            'INSERT INTO foro (id_usuario, titulo, descripcion, fecha_creacion) VALUES (?, ?, ?, NOW())',
+            [userId, title, content]
+        );
+        const newThreadId = result.insertId;
+        console.log(`Nuevo tema creado con ID: ${newThreadId}`);
+
+        const newThreadAuthorDetails = await getUserDetails(userId);
+
+        res.status(201).json({
+            message: 'Tema creado exitosamente!',
+            thread: {
+                id: newThreadId,
+                title: title,
+                author: newThreadAuthorDetails.nombre_usuario,
+                authorReputation: newThreadAuthorDetails.reputation,
+                date: new Date().toISOString().slice(0, 19).replace('T', ' '), // Fecha actual
+                content: content,
+                replies: 0 // Nuevo tema no tiene respuestas inicialmente
+            }
+        });
+    } catch (error) {
+        console.error('Error al crear un nuevo tema:', error);
+        res.status(500).json({ message: 'Error interno del servidor al crear el tema.', error: error.message });
+    }
+});
+
+// 4. AÑADIR UN MENSAJE (RESPUESTA) A UN TEMA
+app.post('/api/forum/threads/:id/replies', authenticateToken, async (req, res) => {
+    const threadId = req.params.id;
+    const userId = req.user.id_usuario;
+    const { content } = req.body;
+    console.log(`Solicitud POST /api/forum/threads/${threadId}/replies recibida para usuario: ${userId}`);
+
+    if (!content) {
+        console.log('Error 400: Contenido del mensaje faltante.');
+        return res.status(400).json({ message: 'El contenido del mensaje es obligatorio.' });
+    }
+
+    try {
+        // Verificar que el tema existe
+        const [threads] = await pool.query('SELECT id_foro FROM foro WHERE id_foro = ?', [threadId]);
+        if (threads.length === 0) {
+            console.log(`Error 404: Tema con ID ${threadId} no encontrado para añadir respuesta.`);
+            return res.status(404).json({ message: 'Tema no encontrado.' });
+        }
+
+        const [result] = await pool.query(
+            'INSERT INTO foro_mensaje (id_foro, id_usuario, contenido, fecha_publicacion) VALUES (?, ?, ?, NOW())',
+            [threadId, userId, content]
+        );
+        const newMessageId = result.insertId;
+        console.log(`Nuevo mensaje creado con ID: ${newMessageId} para tema ${threadId}.`);
+
+        const newReplyAuthorDetails = await getUserDetails(userId);
+
+        res.status(201).json({
+            message: 'Mensaje creado exitosamente!',
+            reply: {
+                id: newMessageId,
+                author: newReplyAuthorDetails.nombre_usuario,
+                authorReputation: newReplyAuthorDetails.reputation,
+                date: new Date().toISOString().slice(0, 19).replace('T', ' '), // Fecha actual
+                content: content,
+                likes: 0 // Nuevo mensaje no tiene likes inicialmente
+            }
+        });
+    } catch (error) {
+        console.error('Error al añadir un mensaje al tema:', error);
+        res.status(500).json({ message: 'Error interno del servidor al añadir el mensaje.', error: error.message });
+    }
+});
+
+// 5. AÑADIR/ELIMINAR UNA REACCIÓN (LIKE) A UN MENSAJE
+app.post('/api/forum/messages/:id/react', authenticateToken, async (req, res) => {
+    const messageId = req.params.id;
+    const userId = req.user.id_usuario;
+    const { type } = req.body; // Por ahora, solo usaremos 'like'
+
+    console.log(`Solicitud POST /api/forum/messages/${messageId}/react recibida para usuario: ${userId}, tipo: ${type}`);
+
+    if (!type || type !== 'like') { // Puedes expandir esto para otros tipos de reacción
+        console.log('Error 400: Tipo de reacción inválido.');
+        return res.status(400).json({ message: 'Tipo de reacción inválido. Solo se permite "like".' });
+    }
+
+    const connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    try {
+        // 1. Verificar si el usuario ya ha reaccionado a este mensaje con el mismo tipo
+        const [existingReaction] = await connection.query(
+            'SELECT id_reaccion FROM foro_reaccion WHERE id_mensaje = ? AND id_usuario = ? AND tipo_reaccion = ?',
+            [messageId, userId, type]
+        );
+
+        if (existingReaction.length > 0) {
+            // Si ya existe la reacción, la eliminamos (es como un "toggle" de like)
+            const reactionId = existingReaction[0].id_reaccion;
+            await connection.query('DELETE FROM foro_reaccion WHERE id_reaccion = ?', [reactionId]);
+            await connection.commit();
+            console.log(`Reacción eliminada de mensaje ${messageId} por usuario ${userId}.`);
+            return res.status(200).json({ message: 'Reacción eliminada exitosamente.', action: 'removed' });
+        } else {
+            // Si no existe, la creamos
+            await connection.query(
+                'INSERT INTO foro_reaccion (id_mensaje, id_usuario, tipo_reaccion, fecha_reaccion) VALUES (?, ?, ?, NOW())',
+                [messageId, userId, type]
+            );
+            await connection.commit();
+            console.log(`Reacción '${type}' añadida al mensaje ${messageId} por usuario ${userId}.`);
+            return res.status(201).json({ message: 'Reacción añadida exitosamente.', action: 'added' });
+        }
+
+    } catch (error) {
+        await connection.rollback();
+        console.error('Error al gestionar la reacción:', error);
+        res.status(500).json({ message: 'Error interno del servidor al gestionar la reacción.', error: error.message });
+    } finally {
+        connection.release();
+    }
+});
+
+// --- FIN DE LAS RUTAS DEL FORO ---
+
+// --- Inicia el servidor ---
+const PORT = process.env.PORT || 4000; // Se ajustó a 4000 según tu indicación
 app.listen(PORT, () => {
-    console.log(`Servidor backend corriendo en el puerto ${PORT}`);
-    console.log(`Accede a http://localhost:${PORT}`);
+    console.log(`Servidor Express corriendo en el puerto ${PORT}`);
+    console.log(`Accede a la API en http://localhost:${PORT}`);
 });
