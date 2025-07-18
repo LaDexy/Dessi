@@ -8,29 +8,34 @@ import PaginaForo from '@/Vistas/PaginaForo.vue';
 
 const routes = [
   {
-    path: '/', // La ruta raíz será para la página de inicio (no autenticada)
+    path: '/',
     name: 'Principal',
     component: PaginaPrincipal
   },
-  {
-    path: '/central', // Esta es la ruta para la página central (dashboard)
-    name: 'Central',
-    component: PaginaCentral,
-    meta: { requiresAuth: true } // Esta ruta requiere autenticación
-  },
-  {
-    path: '/perfil', // Ruta para la página de perfil del usuario
-    name: 'Perfil',
-    component: PaginaPerfil,
-    meta: { requiresAuth: true } // Esta ruta requiere autenticación
-  },
-  {
-    path: '/foro', // Ruta para la página del foro
-    name: 'Foro',
-    component: PaginaForo,
-    meta: { requiresAuth: true } // Esta ruta requiere autenticación
+  { // Agrega esta nueva ruta para /login
+    path: '/login',
+    name: 'Login', // Puedes darle un nombre específico si lo deseas
+    component: PaginaPrincipal // O tu componente de Login/Registro si es diferente
   },
   
+  {
+    path: '/central',
+    name: 'Central',
+    component: PaginaCentral,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/perfil',
+    name: 'Perfil',
+    component: PaginaPerfil,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/foro',
+    name: 'Foro',
+    component: PaginaForo,
+    meta: { requiresAuth: true }
+  },
 ];
 
 const router = createRouter({
@@ -38,28 +43,24 @@ const router = createRouter({
   routes
 });
 
-// Guardia de navegación global para proteger rutas
+// Guardia de navegación global (sin cambios aquí, ya que redirige a 'Principal')
 router.beforeEach((to, from, next) => {
   const userToken = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
 
-  // Si la ruta a la que se intenta acceder requiere autenticación
   if (to.meta.requiresAuth) {
     if (userToken) {
-      // Si el usuario está autenticado, permite el acceso a la ruta
       next();
     } else {
-      // Si no está autenticado, redirige a la página principal (login/registro)
       console.warn('Acceso denegado: Ruta protegida sin autenticación. Redirigiendo a Principal.');
-      next({ name: 'Principal' }); // Redirige por nombre de ruta
+      // Si realmente quieres que vaya a /login cuando no esté autenticado, cámbialo aquí:
+      // next({ name: 'Login' }); // Redirige al nombre 'Login'
+      next({ name: 'Principal' }); // Esto sigue siendo válido si Principal es tu login
     }
   } else {
-    // Si la ruta NO requiere autenticación (como la página principal '/')
-    // y el usuario YA está autenticado, redirige a la página central
-    if (userToken && to.name === 'Principal') {
+    if (userToken && (to.name === 'Principal' || to.name === 'Login')) { // Ajusta aquí si añades 'Login'
       console.log('Usuario ya autenticado. Redirigiendo a Central.');
       next({ name: 'Central' });
     } else {
-      // Si la ruta no requiere autenticación y el usuario no está autenticado (o ya está en otra ruta no protegida), permite el acceso
       next();
     }
   }
