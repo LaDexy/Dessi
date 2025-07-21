@@ -3,7 +3,6 @@
     <!--Componentes de pagina de perfil-->
 
     <ForoUsuarios/>
-    
 
   </div>
 </template>
@@ -19,7 +18,7 @@ export default{
 
     components: {
 
-        ForoUsuarios
+        ForoUsuarios,
     
   }
 

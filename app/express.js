@@ -120,11 +120,9 @@ app.post('/api/register', async (req, res) => {
 
         try {
             console.log('Insertando usuario principal...');
-            // Se añaden foto_perfil_url y descripcion_perfil a la inserción con valores por defecto
-            // CAMBIO CLAVE AQUÍ: Usamos '' (cadena vacía) en lugar de null para evitar el error NOT NULL
             const [userResult] = await connection.query(
-                'INSERT INTO usuarios (nombre_usuario, correo_electronico, contrasena_hash, tipo_perfil, fecha_registro, foto_perfil_url, descripcion_perfil) VALUES (?, ?, ?, ?, NOW(), ?, ?)',
-                [nombre_usuario, correo_electronico, contrasena_hash, tipo_perfil, '', ''] // Valores por defecto: cadena vacía
+                'INSERT INTO usuarios (nombre_usuario, correo_electronico, contrasena_hash, tipo_perfil, fecha_registro, foto_perfil_url, descripcion_perfil, reputacion) VALUES (?, ?, ?, ?, NOW(), ?, ?, ?)',
+                [nombre_usuario, correo_electronico, contrasena_hash, tipo_perfil, '', '', 0] // Valores por defecto para foto, descripción y reputación
             );
             const id_usuario = userResult.insertId;
             console.log('Usuario principal insertado. ID:', id_usuario);
@@ -208,7 +206,7 @@ app.post('/api/login', async (req, res) => {
         const token = jwt.sign(
             { id_usuario: user.id_usuario, tipo_perfil: user.tipo_perfil, nombre_usuario: user.nombre_usuario },
             JWT_SECRET,
-            { expiresIn: '24h' } // Cambiado de '1h' a '24h' (o más si lo necesitas para pruebas)
+            { expiresIn: '24h' }
         );
         console.log('JWT generado. Enviando respuesta de login.');
 
@@ -370,7 +368,6 @@ app.patch('/api/profile/description', authenticateToken, async (req, res) => {
 });
 
 // --- RUTA: SUBIR MÚLTIPLES IMÁGENES AL PORTAFOLIO ---
-// 'portfolioImages' es el nombre del campo esperado en el FormData del frontend
 app.post('/api/upload-portfolio-images', authenticateToken, upload.array('portfolioImages', 10), async (req, res) => {
     console.log('Solicitud POST /api/upload-portfolio-images recibida para usuario:', req.user.id_usuario);
     const userId = req.user.id_usuario;
@@ -510,7 +507,7 @@ app.post('/api/challenges', authenticateToken, async (req, res) => {
     }
 
     // 2. Validación de campos del desafío
-    const { nombre_desafio, descripcion_desafio, beneficios, duracion_dias } = req.body; // Mover la desestructuración aquí
+    const { nombre_desafio, descripcion_desafio, beneficios, duracion_dias } = req.body;
 
     if (!nombre_desafio || !descripcion_desafio || !beneficios || !duracion_dias) {
         console.warn('Error 400: Campos de desafío incompletos.');
@@ -598,7 +595,6 @@ app.get('/api/challenges/me', authenticateToken, async (req, res) => {
     }
 });
 
-
 // --- NUEVA RUTA: OBTENER TODOS LOS PERFILES (EXCEPTO EL DEL USUARIO LOGUEADO) ---
 app.get('/api/profiles', authenticateToken, async (req, res) => {
     console.log('Solicitud GET /api/profiles recibida para usuario:', req.user.id_usuario);
@@ -663,14 +659,6 @@ app.get('/api/profiles', authenticateToken, async (req, res) => {
                 descripcion_perfil: description,
                 profession: profession, // Nombre del negocio o tipo de profesional
                 location: location, // Localidad específica
-                // Incluir campos específicos si existen
-                ...(profile.tipo_perfil === 'Emprendedor' && {
-                    nombre_negocio: profile.nombre_negocio,
-                    tipo_negocio: profile.tipo_negocio
-                }),
-                ...( (profile.tipo_perfil === 'Diseñador' || profile.tipo_perfil === 'Marketing') && {
-                    modalidad_trabajo: profile.modalidad_trabajo
-                })
             };
         });
         res.status(200).json(formattedProfiles);
@@ -681,292 +669,167 @@ app.get('/api/profiles', authenticateToken, async (req, res) => {
     }
 });
 
+// --- RUTAS DEL FORO ---
 
-// --- INICIO DE LAS RUTAS DEL FORO ---
-
-// Helper para obtener el nombre de usuario y reputación (ajusta según tu tabla de usuarios)
-// Asumo que tu tabla 'usuarios' tiene 'nombre_usuario' y quizás una columna de 'reputacion'
-async function getUserDetails(userId) {
-    try {
-        const [users] = await pool.query(
-            'SELECT nombre_usuario, tipo_perfil FROM usuarios WHERE id_usuario = ?',
-            [userId]
-        );
-        if (users.length > 0) {
-            // Puedes añadir una lógica de reputación aquí si tienes una columna 'reputacion'
-            // Por ahora, simularemos una reputación basada en el tipo de perfil
-            let reputation = 0;
-            if (users[0].tipo_perfil === 'Emprendedor') {
-                reputation = 100; // Ejemplo
-            } else if (users[0].tipo_perfil === 'Diseñador') {
-                reputation = 80; // Ejemplo
-            } else if (users[0].tipo_perfil === 'Marketing') {
-                reputation = 70; // Ejemplo
-            } else {
-                reputation = 50; // Usuario general
-            }
-            return {
-                nombre_usuario: users[0].nombre_usuario,
-                reputation: reputation
-            };
-        }
-        return { nombre_usuario: 'Usuario Desconocido', reputation: 0 };
-    } catch (error) {
-        console.error('Error al obtener detalles del usuario:', error);
-        return { nombre_usuario: 'Usuario Desconocido', reputation: 0 };
-    }
-}
-
-// 1. OBTENER TODOS LOS TEMAS DEL FORO (THREADS)
+// 1. Ruta para obtener TODOS los temas del foro
 app.get('/api/forum/threads', async (req, res) => {
-    console.log('Solicitud GET /api/forum/threads recibida.');
     try {
-        const [threads] = await pool.query(
-            `SELECT
-                f.id_foro,
-                f.id_usuario,
-                f.titulo,
-                f.descripcion,
-                f.fecha_creacion,
-                COUNT(fm.id_mensaje) AS replies_count
+        const [threads] = await pool.query(`
+            SELECT
+                f.id_foro AS id,
+                f.titulo AS title,
+                f.descripcion AS content,
+                u.nombre_usuario AS author,
+                f.fecha_creacion AS date,
+                (SELECT COUNT(*) FROM foro_mensaje fr WHERE fr.id_foro = f.id_foro) AS replies_count
             FROM
                 foro f
-            LEFT JOIN
-                foro_mensaje fm ON f.id_foro = fm.id_foro
-            GROUP BY
-                f.id_foro
+            JOIN
+                usuarios u ON f.id_usuario = u.id_usuario
             ORDER BY
-                f.fecha_creacion DESC`
-        );
+                f.fecha_creacion DESC
+        `);
 
-        const formattedThreads = await Promise.all(threads.map(async (thread) => {
-            const authorDetails = await getUserDetails(thread.id_usuario);
-            return {
-                id: thread.id_foro,
-                title: thread.titulo,
-                author: authorDetails.nombre_usuario,
-                authorReputation: authorDetails.reputation,
-                date: thread.fecha_creacion,
-                content: thread.descripcion, // El contenido principal del thread
-                replies: thread.replies_count // Cantidad de respuestas
-            };
+        const formattedThreads = threads.map(thread => ({
+            id: thread.id,
+            title: thread.title,
+            content: thread.content,
+            author: thread.author,
+            date: thread.date,
+            // authorReputation: thread.authorReputation || 0, // Eliminada esta línea
+            replies: thread.replies_count
         }));
 
-        console.log(`Se encontraron ${formattedThreads.length} temas.`);
         res.status(200).json(formattedThreads);
     } catch (error) {
-        console.error('Error al obtener temas del foro:', error);
+        console.error('Error al obtener los temas del foro:', error);
         res.status(500).json({ message: 'Error interno del servidor al obtener temas del foro.', error: error.message });
     }
 });
 
-// 2. OBTENER UN TEMA ESPECÍFICO Y SUS MENSAJES (REPLIES)
+// 2. Ruta para CREAR un nuevo tema del foro (requiere autenticación)
+app.post('/api/forum/threads', authenticateToken, async (req, res) => {
+    console.log('Solicitud POST /api/forum/threads recibida para usuario:', req.user.id_usuario);
+    const userId = req.user.id_usuario; // ID del usuario autenticado
+    const { title, content } = req.body; // El frontend envía 'content'
+
+    if (!title || !content) {
+        return res.status(400).json({ message: 'El título y el contenido del tema son obligatorios.' });
+    }
+
+    try {
+        const [result] = await pool.query(
+            'INSERT INTO foro (id_usuario, titulo, descripcion, fecha_creacion) VALUES (?, ?, ?, NOW())', // ¡CAMBIADO: de 'contenido' a 'descripcion'!
+            [userId, title, content] // 'content' del frontend se mapea a 'descripcion' en la DB
+        );
+
+        const newThreadId = result.insertId;
+        console.log(`Tema de foro creado exitosamente por usuario ${userId}. ID: ${newThreadId}`);
+        res.status(201).json({ message: 'Tema creado exitosamente', threadId: newThreadId });
+
+    } catch (error) {
+        console.error('Error al crear el tema del foro:', error);
+        res.status(500).json({ message: 'Error interno del servidor al crear el tema.', error: error.message });
+    }
+});
+
+// 3. Ruta para obtener un TEMA ESPECÍFICO del foro por ID
 app.get('/api/forum/threads/:id', async (req, res) => {
     const threadId = req.params.id;
     console.log(`Solicitud GET /api/forum/threads/${threadId} recibida.`);
 
     try {
-        const [threads] = await pool.query(
-            'SELECT id_foro, id_usuario, titulo, descripcion, fecha_creacion FROM foro WHERE id_foro = ?',
-            [threadId]
-        );
+        // Obtener el tema principal
+        const [threads] = await pool.query(`
+            SELECT
+                f.id_foro AS id,
+                f.titulo AS title,
+                f.descripcion AS content,
+                u.nombre_usuario AS author,
+                f.fecha_creacion AS date
+            FROM
+                foro f
+            JOIN
+                usuarios u ON f.id_usuario = u.id_usuario
+            WHERE
+                f.id_foro = ?
+        `, [threadId]);
 
         if (threads.length === 0) {
-            console.log(`Error 404: Tema con ID ${threadId} no encontrado.`);
-            return res.status(404).json({ message: 'Tema no encontrado.' });
+            console.log(`Tema con ID ${threadId} no encontrado.`);
+            return res.status(404).json({ message: 'Tema del foro no encontrado.' });
         }
 
         const thread = threads[0];
-        const threadAuthorDetails = await getUserDetails(thread.id_usuario);
 
-        // Obtener todos los mensajes (replies) para este tema
-        const [messages] = await pool.query(
-            `SELECT
-                fm.id_mensaje,
-                fm.id_usuario,
-                fm.contenido,
-                fm.fecha_publicacion,
-                (SELECT COUNT(*) FROM foro_reaccion fr WHERE fr.id_mensaje = fm.id_mensaje AND fr.tipo_reaccion = 'like') as likes_count
+        // Obtener las respuestas para ese tema
+        const [replies] = await pool.query(`
+            SELECT
+                fr.id_mensaje AS id,
+                fr.contenido AS content,
+                u.nombre_usuario AS author,
+                fr.fecha_publicacion AS date
             FROM
-                foro_mensaje fm
+                foro_mensaje fr
+            JOIN
+                usuarios u ON fr.id_usuario = u.id_usuario
             WHERE
-                fm.id_foro = ?
+                fr.id_foro = ?
             ORDER BY
-                fm.fecha_publicacion ASC`,
-            [threadId]
-        );
+                fr.fecha_publicacion ASC
+        `, [threadId]);
 
-        const formattedMessages = await Promise.all(messages.map(async (message) => {
-            const authorDetails = await getUserDetails(message.id_usuario);
-            return {
-                id: message.id_mensaje,
-                author: authorDetails.nombre_usuario,
-                authorReputation: authorDetails.reputation,
-                date: message.fecha_publicacion,
-                content: message.contenido,
-                likes: message.likes_count // Número de likes
-            };
-        }));
+        // Añadir las respuestas al objeto del tema
+        thread.replies = replies;
 
-        const formattedThread = {
-            id: thread.id_foro,
-            title: thread.titulo,
-            author: threadAuthorDetails.nombre_usuario,
-            authorReputation: threadAuthorDetails.reputation,
-            date: thread.fecha_creacion,
-            content: thread.descripcion,
-            replies: formattedMessages
-        };
-
-        console.log(`Tema ${threadId} y sus ${formattedMessages.length} mensajes obtenidos.`);
-        res.status(200).json(formattedThread);
+        console.log(`Detalles del tema ${threadId} y sus respuestas obtenidos.`);
+        res.status(200).json(thread);
 
     } catch (error) {
-        console.error(`Error al obtener el tema ${threadId}:`, error);
-        res.status(500).json({ message: 'Error interno del servidor al obtener el tema.', error: error.message });
+        console.error(`Error al obtener el tema ${threadId} o sus respuestas:`, error);
+        res.status(500).json({ message: 'Error interno del servidor al obtener el tema del foro.', error: error.message });
     }
 });
 
-// 3. CREAR UN NUEVO TEMA EN EL FORO
-app.post('/api/forum/threads', authenticateToken, async (req, res) => {
-    console.log('Solicitud POST /api/forum/threads recibida para usuario:', req.user.id_usuario);
-    const userId = req.user.id_usuario;
-    const { title, content } = req.body;
-
-    if (!title || !content) {
-        console.log('Error 400: Título o contenido del tema faltante.');
-        return res.status(400).json({ message: 'Título y contenido son obligatorios para crear un tema.' });
-    }
-
-    try {
-        const [result] = await pool.query(
-            'INSERT INTO foro (id_usuario, titulo, descripcion, fecha_creacion) VALUES (?, ?, ?, NOW())',
-            [userId, title, content]
-        );
-        const newThreadId = result.insertId;
-        console.log(`Nuevo tema creado con ID: ${newThreadId}`);
-
-        const newThreadAuthorDetails = await getUserDetails(userId);
-
-        res.status(201).json({
-            message: 'Tema creado exitosamente!',
-            thread: {
-                id: newThreadId,
-                title: title,
-                author: newThreadAuthorDetails.nombre_usuario,
-                authorReputation: newThreadAuthorDetails.reputation,
-                date: new Date().toISOString().slice(0, 19).replace('T', ' '), // Fecha actual
-                content: content,
-                replies: 0 // Nuevo tema no tiene respuestas inicialmente
-            }
-        });
-    } catch (error) {
-        console.error('Error al crear un nuevo tema:', error);
-        res.status(500).json({ message: 'Error interno del servidor al crear el tema.', error: error.message });
-    }
-});
-
-// 4. AÑADIR UN MENSAJE (RESPUESTA) A UN TEMA
+// 4. Ruta para añadir una RESPUESTA a un tema (requiere autenticación)
 app.post('/api/forum/threads/:id/replies', authenticateToken, async (req, res) => {
     const threadId = req.params.id;
-    const userId = req.user.id_usuario;
+    const userId = req.user.id_usuario; // ID del usuario del token
     const { content } = req.body;
-    console.log(`Solicitud POST /api/forum/threads/${threadId}/replies recibida para usuario: ${userId}`);
 
     if (!content) {
-        console.log('Error 400: Contenido del mensaje faltante.');
-        return res.status(400).json({ message: 'El contenido del mensaje es obligatorio.' });
+        return res.status(400).json({ message: 'El contenido de la respuesta es obligatorio.' });
     }
 
     try {
-        // Verificar que el tema existe
+        // Verificar si el tema existe
         const [threads] = await pool.query('SELECT id_foro FROM foro WHERE id_foro = ?', [threadId]);
         if (threads.length === 0) {
-            console.log(`Error 404: Tema con ID ${threadId} no encontrado para añadir respuesta.`);
-            return res.status(404).json({ message: 'Tema no encontrado.' });
+            return res.status(404).json({ message: 'El tema al que intentas responder no existe.' });
         }
 
         const [result] = await pool.query(
             'INSERT INTO foro_mensaje (id_foro, id_usuario, contenido, fecha_publicacion) VALUES (?, ?, ?, NOW())',
             [threadId, userId, content]
         );
-        const newMessageId = result.insertId;
-        console.log(`Nuevo mensaje creado con ID: ${newMessageId} para tema ${threadId}.`);
 
-        const newReplyAuthorDetails = await getUserDetails(userId);
+        const newReplyId = result.insertId;
+        console.log(`Respuesta añadida al tema ${threadId} por usuario ${userId}. ID: ${newReplyId}`);
+        res.status(201).json({ message: 'Respuesta publicada exitosamente', replyId: newReplyId });
 
-        res.status(201).json({
-            message: 'Mensaje creado exitosamente!',
-            reply: {
-                id: newMessageId,
-                author: newReplyAuthorDetails.nombre_usuario,
-                authorReputation: newReplyAuthorDetails.reputation,
-                date: new Date().toISOString().slice(0, 19).replace('T', ' '), // Fecha actual
-                content: content,
-                likes: 0 // Nuevo mensaje no tiene likes inicialmente
-            }
-        });
     } catch (error) {
-        console.error('Error al añadir un mensaje al tema:', error);
-        res.status(500).json({ message: 'Error interno del servidor al añadir el mensaje.', error: error.message });
+        console.error('Error al añadir respuesta al tema:', error);
+        res.status(500).json({ message: 'Error interno del servidor al añadir respuesta.', error: error.message });
     }
 });
 
-// 5. AÑADIR/ELIMINAR UNA REACCIÓN (LIKE) A UN MENSAJE
-app.post('/api/forum/messages/:id/react', authenticateToken, async (req, res) => {
-    const messageId = req.params.id;
-    const userId = req.user.id_usuario;
-    const { type } = req.body; // Por ahora, solo usaremos 'like'
-
-    console.log(`Solicitud POST /api/forum/messages/${messageId}/react recibida para usuario: ${userId}, tipo: ${type}`);
-
-    if (!type || type !== 'like') { // Puedes expandir esto para otros tipos de reacción
-        console.log('Error 400: Tipo de reacción inválido.');
-        return res.status(400).json({ message: 'Tipo de reacción inválido. Solo se permite "like".' });
-    }
-
-    const connection = await pool.getConnection();
-    await connection.beginTransaction();
-
-    try {
-        // 1. Verificar si el usuario ya ha reaccionado a este mensaje con el mismo tipo
-        const [existingReaction] = await connection.query(
-            'SELECT id_reaccion FROM foro_reaccion WHERE id_mensaje = ? AND id_usuario = ? AND tipo_reaccion = ?',
-            [messageId, userId, type]
-        );
-
-        if (existingReaction.length > 0) {
-            // Si ya existe la reacción, la eliminamos (es como un "toggle" de like)
-            const reactionId = existingReaction[0].id_reaccion;
-            await connection.query('DELETE FROM foro_reaccion WHERE id_reaccion = ?', [reactionId]);
-            await connection.commit();
-            console.log(`Reacción eliminada de mensaje ${messageId} por usuario ${userId}.`);
-            return res.status(200).json({ message: 'Reacción eliminada exitosamente.', action: 'removed' });
-        } else {
-            // Si no existe, la creamos
-            await connection.query(
-                'INSERT INTO foro_reaccion (id_mensaje, id_usuario, tipo_reaccion, fecha_reaccion) VALUES (?, ?, ?, NOW())',
-                [messageId, userId, type]
-            );
-            await connection.commit();
-            console.log(`Reacción '${type}' añadida al mensaje ${messageId} por usuario ${userId}.`);
-            return res.status(201).json({ message: 'Reacción añadida exitosamente.', action: 'added' });
-        }
-
-    } catch (error) {
-        await connection.rollback();
-        console.error('Error al gestionar la reacción:', error);
-        res.status(500).json({ message: 'Error interno del servidor al gestionar la reacción.', error: error.message });
-    } finally {
-        connection.release();
-    }
+// Ruta de prueba
+app.get('/', (req, res) => {
+    res.send('API de Convenio de Emprendimiento funcionando!');
 });
 
-// --- FIN DE LAS RUTAS DEL FORO ---
-
-// --- Inicia el servidor ---
-const PORT = process.env.PORT || 4000; // Se ajustó a 4000 según tu indicación
+// Inicio del servidor
+const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
     console.log(`Servidor Express corriendo en el puerto ${PORT}`);
-    console.log(`Accede a la API en http://localhost:${PORT}`);
 });

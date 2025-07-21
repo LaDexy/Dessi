@@ -4,6 +4,7 @@ import PaginaPrincipal from '../Vistas/PaginaPrincipal.vue';
 import PaginaCentral from '../Vistas/PaginaCentral.vue';
 import PaginaPerfil from '@/Vistas/PaginaPerfil.vue';
 import PaginaForo from '@/Vistas/PaginaForo.vue';
+import ForoInteraccion from '@/components/ForoInteraccion.vue';
 
 
 const routes = [
@@ -36,6 +37,14 @@ const routes = [
     component: PaginaForo,
     meta: { requiresAuth: true }
   },
+   {
+    // NUEVA RUTA para el detalle de un tema específico
+    path: '/foro/:id', // :id es un parámetro dinámico que capturará el ID del tema
+    name: 'ThreadDetail', // Este es el nombre que usarás en router.push de ForoUsuarios.vue
+    component: ForoInteraccion, // <--- Carga ForoInteraccion.vue para mostrar el detalle del tema
+    props: true, // Importante: Esto pasa el 'id' de la URL como una prop al componente ForoInteraccion
+    meta: { requiresAuth: true }
+  }
 ];
 
 const router = createRouter({
