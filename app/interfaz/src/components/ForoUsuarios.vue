@@ -1,7 +1,15 @@
 <template>
-  <div class="RectanguloForo"> <header class="forum-header"> <h1 class="titulo-foro">Foro de la Comunidad</h1> </header>
+  <div class="RectanguloForo">
+    <header class="forum-header">
+      <h1 class="titulo-foro">Foro de la Comunidad</h1>
+    </header>
 
-    <main class="forum-content"> <section class="ListaTemas"> <div class="titulo-temas"> <h2 class="Seccion">Temas Recientes</h2> <button @click="openNewThreadModal" class="NuevoTema"> Crear Nuevo Tema
+    <main class="forum-content">
+      <section class="ListaTemas">
+        <div class="titulo-temas">
+          <h2 class="Seccion">Temas Recientes</h2>
+          <button @click="openNewThreadModal" class="NuevoTema">
+            Crear Nuevo Tema
           </button>
         </div>
 
@@ -12,8 +20,11 @@
           No hay temas en el foro aún. ¡Sé el primero en crear uno!
         </div>
 
-        <ul class="TarjetasTemas"> <li v-for="thread in threads" :key="thread.id" class="TarjetaIndividual"> <h3 @click="goToThreadDetail(thread.id)">{{ thread.title }}</h3>
-            <p class="InfoAutor"> Publicado por
+        <ul class="TarjetasTemas">
+          <li v-for="thread in threads" :key="thread.id" class="TarjetaIndividual">
+            <h3 @click="goToThreadDetail(thread.id)">{{ thread.title }}</h3>
+            <p class="InfoAutor">
+              Publicado por
               <span class="author-name">{{ thread.author }}</span>
               <span v-if="thread.authorReputation" class="reputacion-icono">({{ thread.authorReputation }} Rep.)</span> el {{ formatDate(thread.date) }}
             </p>
@@ -76,9 +87,10 @@ export default {
     this.fetchThreads();
   },
   methods: {
-    // Método para obtener el token JWT del localStorage
+    // Método para obtener el token JWT del almacenamiento (localStorage o sessionStorage)
     getToken() {
-      return localStorage.getItem('userToken');
+      // ESTA ES LA LÍNEA CLAVE QUE DEBES CAMBIAR
+      return localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
     },
 
     // Método para obtener todos los temas del foro
@@ -101,6 +113,7 @@ export default {
     // Método para abrir el modal de creación de nuevo tema
     openNewThreadModal() {
       const token = this.getToken();
+      // console.log('Token en openNewThreadModal:', token); // Descomenta para depuración
       if (!token) {
         alert('Debes iniciar sesión para crear un nuevo tema.');
         router.push('/login'); // Redirige a la página de login
@@ -121,6 +134,7 @@ export default {
       this.creatingThread = true;
       try {
         const token = this.getToken();
+        // console.log('Token en createNewThread:', token); // Descomenta para depuración
         if (!token) {
           alert('No estás autenticado. Por favor, inicia sesión.');
           router.push('/login');
@@ -166,8 +180,6 @@ export default {
 
     // Método para navegar a la página de detalles de un tema
     goToThreadDetail(threadId) {
-      // Asume que tienes una ruta configurada en tu Vue Router
-      // por ejemplo: { path: '/foro/:id', name: 'ThreadDetail', component: ThreadDetailComponent }
       router.push({ name: 'ThreadDetail', params: { id: threadId } });
     },
   },
