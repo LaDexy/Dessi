@@ -134,7 +134,7 @@ app.post('/api/register', async (req, res) => {
                 const tipoNegocioString = Array.isArray(tipo_negocio) ? tipo_negocio.join(',') : tipo_negocio;
                 console.log('Insertando datos de Emprendedor:', { id_usuario, nombre_negocio, localidad, tipoNegocioString });
                 await connection.query(
-                    'INSERT INTO emprendedor (id_usuario, nombre_negocio, localidad, tipo_negocio) VALUES (?, ?, ?, ?)',
+                    'INSERT INTO emprendedor (id_usuario, nombre_negocio, localidad, tipo_negocio, desafios_cuenta) VALUES (?, ?, ?, ?, 0)', // <--- CORREGIDO: desafios_cuenta
                     [id_usuario, nombre_negocio, localidad, tipoNegocioString]
                 );
                 console.log('Datos de Emprendedor insertados.');
@@ -250,7 +250,7 @@ app.get('/api/profile/me', authenticateToken, async (req, res) => {
         if (userProfileType === 'Emprendedor') {
             console.log('Consultando datos de emprendedor...');
             const [emprendedorData] = await pool.query(
-                'SELECT nombre_negocio, localidad, tipo_negocio FROM emprendedor WHERE id_usuario = ?',
+                'SELECT nombre_negocio, localidad, tipo_negocio, desafios_cuenta FROM emprendedor WHERE id_usuario = ?', // <--- CORREGIDO: desafios_cuenta
                 [userId]
             );
             if (emprendedorData.length > 0) {
@@ -288,7 +288,7 @@ app.get('/api/profile/me', authenticateToken, async (req, res) => {
             if (row.id_imagen) {
                 acc[row.id_proyecto].imagenes.push({
                     id_imagen: row.id_imagen,
-                    url_imagen: `${req.protocol}://${req.get('host')}/uploads/${row.url_imagen}`,
+                    url_imagen: `${req.protocol}://${req.get('host')}${row.url_imagen}`,
                     descripcion_imagen: row.descripcion_imagen
                 });
             }
@@ -518,34 +518,48 @@ app.post('/api/challenges', authenticateToken, async (req, res) => {
         return res.status(400).json({ message: 'La duración del desafío debe ser un número positivo de días.' });
     }
 
+    const connection = await pool.getConnection(); // Obtener conexión aquí para la transacción
+    await connection.beginTransaction(); // Iniciar transacción
+
     try {
-        // 3. Obtener el id_emprendedor a partir del id_usuario
-        console.log('Buscando id_emprendedor para id_usuario:', userId);
-        const [emprendedorResult] = await pool.query(
-            'SELECT id_emprendedor FROM emprendedor WHERE id_usuario = ?',
+        // 3. Obtener el id_emprendedor y el contador de desafíos creados
+        console.log('Buscando id_emprendedor y contador de desafíos para id_usuario:', userId);
+        const [emprendedorResult] = await connection.query( // Usar 'connection' para la transacción
+            'SELECT id_emprendedor, desafios_cuenta FROM emprendedor WHERE id_usuario = ?', // <--- CORREGIDO: desafios_cuenta
             [userId]
         );
 
         if (emprendedorResult.length === 0) {
             console.warn('Error 404: No se encontró el id_emprendedor asociado al id_usuario.', userId);
+            await connection.rollback(); // Revertir transacción
             return res.status(404).json({ message: 'No se encontró el perfil de emprendedor asociado a este usuario.' });
         }
-        const id_emprendedor = emprendedorResult[0].id_emprendedor;
-        console.log('id_emprendedor encontrado:', id_emprendedor);
+        const { id_emprendedor, desafios_cuenta } = emprendedorResult[0]; // <--- CORREGIDO: desafios_cuenta
+        console.log('id_emprendedor encontrado:', id_emprendedor, 'Desafíos creados:', desafios_cuenta); // <--- CORREGIDO: desafios_cuenta
 
-        // --- NUEVA LÓGICA: VERIFICAR SI YA TIENE UN DESAFÍO ACTIVO ---
+        // --- LÓGICA: VERIFICAR LÍMITE DE DESAFÍOS GRATUITOS ---
+        const MAX_FREE_CHALLENGES = 3;
+        if (desafios_cuenta >= MAX_FREE_CHALLENGES) { // <--- CORREGIDO: desafios_cuenta
+            console.warn('Error 402: El emprendedor ha alcanzado el límite de desafíos gratuitos.');
+            await connection.rollback(); // Revertir transacción
+            return res.status(402).json({ message: `Has alcanzado el límite de ${MAX_FREE_CHALLENGES} desafíos gratuitos. Por favor, realiza un pago para crear más desafíos.` });
+        }
+        // --- FIN LÓGICA LÍMITE ---
+
+        // --- LÓGICA: VERIFICAR SI YA TIENE UN DESAFÍO ACTIVO (EXISTENTE) ---
         console.log('Verificando desafíos activos para id_emprendedor:', id_emprendedor);
-        const [activeChallenges] = await pool.query(
+        const [activeChallenges] = await connection.query( // Usar 'connection' para la transacción
             'SELECT id_desafio FROM desafios WHERE id_emprendedor = ? AND fecha_fin >= CURDATE()',
             [id_emprendedor]
         );
 
         if (activeChallenges.length > 0) {
             console.warn('Error 409: El emprendedor ya tiene un desafío activo y no puede crear otro.');
+            await connection.rollback(); // Revertir transacción
             return res.status(409).json({ message: 'Ya tienes un desafío activo. Debes esperar a que finalice para crear uno nuevo.' });
         }
         console.log('No se encontraron desafíos activos. Procediendo a crear el nuevo desafío.');
-        // --- FIN NUEVA LÓGICA ---
+        // --- FIN LÓGICA EXISTENTE ---
 
         // 4. Calcular fecha_fin
         const fechaCreacion = new Date();
@@ -553,17 +567,34 @@ app.post('/api/challenges', authenticateToken, async (req, res) => {
         fechaFin.setDate(fechaCreacion.getDate() + duracion_dias);
 
         // 5. Insertar el desafío en la tabla 'desafios'
-        const [result] = await pool.query(
+        const [result] = await connection.query( // Usar 'connection' para la transacción
             'INSERT INTO desafios (id_emprendedor, nombre_desafio, descripcion_desafio, beneficios, dias_duracion, fecha_creacion, fecha_fin) VALUES (?, ?, ?, ?, ?, ?, ?)',
             [id_emprendedor, nombre_desafio, descripcion_desafio, beneficios, duracion_dias, fechaCreacion, fechaFin]
         );
 
+        // 6. Incrementar el contador de desafíos creados para el emprendedor
+        await connection.query( // Usar 'connection' para la transacción
+            'UPDATE emprendedor SET desafios_cuenta = desafios_cuenta + 1 WHERE id_emprendedor = ?', // <--- CORREGIDO: desafios_cuenta
+            [id_emprendedor]
+        );
+        console.log('Contador de desafíos creados incrementado.');
+
+        await connection.commit(); // Confirmar transacción
         console.log(`Desafío creado exitosamente para id_emprendedor ${id_emprendedor}. ID: ${result.insertId}`);
-        res.status(201).json({ message: 'Desafío creado exitosamente!', id_desafio: result.insertId });
+
+        // Devolver el nuevo contador para que el frontend lo use
+        res.status(201).json({
+            message: 'Desafío creado exitosamente!',
+            id_desafio: result.insertId,
+            desafios_restantes_gratuitos: MAX_FREE_CHALLENGES - (desafios_cuenta + 1) // <--- CORREGIDO: desafios_cuenta
+        });
 
     } catch (error) {
+        await connection.rollback(); // Revertir transacción en caso de error
         console.error('Error al crear el desafío en la DB:', error);
         res.status(500).json({ message: 'Error interno del servidor al crear el desafío.', error: error.message });
+    } finally {
+        connection.release(); // Liberar conexión
     }
 });
 
@@ -595,7 +626,7 @@ app.get('/api/challenges/me', authenticateToken, async (req, res) => {
         console.log('id_emprendedor encontrado para obtener desafíos:', id_emprendedor);
 
         // 3. Obtener los desafíos asociados a ese id_emprendedor
-        // ¡ESTA ES LA LÍNEA CLAVE CON EL FILTRO PARA DESAFÍOS NO EXPIRADOS!
+        // FILTRO: SOLO LOS DESAFÍOS CUYA FECHA DE FIN ES HOY O EN EL FUTURO
         const [challenges] = await pool.query(
             'SELECT id_desafio, id_emprendedor, nombre_desafio, descripcion_desafio, beneficios, dias_duracion, fecha_creacion, fecha_fin, estado FROM desafios WHERE id_emprendedor = ? AND fecha_fin >= CURDATE() ORDER BY fecha_creacion DESC',
             [id_emprendedor]
