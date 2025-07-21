@@ -27,7 +27,7 @@
     />
 
     <!-- Botones para los desafíos -->
-    <BotonesDesafios @MostrarRegistro="MostrarRegistro" />
+    <BotonesDesafios v-if="userProfile === 'Emprendedor'" @MostrarRegistro="MostrarRegistro" />
     
     <!-- Sección de carga de portafolio y componente PortafolioPerfil -->
     <div class="portfolio-section-wrapper">
