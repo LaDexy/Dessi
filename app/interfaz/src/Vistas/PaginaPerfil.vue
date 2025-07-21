@@ -35,6 +35,10 @@
       <PortafolioPerfil :projects="userProjects" />
     </div>
 
+    <!--Icono de archivo para subir archivos de portafolio-->
+
+    <IconoPortafolio/>
+
     <!-- Modales de desafíos (se muestran/ocultan según el estado) -->
     <CrearDesafio
       v-if="CrearDesafioNuevo"
@@ -62,6 +66,7 @@ import TipoPerfil from "../components/TipoPerfil.vue";
 import PortafolioPerfil from "../components/PortafolioPerfil.vue";
 import BotonesDesafios from "../components/BotonesDesafios.vue";
 import IconoCamara from "@/components/IconoCamara.vue";
+import IconoPortafolio from "@/components/IconoPortafolio.vue";
 import axios from "axios";
 
 export default {
@@ -88,6 +93,7 @@ export default {
     PortafolioPerfil,
     BotonesDesafios,
     IconoCamara,
+    IconoPortafolio
   },
   mounted() {
     this.loadUserProfileData();
