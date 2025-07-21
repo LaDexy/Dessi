@@ -10,7 +10,7 @@
 
             <div class="content">
 
-                <div @click="$emit('MostrarRegistro', 'DesafiosNuevos')"><a>Crear desafio</a></div>
+                <div @click="$emit('MostrarRegistro', 'DesafiosNuevos')"><a><i class="fa-solid fa-crown" style="color: #d6bb5f;"></i>Crear desafio</a></div>
                 <div @click="$emit('MostrarRegistro', 'DesafiosCreados')"><a>Ver mis desafio</a></div>
 
             </div>
