@@ -9,6 +9,7 @@ import path from 'path'; // Para manejar rutas de archivos
 import { fileURLToPath } from 'url'; // Para obtener __dirname en ES Modules
 import fs from 'fs'; // Para crear directorios si no existen
 
+// Obtener __filename y __dirname para entornos ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -26,6 +27,7 @@ app.use(cors({
 
 app.use(express.json()); // Permite a Express parsear cuerpos de solicitud JSON
 app.use(express.urlencoded({ extended: true })); // Para formularios URL-encoded
+
 // Sirve archivos estáticos desde la carpeta 'uploads' (donde guardaremos las imágenes de perfil/proyectos)
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -44,6 +46,8 @@ const dbConfig = {
 const pool = mysql.createPool(dbConfig);
 
 // Clave secreta para firmar los JWT
+// ¡IMPORTANTE! Asegúrate de que esta clave sea la misma que usas al generar tokens
+// y que sea un valor seguro y largo en un entorno de producción (ej. desde variables de entorno).
 const JWT_SECRET = 'tu_super_secreto_jwt_muy_seguro_y_largo_1234567890'; // Asegúrate de haberla cambiado
 
 // Configuración de Multer para la carga de archivos
@@ -61,7 +65,9 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// Middleware para verificar el token JWT
+// --- MIDDLEWARES DE AUTENTICACIÓN Y AUTORIZACIÓN ---
+
+// Middleware para verificar el token JWT (ya lo tenías)
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; // Formato: Bearer TOKEN
@@ -76,11 +82,34 @@ const authenticateToken = (req, res, next) => {
             console.log('Autenticación fallida: Token inválido o expirado.', err.message);
             return res.status(403).json({ message: 'Token inválido o expirado.' });
         }
-        req.user = user;
-        console.log('Token autenticado para usuario:', user.id_usuario, user.nombre_usuario);
+        req.user = user; // 'user' contendrá el payload del token (id_usuario, tipo_perfil, nombre_usuario)
+        console.log('Token autenticado para usuario:', user.id_usuario, user.nombre_usuario, user.tipo_perfil);
         next();
     });
 };
+
+// NUEVO MIDDLEWARE: Para autorizar solo a usuarios Emprendedores
+const authorizeEntrepreneur = (req, res, next) => {
+    if (req.user && req.user.tipo_perfil === 'Emprendedor') {
+        next(); // El usuario es un emprendedor, continuar
+    } else {
+        console.warn('Error 403: Acceso denegado. Solo los emprendedores pueden realizar esta acción. Tipo de perfil:', req.user ? req.user.tipo_perfil : 'No especificado');
+        res.status(403).json({ message: 'Acceso denegado. Solo los emprendedores pueden realizar esta acción.' });
+    }
+};
+
+// NUEVO MIDDLEWARE: Para autorizar solo a usuarios Diseñador o Marketing
+const authorizeDesignerMarketing = (req, res, next) => {
+    if (req.user && (req.user.tipo_perfil === 'Diseñador' || req.user.tipo_perfil === 'Marketing')) {
+        next(); // El usuario es Diseñador o Marketing, continuar
+    } else {
+        console.warn('Error 403: Acceso denegado. Solo Diseñadores y Marketing pueden ver esta lista de desafíos. Tipo de perfil:', req.user ? req.user.tipo_perfil : 'No especificado');
+        res.status(403).json({ message: 'Acceso denegado. Solo Diseñadores y Marketing pueden ver esta lista de desafíos.' });
+    }
+};
+
+
+// --- RUTAS DE AUTENTICACIÓN Y PERFIL ---
 
 // --- RUTA PARA REGISTRO DE USUARIOS ---
 app.post('/api/register', async (req, res) => {
@@ -134,7 +163,7 @@ app.post('/api/register', async (req, res) => {
                 const tipoNegocioString = Array.isArray(tipo_negocio) ? tipo_negocio.join(',') : tipo_negocio;
                 console.log('Insertando datos de Emprendedor:', { id_usuario, nombre_negocio, localidad, tipoNegocioString });
                 await connection.query(
-                    'INSERT INTO emprendedor (id_usuario, nombre_negocio, localidad, tipo_negocio, desafios_cuenta) VALUES (?, ?, ?, ?, 0)', // <--- CORREGIDO: desafios_cuenta
+                    'INSERT INTO emprendedor (id_usuario, nombre_negocio, localidad, tipo_negocio, desafios_cuenta) VALUES (?, ?, ?, ?, 0)',
                     [id_usuario, nombre_negocio, localidad, tipoNegocioString]
                 );
                 console.log('Datos de Emprendedor insertados.');
@@ -250,7 +279,7 @@ app.get('/api/profile/me', authenticateToken, async (req, res) => {
         if (userProfileType === 'Emprendedor') {
             console.log('Consultando datos de emprendedor...');
             const [emprendedorData] = await pool.query(
-                'SELECT nombre_negocio, localidad, tipo_negocio, desafios_cuenta FROM emprendedor WHERE id_usuario = ?', // <--- CORREGIDO: desafios_cuenta
+                'SELECT nombre_negocio, localidad, tipo_negocio, desafios_cuenta FROM emprendedor WHERE id_usuario = ?',
                 [userId]
             );
             if (emprendedorData.length > 0) {
@@ -494,17 +523,17 @@ app.delete('/api/delete-portfolio-image/:id_imagen', authenticateToken, async (r
     }
 });
 
-// --- RUTA: CREAR UN NUEVO DESAFÍO ---
-app.post('/api/challenges', authenticateToken, async (req, res) => {
+
+// --- RUTAS DE DESAFÍOS ---
+
+// --- RUTA: CREAR UN NUEVO DESAFÍO (Ahora usa authorizeEntrepreneur) ---
+app.post('/api/challenges', authenticateToken, authorizeEntrepreneur, async (req, res) => {
     console.log('Solicitud POST /api/challenges recibida para usuario:', req.user.id_usuario);
     const userId = req.user.id_usuario; // ID del usuario autenticado
-    const userProfileType = req.user.tipo_perfil; // Tipo de perfil del usuario autenticado
+    // Ya no necesitas userProfileType aquí porque authorizeEntrepreneur ya lo verificó.
+    // const userProfileType = req.user.tipo_perfil; // Removido, ahora lo maneja el middleware
 
-    // 1. Verificar que el usuario sea un Emprendedor
-    if (userProfileType !== 'Emprendedor') {
-        console.warn('Error 403: Usuario no autorizado para crear desafíos. Tipo de perfil:', userProfileType);
-        return res.status(403).json({ message: 'Solo los usuarios Emprendedores pueden crear desafíos.' });
-    }
+    // 1. (Verificación de Emprendedor ya manejada por authorizeEntrepreneur)
 
     // 2. Validación de campos del desafío
     const { nombre_desafio, descripcion_desafio, beneficios, duracion_dias } = req.body;
@@ -525,7 +554,7 @@ app.post('/api/challenges', authenticateToken, async (req, res) => {
         // 3. Obtener el id_emprendedor y el contador de desafíos creados
         console.log('Buscando id_emprendedor y contador de desafíos para id_usuario:', userId);
         const [emprendedorResult] = await connection.query( // Usar 'connection' para la transacción
-            'SELECT id_emprendedor, desafios_cuenta FROM emprendedor WHERE id_usuario = ?', // <--- CORREGIDO: desafios_cuenta
+            'SELECT id_emprendedor, desafios_cuenta FROM emprendedor WHERE id_usuario = ?',
             [userId]
         );
 
@@ -534,12 +563,12 @@ app.post('/api/challenges', authenticateToken, async (req, res) => {
             await connection.rollback(); // Revertir transacción
             return res.status(404).json({ message: 'No se encontró el perfil de emprendedor asociado a este usuario.' });
         }
-        const { id_emprendedor, desafios_cuenta } = emprendedorResult[0]; // <--- CORREGIDO: desafios_cuenta
-        console.log('id_emprendedor encontrado:', id_emprendedor, 'Desafíos creados:', desafios_cuenta); // <--- CORREGIDO: desafios_cuenta
+        const { id_emprendedor, desafios_cuenta } = emprendedorResult[0];
+        console.log('id_emprendedor encontrado:', id_emprendedor, 'Desafíos creados:', desafios_cuenta);
 
         // --- LÓGICA: VERIFICAR LÍMITE DE DESAFÍOS GRATUITOS ---
         const MAX_FREE_CHALLENGES = 3;
-        if (desafios_cuenta >= MAX_FREE_CHALLENGES) { // <--- CORREGIDO: desafios_cuenta
+        if (desafios_cuenta >= MAX_FREE_CHALLENGES) {
             console.warn('Error 402: El emprendedor ha alcanzado el límite de desafíos gratuitos.');
             await connection.rollback(); // Revertir transacción
             return res.status(402).json({ message: `Has alcanzado el límite de ${MAX_FREE_CHALLENGES} desafíos gratuitos. Por favor, realiza un pago para crear más desafíos.` });
@@ -567,14 +596,15 @@ app.post('/api/challenges', authenticateToken, async (req, res) => {
         fechaFin.setDate(fechaCreacion.getDate() + duracion_dias);
 
         // 5. Insertar el desafío en la tabla 'desafios'
+        // NOTA: Asumo que la tabla 'desafios' tiene una columna 'estado' y que por defecto es 'Activo'.
         const [result] = await connection.query( // Usar 'connection' para la transacción
-            'INSERT INTO desafios (id_emprendedor, nombre_desafio, descripcion_desafio, beneficios, dias_duracion, fecha_creacion, fecha_fin) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [id_emprendedor, nombre_desafio, descripcion_desafio, beneficios, duracion_dias, fechaCreacion, fechaFin]
+            'INSERT INTO desafios (id_emprendedor, nombre_desafio, descripcion_desafio, beneficios, dias_duracion, fecha_creacion, fecha_fin, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [id_emprendedor, nombre_desafio, descripcion_desafio, beneficios, duracion_dias, fechaCreacion, fechaFin, 'Activo'] // 'Activo' como estado inicial
         );
 
         // 6. Incrementar el contador de desafíos creados para el emprendedor
         await connection.query( // Usar 'connection' para la transacción
-            'UPDATE emprendedor SET desafios_cuenta = desafios_cuenta + 1 WHERE id_emprendedor = ?', // <--- CORREGIDO: desafios_cuenta
+            'UPDATE emprendedor SET desafios_cuenta = desafios_cuenta + 1 WHERE id_emprendedor = ?',
             [id_emprendedor]
         );
         console.log('Contador de desafíos creados incrementado.');
@@ -586,7 +616,7 @@ app.post('/api/challenges', authenticateToken, async (req, res) => {
         res.status(201).json({
             message: 'Desafío creado exitosamente!',
             id_desafio: result.insertId,
-            desafios_restantes_gratuitos: MAX_FREE_CHALLENGES - (desafios_cuenta + 1) // <--- CORREGIDO: desafios_cuenta
+            desafios_restantes_gratuitos: MAX_FREE_CHALLENGES - (desafios_cuenta + 1)
         });
 
     } catch (error) {
@@ -598,17 +628,14 @@ app.post('/api/challenges', authenticateToken, async (req, res) => {
     }
 });
 
-// --- RUTA: OBTENER DESAFÍOS CREADOS POR EL USUARIO LOGUEADO ---
-app.get('/api/challenges/me', authenticateToken, async (req, res) => {
+// --- RUTA: OBTENER DESAFÍOS CREADOS POR EL USUARIO LOGUEADO (Ahora usa authorizeEntrepreneur) ---
+app.get('/api/challenges/me', authenticateToken, authorizeEntrepreneur, async (req, res) => {
     console.log('Solicitud GET /api/challenges/me recibida para usuario:', req.user.id_usuario);
     const userId = req.user.id_usuario; // ID del usuario autenticado
-    const userProfileType = req.user.tipo_perfil; // Tipo de perfil del usuario autenticado
+    // Ya no necesitas userProfileType aquí porque authorizeEntrepreneur ya lo verificó.
+    // const userProfileType = req.user.tipo_perfil; // Removido, ahora lo maneja el middleware
 
-    // 1. Verificar que el usuario sea un Emprendedor
-    if (userProfileType !== 'Emprendedor') {
-        console.warn('Error 403: Usuario no autorizado para ver desafíos. Tipo de perfil:', userProfileType);
-        return res.status(403).json({ message: 'Solo los usuarios Emprendedores pueden ver sus desafíos.' });
-    }
+    // 1. (Verificación de Emprendedor ya manejada por authorizeEntrepreneur)
 
     try {
         // 2. Obtener el id_emprendedor a partir del id_usuario
@@ -640,6 +667,48 @@ app.get('/api/challenges/me', authenticateToken, async (req, res) => {
         res.status(500).json({ message: 'Error interno del servidor al obtener desafíos.', error: error.message });
     }
 });
+
+
+// --- NUEVA RUTA: OBTENER TODOS LOS DESAFÍOS ACTIVOS CREADOS POR CUALQUIER EMPRENDEDOR ---
+// Esta ruta es para los roles de Diseñador y Marketing
+app.get('/api/desafios_activos_emprendedores', authenticateToken, authorizeDesignerMarketing, async (req, res) => {
+    console.log('Solicitud GET /api/desafios_activos_emprendedores recibida para usuario:', req.user.id_usuario);
+
+    try {
+        // Consulta SQL para obtener desafíos activos (fecha_fin >= CURDATE())
+        // y unir con la tabla 'usuarios' para obtener el nombre del emprendedor.
+        const [rows] = await pool.query(`
+            SELECT
+                d.id_desafio,
+                d.nombre_desafio,
+                d.descripcion_desafio,
+                d.beneficios,
+                d.dias_duracion,
+                d.fecha_creacion,
+                d.fecha_fin,
+                d.estado,
+                u.nombre_usuario AS nombre_usuario_emprendedor
+            FROM
+                desafios d
+            JOIN
+                emprendedor e ON d.id_emprendedor = e.id_emprendedor
+            JOIN
+                usuarios u ON e.id_usuario = u.id_usuario
+            WHERE
+                d.fecha_fin >= CURDATE()
+            ORDER BY
+                d.fecha_creacion DESC;
+        `);
+
+        console.log(`Desafíos activos de emprendedores obtenidos: ${rows.length}`);
+        res.status(200).json(rows);
+
+    } catch (err) {
+        console.error('Error al obtener desafíos activos de emprendedores:', err);
+        res.status(500).json({ message: 'Error interno del servidor al obtener desafíos activos.', error: err.message });
+    }
+});
+
 
 // --- NUEVA RUTA: OBTENER TODOS LOS PERFILES (EXCEPTO EL DEL USUARIO LOGUEADO) ---
 app.get('/api/profiles', authenticateToken, async (req, res) => {

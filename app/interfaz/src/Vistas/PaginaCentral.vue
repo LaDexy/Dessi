@@ -21,7 +21,7 @@
 
       <!-- OpcionPerfil ya no necesita la prop 'logout', maneja su propia lógica -->
       <OpcionPerfil class="component-margin-bottom"/>
-      <ContenidoMenu class="component-margin-bottom"/>
+      <ContenidoMenu :userRole="userProfileType" class="component-margin-bottom"/>
       
       <!-- Barra de Búsqueda: Escucha el evento 'search' -->
       <BarraBusqueda @search="handleSearch" class="component-margin-bottom"/>
