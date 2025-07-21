@@ -533,6 +533,20 @@ app.post('/api/challenges', authenticateToken, async (req, res) => {
         const id_emprendedor = emprendedorResult[0].id_emprendedor;
         console.log('id_emprendedor encontrado:', id_emprendedor);
 
+        // --- NUEVA LÓGICA: VERIFICAR SI YA TIENE UN DESAFÍO ACTIVO ---
+        console.log('Verificando desafíos activos para id_emprendedor:', id_emprendedor);
+        const [activeChallenges] = await pool.query(
+            'SELECT id_desafio FROM desafios WHERE id_emprendedor = ? AND fecha_fin >= CURDATE()',
+            [id_emprendedor]
+        );
+
+        if (activeChallenges.length > 0) {
+            console.warn('Error 409: El emprendedor ya tiene un desafío activo y no puede crear otro.');
+            return res.status(409).json({ message: 'Ya tienes un desafío activo. Debes esperar a que finalice para crear uno nuevo.' });
+        }
+        console.log('No se encontraron desafíos activos. Procediendo a crear el nuevo desafío.');
+        // --- FIN NUEVA LÓGICA ---
+
         // 4. Calcular fecha_fin
         const fechaCreacion = new Date();
         const fechaFin = new Date(fechaCreacion);
@@ -581,12 +595,13 @@ app.get('/api/challenges/me', authenticateToken, async (req, res) => {
         console.log('id_emprendedor encontrado para obtener desafíos:', id_emprendedor);
 
         // 3. Obtener los desafíos asociados a ese id_emprendedor
+        // ¡ESTA ES LA LÍNEA CLAVE CON EL FILTRO PARA DESAFÍOS NO EXPIRADOS!
         const [challenges] = await pool.query(
-            'SELECT id_desafio, id_emprendedor, nombre_desafio, descripcion_desafio, beneficios, dias_duracion, fecha_creacion, fecha_fin, estado FROM desafios WHERE id_emprendedor = ? ORDER BY fecha_creacion DESC',
+            'SELECT id_desafio, id_emprendedor, nombre_desafio, descripcion_desafio, beneficios, dias_duracion, fecha_creacion, fecha_fin, estado FROM desafios WHERE id_emprendedor = ? AND fecha_fin >= CURDATE() ORDER BY fecha_creacion DESC',
             [id_emprendedor]
         );
 
-        console.log(`Desafíos obtenidos para id_emprendedor ${id_emprendedor}: ${challenges.length} desafíos.`);
+        console.log(`Desafíos obtenidos para id_emprendedor ${id_emprendedor}: ${challenges.length} desafíos (filtrando expirados).`);
         res.status(200).json(challenges);
 
     } catch (error) {
