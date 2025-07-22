@@ -46,47 +46,44 @@ import axios from 'axios';
 import IconoReaccion from '@/components/IconoReaccion.vue'; // Asegúrate de que esta ruta sea correcta
 
 export default {
-  name: 'ForoInteraccion', // Este es el nombre correcto del componente
+  name: 'ForoInteraccion',
   props: {
-    id: { // Este 'id' viene del parámetro de la ruta '/foro/:id' gracias a 'props: true'
+    id: {
       type: [String, Number],
       required: true
     }
   },
   components: {
-    IconoReaccion // Registra el componente IconoReaccion aquí
+    IconoReaccion
   },
   data() {
     return {
       thread: null,
       loading: false,
       error: null,
-      newReplyContent: '', // Para el formulario de respuesta
-      API_BASE_URL: 'http://localhost:4000/api', // URL base de tu API de Express
+      newReplyContent: '',
+      API_BASE_URL: 'http://localhost:4000/api',
     };
   },
   created() {
     this.fetchThreadDetail();
   },
   watch: {
-    // Escuchar cambios en la prop 'id' si el usuario navega entre temas sin recargar el componente
     id: 'fetchThreadDetail'
   },
   methods: {
     getToken() {
-      // Usar la misma lógica de getToken que en ForoUsuarios.vue
       return localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
     },
     async fetchThreadDetail() {
       this.loading = true;
       this.error = null;
-      this.thread = null; // Limpiar el tema anterior si se está recargando
+      this.thread = null;
 
       try {
-        const token = this.getToken(); // Obtener el token para la solicitud
+        const token = this.getToken();
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-        // La ruta del backend para obtener el detalle del tema y sus respuestas
         const response = await axios.get(`${this.API_BASE_URL}/forum/threads/${this.id}`, { headers });
         this.thread = response.data;
         console.log('Detalles del tema cargados:', this.thread);
@@ -94,9 +91,8 @@ export default {
         console.error('Error al cargar los detalles del tema:', err);
         this.error = 'No se pudo cargar el tema. Inténtalo de nuevo más tarde.';
         alert('Error al cargar el tema: ' + (err.response?.data?.message || err.message));
-        // Si el tema no se encuentra (404), podrías redirigir a la lista de foros
         if (err.response && err.response.status === 404) {
-            this.$router.push({ name: 'Foro' }); // Asegúrate que 'Foro' sea el nombre de tu ruta para la lista
+            this.$router.push({ name: 'Foro' });
         }
       } finally {
         this.loading = false;
@@ -107,30 +103,39 @@ export default {
       return new Date(dateString).toLocaleDateString(undefined, options);
     },
     goBackToForum() {
-      this.$router.push({ name: 'Foro' }); // Volver a la lista de temas
+      this.$router.push({ name: 'Foro' });
     },
     async toggleLike(reply) {
       const token = this.getToken();
       if (!token) {
         alert('Debes iniciar sesión para dar "me gusta".');
-        this.$router.push('/login'); // Redirige al login
+        this.$router.push('/login');
         return;
       }
 
       try {
-        // Nueva ruta POST para dar/quitar like a una respuesta específica
         const res = await axios.post(
           `${this.API_BASE_URL}/replies/${reply.id}/like`,
-          {}, // Body vacío para POST
+          {},
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
+        // --- ¡AQUÍ ESTÁ EL CAMBIO! ---
         if (res.data.success) {
-          // Actualiza reactivamente el contador y el estado del "me gusta" en la respuesta
-          reply.likesCount = res.data.newLikesCount;
-          reply.likedByCurrentUser = res.data.likedByCurrentUser;
+          console.log("Respuesta del like:", res.data); // Para depuración
+
+          const replyIndex = this.thread.replies.findIndex(r => r.id === reply.id);
+
+          if (replyIndex !== -1) {
+            this.$set(this.thread.replies[replyIndex], 'likesCount', res.data.newLikesCount);
+            this.$set(this.thread.replies[replyIndex], 'likedByCurrentUser', res.data.likedByCurrentUser);
+            console.log("Reply actualizada:", this.thread.replies[replyIndex]);
+          }
+          // Opcional: Si quieres un mensaje de éxito, ponlo aquí
+          // alert(res.data.message); // Por ejemplo, "Reacción procesada con éxito."
         } else {
-          alert('Error al procesar el "me gusta": ' + res.data.message);
+          // Esto solo se ejecutará si success es false
+          alert('Error al procesar el "me gusta": ' + (res.data.message || 'Error desconocido.'));
         }
       } catch (error) {
         console.error('Error al dar/quitar "me gusta":', error);
@@ -155,14 +160,13 @@ export default {
       }
 
       try {
-        // Ruta POST para añadir respuestas al backend
         const response = await axios.post(
           `${this.API_BASE_URL}/forum/threads/${this.id}/replies`,
           { content: this.newReplyContent },
           { headers: { Authorization: `Bearer ${token}` } }
         );
         alert('Respuesta publicada exitosamente!');
-        this.newReplyContent = ''; // Limpiar el campo
+        this.newReplyContent = '';
         this.fetchThreadDetail(); // Recargar el tema para ver la nueva respuesta y su estado inicial de likes
         console.log('Respuesta enviada:', response.data);
       } catch (error) {
@@ -174,91 +178,148 @@ export default {
 };
 </script>
 
-<style scoped>
-/* Tus estilos CSS existentes para este componente */
+<style>
+/* Aquí va tu CSS actual para ForoInteraccion.vue */
 .foro-interaccion-container {
-  max-width: 800px;
-  margin: 20px auto;
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .back-button {
-  background-color: #6a0dad;
-  color: white;
-  padding: 10px 15px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  margin-bottom: 20px;
-  font-size: 1em;
+    background-color: #6a0dad; /* Púrpura */
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    font-size: 16px;
 }
 
 .back-button:hover {
-  background-color: #5a099a;
-}
-
-.thread-detail, .reply-item {
-  background-color: #f9f9f9;
-  border: 1px solid #eee;
-  border-radius: 6px;
-  padding: 15px;
-  margin-bottom: 15px;
-}
-
-.thread-detail h2, .reply-form h4, h3 {
-  color: #333;
-}
-
-.author-info, .reply-author {
-  font-size: 0.9em;
-  color: #666;
-  margin-bottom: 10px;
-}
-
-.likes-section {
-  display: flex;
-  align-items: center;
-  margin-top: 10px;
-}
-
-.likes-count {
-  font-size: 0.9em;
-  color: #555;
-  margin-left: 5px; /* Espacio entre el icono y el número */
-}
-
-.reply-form textarea {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  box-sizing: border-box;
-}
-
-.reply-form button {
-  background-color: #6a0dad;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 1em;
-}
-
-.reply-form button:hover {
-  background-color: #5a099a;
+    background-color: #5a099a; /* Púrpura más oscuro */
 }
 
 .loading-message, .error-message {
     text-align: center;
     padding: 20px;
-    color: #888;
+    color: #555;
 }
+
 .error-message {
-    color: #d9534f;
+    color: #d32f2f;
+}
+
+.thread-detail h2 {
+    color: #333;
+    font-size: 28px;
+    margin-bottom: 10px;
+}
+
+.author-info {
+    color: #777;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.thread-content {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    line-height: 1.6;
+    white-space: pre-wrap; /* Mantiene saltos de línea y espacios */
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid #eee;
+    margin: 30px 0;
+}
+
+h3 {
+    color: #333;
+    font-size: 24px;
+    margin-bottom: 15px;
+}
+
+.reply-item {
+    background-color: #f0f0f0;
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.reply-author {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.reply-author strong {
+    color: #333;
+}
+
+.reply-content {
+    font-size: 16px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    margin-bottom: 10px;
+}
+
+.likes-section {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Espacio entre el icono y el contador */
+    font-size: 14px;
+    color: #666;
+}
+
+.likes-section .likes-count {
+    font-weight: bold;
+    color: #333;
+}
+
+.reply-form {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.reply-form h4 {
+    font-size: 20px;
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.reply-form textarea {
+    width: calc(100% - 20px);
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    min-height: 80px;
+    margin-bottom: 15px;
+    resize: vertical;
+}
+
+.reply-form button {
+    background-color: #8197FC; /* Azul más claro */
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+.reply-form button:hover {
+    background-color: #6a7edb; /* Azul más oscuro al pasar el ratón */
 }
 </style>
