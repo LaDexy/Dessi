@@ -982,6 +982,53 @@ app.post('/api/forum/threads/:id/replies', authenticateToken, async (req, res) =
     }
 });
 
+// 1. Ruta para obtener TODOS los perfiles de usuarios
+app.get('/api/profiles', async (req, res) => {
+    try {
+        const [profiles] = await pool.query(`
+            SELECT
+                u.id_usuario,
+                u.nombre_usuario,
+                u.tipo_perfil,
+                u.descripcion_perfil,
+                u.foto_perfil_url,
+                u.reputacion,
+                -- NUEVO: Subconsulta para contar el total de likes recibidos por el usuario en el foro
+                (
+                    SELECT SUM(CASE WHEN fr.tipo_reaccion = 'like' THEN 1 ELSE 0 END)
+                    FROM foro_mensaje fm
+                    LEFT JOIN foro_reaccion fr ON fm.id_mensaje = fr.id_mensaje
+                    WHERE fm.id_usuario = u.id_usuario -- Filtra por los mensajes del usuario
+                ) AS likes_acumulados_foro
+            FROM
+                usuarios u
+            ORDER BY
+                u.nombre_usuario ASC
+        `);
+
+        // Formatear las URLs de las fotos de perfil
+        const formattedProfiles = profiles.map(profile => {
+            const fotoUrl = profile.foto_perfil_url
+                ? `${req.protocol}://${req.get('host')}${profile.foto_perfil_url}`
+                : '';
+            
+            // Asegúrate de que likes_acumulados_foro sea un número, incluso si es NULL del SQL (significaría 0)
+            const likesAcumulados = profile.likes_acumulados_foro || 0;
+
+            return {
+                ...profile,
+                foto_perfil_url: fotoUrl,
+                likes_acumulados_foro: likesAcumulados
+            };
+        });
+
+        res.status(200).json(formattedProfiles);
+    } catch (error) {
+        console.error('Error al obtener los perfiles:', error);
+        res.status(500).json({ message: 'Error interno del servidor al obtener perfiles.', error: error.message });
+    }
+});
+
 // 5. NUEVA RUTA: Manejar el "me gusta" para una respuesta específica (toggle like/unlike)
 app.post('/api/replies/:replyId/like', authenticateToken, async (req, res) => {
     if (!req.user) {
