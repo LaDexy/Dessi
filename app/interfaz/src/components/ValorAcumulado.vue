@@ -1,38 +1,46 @@
 <template>
-  <div class="Medalla">
-    <i class="fa-regular fa-medal" style="color: #cc9e00;"></i>
-    <span class="reputacion-valor">{{ reputacion || 0 }}</span>
+  <div class="valor-acumulado-display">
+    <i class="fa-solid fa-medal" style="color: #FFD43B;"></i>
+    <span class="valor">{{ reputacion }}</span>
   </div>
 </template>
 
 <script>
 export default {
-  name: "ValorAcumulado",
+  name: 'ValorAcumulado',
   props: {
     reputacion: {
       type: Number,
+      required: true,
       default: 0
     }
   }
-}
+};
 </script>
 
 <style scoped>
-.Medalla {
+/* Estos estilos son para el componente ValorAcumulado.vue en sí */
+.valor-acumulado-display {
   display: flex;
   align-items: center;
-  gap: 3px; /* Reduje un poco el espacio para que esté más cerca del nombre */
-  font-size: 0.9em; /* Posiblemente más pequeño para que no ocupe mucho espacio */
-  color: #555;
+  /* Centrar horizontalmente si el contenedor padre es flex o grid */
+  justify-content: center; 
+  /* Puedes ajustar el espacio interior si lo necesitas */
+  padding: 3px 8px; 
+  background-color: #e6e6fa; /* Fondo suave para destacarlo */
+  border-radius: 20px;
+  border: 1px solid #dcdcdc;
+  gap: 5px; /* Espacio entre el icono y el número */
+  font-size: 0.9em; /* Reduce el tamaño para que encaje bien al lado del nombre */
 }
 
-.Medalla i {
-  color: #FFD700; /* Dorado para la medalla */
-  font-size: 1.1em; /* Ajusta el tamaño del icono */
+.icon-reputacion-medalla {
+  width: 20px; /* Tamaño más pequeño para el icono de la medalla */
+  height: 20px;
 }
 
-.reputacion-valor {
+.valor {
   font-weight: bold;
-  color: #007bff;
+  color: #4a4a4a;
 }
 </style>

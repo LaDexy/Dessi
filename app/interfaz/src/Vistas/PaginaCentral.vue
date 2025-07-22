@@ -1,13 +1,9 @@
 <template>
   <div class="main-wrapper">
     <div class="content-card">
-      <!-- Barra de Perfil (ahora recibe userName) -->
       <BarraPerfil :userName="userName" />
 
-      <ValorAcumulado/>
-
       <div class="profile-image-section">
-        <!-- Imagen de Perfil (ahora recibe profileImageSrc y emite imageSelected) -->
         <ImagenPerfil
           ref="imagenPerfilComponent"
           :profileImageSrc="profileImageSrc"
@@ -15,56 +11,25 @@
         />
       </div>
 
-      <!-- Este es el h1 que mostrará el nombre de usuario -->
       <div class="user-name-display-wrapper">
         <h1 class="user-name-display">{{ userName }}</h1>
         <p class="user-profile-type">{{ userProfileType }}</p>
       </div>
 
-      <!-- OpcionPerfil ya no necesita la prop 'logout', maneja su propia lógica -->
       <OpcionPerfil class="component-margin-bottom"/>
       <ContenidoMenu :userRole="userProfileType" class="component-margin-bottom"/>
       
-      <!-- Barra de Búsqueda: Escucha el evento 'search' -->
       <BarraBusqueda @search="handleSearch" class="component-margin-bottom"/>
       
-      <!-- Botones de Filtro: Escucha el evento 'filter' -->
       <BotonesFiltro @filter="handleFilter" class="buttons-filter-margin-bottom"/>
 
-      <!-- Sección de Perfiles de Otros Usuarios -->
       <h2 class="section-title">Perfiles de Usuarios</h2>
-      <!-- CAMBIADO: Ahora itera sobre filteredProfiles en lugar de profiles -->
-      <div v-if="filteredProfiles.length > 0" class="profiles-grid">
-        <div v-for="profile in filteredProfiles" :key="profile.id_usuario" class="profile-card">
-          <div class="profile-card-header">
-            <img v-if="profile.foto_perfil_url" :src="profile.foto_perfil_url" alt="Foto de Perfil" class="profile-card-image">
-            <svg v-else class="profile-card-placeholder-icon" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
-            </svg>
-            <div class="profile-card-overlay"></div>
-          </div>
-          <div class="profile-card-content">
-            <h3 class="profile-card-title">{{ profile.nombre_usuario }}</h3>
-            <p class="profile-card-subtitle">{{ profile.profesion_display }}</p>
-            <p class="profile-card-description">{{ profile.descripcion_perfil }}</p>
-            <div class="VerPerfilUsuario">
-            <button @click="viewProfileDetails(profile)" class="profile-card-button">
-              Ver Perfil
-            </button>
-            </div>
-            <div class="SolicitudUsuario">
-            <button @click="viewProfileDetails(profile)" class="profile-card-button">
-              Solicitud
-            </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <!-- CAMBIADO: Mensaje si no hay perfiles filtrados -->
-      <p v-else class="no-profiles-message">No se encontraron perfiles que coincidan con su búsqueda o filtro.</p>
+      
+      <TarjetasPerfiles :profiles="filteredProfiles" />
+
+      <p v-if="filteredProfiles.length === 0" class="no-profiles-message">No se encontraron perfiles que coincidan con su búsqueda o filtro.</p>
     </div>
 
-    <!-- Modal de Mensaje (para errores o éxitos) -->
     <div v-if="showMessageModal" class="message-modal-overlay">
       <div class="message-modal-content">
         <h3 class="message-modal-title">{{ messageModalTitle }}</h3>
@@ -79,14 +44,18 @@
 
 <script>
 import axios from 'axios';
-// Importamos los componentes hijos de PaginaCentral
 import BarraPerfil from "../components/BarraPerfil.vue";
 import OpcionPerfil from "../components/OpcionPerfil.vue";
 import ContenidoMenu from "../components/ContenidoMenu.vue";
 import ImagenPerfil from "../components/ImagenPerfil.vue";
 import BarraBusqueda from "../components/BarraBusqueda.vue";
 import BotonesFiltro from "../components/BotonesFiltro.vue";
-import ValorAcumulado from '@/components/ValorAcumulado.vue'; // Asegúrate de que esta ruta sea correcta
+// ELIMINADO: Ya no necesitamos importar ValorAcumulado aquí
+// import ValorAcumulado from '@/components/ValorAcumulado.vue'; 
+
+// Importamos TarjetasPerfiles.vue (que ya contiene la lógica de v-for y ValorAcumulado)
+import TarjetasPerfiles from '@/components/TarjetasPerfiles.vue';
+
 
 export default {
   name: 'PaginaCentral',
@@ -97,32 +66,27 @@ export default {
     ImagenPerfil,
     BarraBusqueda,
     BotonesFiltro,
-    ValorAcumulado // Asegúrate de registrar BotonesFiltro
+    // ELIMINADO: Ya no necesitamos registrar ValorAcumulado aquí
+    // ValorAcumulado, 
+    TarjetasPerfiles // Registramos TarjetasPerfiles
   },
   data() {
     return {
-      userName: "Cargando...", // Nombre de usuario
-      profileImageSrc: "", // URL de la imagen de perfil
-      userProfileType: "", // Tipo de perfil del usuario logueado
-      allProfiles: [],   // Almacena todos los perfiles sin filtrar
-      searchTerm: '',    // Almacena el término de búsqueda actual
-      activeFilter: 'Todos', // NUEVO: Almacena el filtro de tipo de perfil activo
-      // Estados para el modal de mensaje
+      userName: "Cargando...",
+      profileImageSrc: "",
+      userProfileType: "",
+      allProfiles: [],
+      searchTerm: '',
+      activeFilter: 'Todos',
       showMessageModal: false,
       messageModalTitle: '',
       messageModalMessage: ''
     };
   },
   computed: {
-    /**
-     * @description Propiedad computada que filtra los perfiles basados en el término de búsqueda
-     * y el tipo de perfil seleccionado.
-     * @returns {Array} Array de perfiles filtrados.
-     */
     filteredProfiles() {
       let profilesToFilter = this.allProfiles;
 
-      // 1. Aplicar filtro por término de búsqueda (si existe)
       if (this.searchTerm) {
         const lowerCaseSearchTerm = this.searchTerm.toLowerCase();
         profilesToFilter = profilesToFilter.filter(profile => {
@@ -130,7 +94,6 @@ export default {
         });
       }
 
-      // 2. Aplicar filtro por tipo de perfil (si no es 'Todos')
       if (this.activeFilter !== 'Todos') {
         profilesToFilter = profilesToFilter.filter(profile => {
           return profile.tipo_perfil === this.activeFilter;
@@ -141,16 +104,10 @@ export default {
     }
   },
   async created() {
-    // Al cargar el componente, obtenemos los datos del perfil del usuario logueado
     await this.fetchLoggedInUserProfile();
-    // Y luego los perfiles de otros usuarios
     await this.fetchAllProfiles();
   },
   methods: {
-    /**
-     * @description Obtiene los datos del perfil del usuario logueado desde el backend.
-     * Esto incluye el nombre, tipo de perfil y la URL de la foto de perfil.
-     */
     async fetchLoggedInUserProfile() {
       try {
         const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
@@ -169,8 +126,8 @@ export default {
         if (response.status === 200) {
           const profile = response.data;
           this.userName = profile.nombre_usuario;
-          this.profileImageSrc = profile.foto_perfil_url || ''; // Asigna la URL de la imagen o string vacío
-          this.userProfileType = profile.tipo_perfil; // Asigna el tipo de perfil
+          this.profileImageSrc = profile.foto_perfil_url || '';
+          this.userProfileType = profile.tipo_perfil;
           console.log('Datos de usuario logueado cargados en PaginaCentral:', {
             userName: this.userName,
             profileImageSrc: this.profileImageSrc,
@@ -184,16 +141,13 @@ export default {
         console.error('Error en la solicitud para obtener el perfil del usuario logueado:', error);
         if (error.response && (error.response.status === 401 || error.response.status === 403)) {
           this.showErrorMessage('Sesión Expirada', 'Tu sesión ha expirado o es inválida. Por favor, inicia sesión de nuevo.');
-          this.$router.push({ name: 'Principal' }); // Redirigir a login
+          this.$router.push({ name: 'Principal' });
         } else {
           this.showErrorMessage('Error de Conexión', 'No se pudo conectar con el servidor para cargar tu perfil.');
         }
       }
     },
 
-    /**
-     * @description Obtiene todos los perfiles de otros usuarios desde el backend.
-     */
     async fetchAllProfiles() {
       try {
         const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
@@ -220,72 +174,44 @@ export default {
       }
     },
 
-    /**
-     * @description Maneja el evento 'search' emitido por BarraBusqueda.
-     * Actualiza el término de búsqueda y, gracias a la propiedad computada,
-     * los perfiles mostrados se actualizarán automáticamente.
-     * @param {string} term - El término de búsqueda.
-     */
     handleSearch(term) {
       this.searchTerm = term;
       console.log('Término de búsqueda recibido en PaginaCentral:', term);
     },
 
-    /**
-     * @description Maneja el evento 'filter' emitido por BotonesFiltro.
-     * Actualiza el filtro de tipo de perfil activo.
-     * @param {string} filterType - El tipo de perfil a filtrar.
-     */
     handleFilter(filterType) {
       this.activeFilter = filterType;
       console.log('Filtro de tipo de perfil recibido en PaginaCentral:', filterType);
-      // Opcional: Si quieres limpiar el término de búsqueda al aplicar un filtro, descomenta la siguiente línea:
-      // this.searchTerm = '';
     },
 
-    /**
-     * @description Maneja el evento cuando se selecciona una imagen en el componente ImagenPerfil.
-     * En PaginaCentral, esto podría ser un placeholder o una acción de registro.
-     * @param {File} imageFile - El archivo de imagen seleccionado.
-     */
     handleImageSelected(imageFile) {
       console.log("Imagen seleccionada en PaginaCentral:", imageFile.name);
       this.showMessage('Imagen Seleccionada', `Se ha seleccionado la imagen: ${imageFile.name}. La gestión de la imagen de perfil se realiza en la página de tu perfil.`);
     },
 
-    /**
-     * @description Muestra los detalles de un perfil (funcionalidad pendiente).
-     * @param {Object} profile - El objeto de perfil a mostrar.
-     */
+    // Este método es para los botones "Ver Perfil" y "Solicitud" dentro de la tarjeta
+    // Es importante que estos botones NO hagan la navegación aquí directamente,
+    // sino que el evento sea capturado en TarjetasPerfiles si fuera necesario.
+    // O si TarjetasPerfiles no emite el evento, entonces se puede mantener aquí
+    // si el componente Tarjeta individual tuviera su propia lógica de navegación.
+    // Dado que PaginaCentral ya maneja filteredProfiles, esta función es para los botones de las tarjetas
     viewProfileDetails(profile) {
       console.log('Ver detalles del perfil:', profile);
       this.showMessage('Funcionalidad Pendiente', `Aquí se mostrarían los detalles completos de ${profile.nombre_usuario}.`);
+      // this.$router.push({ name: 'PerfilDetalle', params: { id: profile.id_usuario } });
     },
 
     // --- Lógica del Modal de Mensaje ---
-    /**
-     * @description Muestra un modal de mensaje de éxito o información.
-     * @param {string} title - El título del modal.
-     * @param {string} message - El mensaje a mostrar.
-     */
     showMessage(title, message) {
       this.messageModalTitle = title;
       this.messageModalMessage = message;
       this.showMessageModal = true;
     },
-    /**
-     * @description Muestra un modal de mensaje de error.
-     * @param {string} title - El título del modal.
-     * @param {string} message - El mensaje de error a mostrar.
-     */
     showErrorMessage(title, message) {
       this.messageModalTitle = title;
       this.messageModalMessage = message;
       this.showMessageModal = true;
     },
-    /**
-     * @description Cierra el modal de mensaje.
-     */
     closeMessageModal() {
       this.showMessageModal = false;
       this.messageModalTitle = '';
@@ -295,4 +221,132 @@ export default {
 };
 </script>
 
-<style></style>
+<style scoped>
+/* Copia aquí los estilos relacionados con .profiles-grid, .section-title, .no-profiles-message */
+/* Y cualquier otro estilo que afecte el layout general de PaginaCentral que no esté en los componentes hijos */
+
+.profiles-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center; /* Centra las tarjetas en la cuadrícula */
+  gap: 20px; /* Espacio entre las tarjetas */
+  margin-top: 20px;
+}
+
+.section-title {
+  text-align: center;
+  margin-top: 40px;
+  margin-bottom: 20px;
+  font-size: 2em;
+  color: #6c5ce7;
+}
+
+.no-profiles-message {
+  text-align: center;
+  color: #888;
+  font-style: italic;
+  margin-top: 30px;
+}
+
+/* Mantén tus estilos existentes para main-wrapper, content-card, etc. */
+.main-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  background-color: #f0f2f5;
+  min-height: 100vh;
+}
+
+.content-card {
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.user-name-display-wrapper {
+  text-align: center;
+}
+
+.user-name-display {
+  font-size: 2.2em;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.user-profile-type {
+  font-size: 1.1em;
+  color: #777;
+}
+
+.component-margin-bottom {
+  margin-bottom: 20px;
+}
+
+.buttons-filter-margin-bottom {
+  margin-bottom: 30px;
+}
+
+.profile-image-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+/* Estilos para el modal */
+.message-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.message-modal-content {
+  background-color: #fff;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  width: 90%;
+  max-width: 400px;
+}
+
+.message-modal-title {
+  font-size: 1.5em;
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.message-modal-message {
+  font-size: 1.1em;
+  color: #555;
+  margin-bottom: 25px;
+}
+
+.message-modal-button-close {
+  background-color: #6c5ce7;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background-color 0.3s ease;
+}
+
+.message-modal-button-close:hover {
+  background-color: #5a4bbf;
+}
+</style>

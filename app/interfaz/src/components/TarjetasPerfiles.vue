@@ -11,7 +11,7 @@
             <footer class="Final-Tarjeta">
               <div class="Categoria-Tarjeta">
                 <span class="profile-name">{{ profile.nombre_usuario }}</span>
-                <ValorAcumulado :reputacion="profile.reputacion" />
+                <ValorAcumulado :reputacion="profile.reputacion" /> 
               </div>
 
               <div class="Texto-Tarjeta">
@@ -40,7 +40,7 @@ import ValorAcumulado from '@/components/ValorAcumulado.vue'; // Asegúrate de q
 export default {
   name: "TarjetasPerfiles",
   components: {
-    ValorAcumulado // Declara el componente para que pueda ser usado en el template
+    ValorAcumulado
   },
   props: {
     profiles: {
@@ -53,10 +53,8 @@ export default {
 </script>
 
 <style>
-
 /*Todos los perfiles*/
 .TarjetasPerfiles {
- 
   display: flex;
   flex-wrap: wrap;
   justify-content: center; 
@@ -65,7 +63,7 @@ export default {
   margin-top: 100px;
 }
 
-/*Imagen*/
+/*Imagen (referencia global, considera mover a .Inicio-Tarjeta img si es solo para tarjetas) */
 img {
   max-width: 100%;
 }
@@ -77,65 +75,107 @@ img {
   border-radius: 8px;
   margin: 1rem;
   box-shadow: 0 0 12px #d7d7d7;
+  display: flex; /* Añadido: para que el header y footer se organicen bien */
+  flex-direction: column; /* Añadido: para que el header y footer se apilen */
+  height: 100%; /* Asegura que la tarjeta ocupe la altura completa de su contenedor */
 }
 
 /*El encabezado de la tarjeta*/
-.Inicio-Tarjeta img {
+.Inicio-Tarjeta {
   border-radius: 8px 8px 0 0;
   max-height: 200px;
   height: 200px;
   width: 100%;
+  overflow: hidden; /* Asegura que la imagen no se salga */
+}
+
+.Inicio-Tarjeta img {
+  border-radius: 8px 8px 0 0; /* Aplicar borde de radio solo a la imagen aquí */
+  height: 100%; /* La imagen debe ocupar toda la altura del contenedor */
+  width: 100%; /* La imagen debe ocupar todo el ancho del contenedor */
+  object-fit: cover; /* Recorta la imagen para que quepa sin distorsión */
 }
 
 /*Nombre de usuario Y la reputación juntos */
 .Categoria-Tarjeta {
   margin-top: 1rem;
-  display: flex; /* Añadir display: flex para alinear horizontalmente */
+  display: flex; 
   align-items: center; /* Alinear verticalmente al centro */
   justify-content: center; /* Centrar horizontalmente el contenido */
-  gap: 5px; /* Espacio entre el nombre y la medalla */
+  gap: 8px; /* Aumentado el espacio entre el nombre y la medalla para mejor legibilidad */
+  flex-wrap: wrap; /* Permite que el contenido se ajuste en una nueva línea si el nombre es muy largo */
 }
 
 .profile-name {
-  font-weight: bold; /* Puedes hacer el nombre más prominente */
+  font-weight: bold;
   font-size: 1.1em;
+  color: #333; /* Un color más oscuro para el nombre */
 }
 
 
 /*Boton de solicitud*/
 .Interes {
   background-color: rgb(162, 162, 250);
+  border: none; /* Eliminar el borde por defecto */
+  color: white; /* Color de texto blanco */
   border-radius: 50px;
-  padding: .2rem .5rem;
+  padding: .6rem 1.2rem; /* Ajuste del padding para que se vea mejor */
+  cursor: pointer;
+  transition: background-color 0.3s ease; /* Transición suave al pasar el ratón */
+}
+
+.Interes:hover {
+  background-color: rgb(120, 120, 240); /* Un tono más oscuro al pasar el ratón */
 }
 
 /*Parte externa de tarjeta*/
 .Tarjeta footer {
   padding: 0 1rem;
-  text-align: center; /* Centra el contenido del footer si quieres */
+  text-align: center;
+  flex-grow: 1; /* Permite que el footer ocupe el espacio restante */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* Para empujar los botones hacia abajo si hay espacio */
 }
 
 /*Ajuste de tarjetas*/
 .Exterior {
-  display: flex;
-  flex-flow: wrap;
+  /* No necesitas flex-flow: wrap aquí, ya que el contenedor .TarjetasPerfiles ya lo maneja */
+  /* Removemos height: 100% si el .Tarjeta ya lo maneja */
+  display: flex; /* Asegura que la tarjeta hija se estire en altura */
+  align-items: stretch; /* Asegura que todas las tarjetas tengan la misma altura */
 }
 
 /* Estilos para el texto de la tarjeta */
 .Texto-Tarjeta {
   margin-top: 0.5rem;
+  font-size: 1em;
+  color: #555;
 }
 
 .Descripcion-Tarjeta {
   margin-top: 0.5rem;
-  min-height: 40px; /* Asegura un mínimo de altura para la descripción */
+  min-height: 60px; /* Aumentado para descripciones más largas, ajusta según necesidad */
+  flex-grow: 1; /* Permite que la descripción empuje los botones hacia abajo */
+  color: #666;
+  font-size: 0.9em;
+  line-height: 1.4;
 }
 
 .buttons-container {
   display: flex;
-  justify-content: space-around; /* O center, o flex-start, según prefieras */
+  justify-content: space-around;
   gap: 10px;
   margin-top: 1rem;
-  padding-bottom: 1rem; /* Espacio debajo de los botones */
+  padding-bottom: 1rem;
 }
+
+/* Estilos generales que podrían estar en un archivo global o en App.vue */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+}
+
 </style>
