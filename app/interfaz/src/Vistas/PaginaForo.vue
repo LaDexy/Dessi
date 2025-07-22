@@ -3,7 +3,7 @@
     <!--Componentes de pagina de perfil-->
 
     <ForoUsuarios/>
-    <IconoReaccion/>
+   
 
   </div>
 </template>
@@ -12,7 +12,6 @@
 
 /*Importacion de componentes de pagina de perfil*/
 import ForoUsuarios from '@/components/ForoUsuarios.vue';
-import IconoReaccion from '@/components/IconoReaccion.vue';
 
 export default{
 
@@ -21,7 +20,6 @@ export default{
     components: {
 
         ForoUsuarios,
-        IconoReaccion
     
   }
 
