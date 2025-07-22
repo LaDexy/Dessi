@@ -786,7 +786,7 @@ app.get('/api/profiles', authenticateToken, async (req, res) => {
 
 // --- RUTAS DEL FORO ---
 
-// 1. Ruta para obtener TODOS los temas del foro
+// 1. Ruta para obtener TODOS los temas del foro (visibles para todos)
 app.get('/api/forum/threads', async (req, res) => {
     try {
         const [threads] = await pool.query(`
@@ -805,17 +805,11 @@ app.get('/api/forum/threads', async (req, res) => {
                 f.fecha_creacion DESC
         `);
 
-        const formattedThreads = threads.map(thread => ({
-            id: thread.id,
-            title: thread.title,
-            content: thread.content,
-            author: thread.author,
-            date: thread.date,
-            // authorReputation: thread.authorReputation || 0, // Eliminada esta línea
-            replies: thread.replies_count
-        }));
+        // No necesitas 'formattedThreads' separado si los nombres de columna ya son buenos.
+        // Asegúrate de que los nombres de columna en la consulta SQL coincidan con lo que esperas en el frontend.
+        // replies_count ya es lo que el frontend puede esperar como 'replies'.
 
-        res.status(200).json(formattedThreads);
+        res.status(200).json(threads);
     } catch (error) {
         console.error('Error al obtener los temas del foro:', error);
         res.status(500).json({ message: 'Error interno del servidor al obtener temas del foro.', error: error.message });
@@ -824,9 +818,12 @@ app.get('/api/forum/threads', async (req, res) => {
 
 // 2. Ruta para CREAR un nuevo tema del foro (requiere autenticación)
 app.post('/api/forum/threads', authenticateToken, async (req, res) => {
+    if (!req.user) { // Asegúrate de que el usuario esté autenticado
+        return res.status(401).json({ message: 'No autenticado. Debes iniciar sesión para crear un tema.' });
+    }
     console.log('Solicitud POST /api/forum/threads recibida para usuario:', req.user.id_usuario);
-    const userId = req.user.id_usuario; // ID del usuario autenticado
-    const { title, content } = req.body; // El frontend envía 'content'
+    const userId = req.user.id_usuario;
+    const { title, content } = req.body;
 
     if (!title || !content) {
         return res.status(400).json({ message: 'El título y el contenido del tema son obligatorios.' });
@@ -834,8 +831,8 @@ app.post('/api/forum/threads', authenticateToken, async (req, res) => {
 
     try {
         const [result] = await pool.query(
-            'INSERT INTO foro (id_usuario, titulo, descripcion, fecha_creacion) VALUES (?, ?, ?, NOW())', // ¡CAMBIADO: de 'contenido' a 'descripcion'!
-            [userId, title, content] // 'content' del frontend se mapea a 'descripcion' en la DB
+            'INSERT INTO foro (id_usuario, titulo, descripcion, fecha_creacion) VALUES (?, ?, ?, NOW())',
+            [userId, title, content]
         );
 
         const newThreadId = result.insertId;
@@ -848,10 +845,13 @@ app.post('/api/forum/threads', authenticateToken, async (req, res) => {
     }
 });
 
-// 3. Ruta para obtener un TEMA ESPECÍFICO del foro por ID
-app.get('/api/forum/threads/:id', async (req, res) => {
+// 3. Ruta para obtener un TEMA ESPECÍFICO del foro por ID y sus respuestas con información de likes
+app.get('/api/forum/threads/:id', authenticateToken, async (req, res) => {
     const threadId = req.params.id;
-    console.log(`Solicitud GET /api/forum/threads/${threadId} recibida.`);
+    // req.user ya está poblado por authenticateToken, puede ser null si no hay token o es inválido.
+    const userId = req.user ? req.user.id_usuario : null;
+
+    console.log(`Solicitud GET /api/forum/threads/${threadId} recibida. Usuario autenticado: ${userId || 'No'}`);
 
     try {
         // Obtener el tema principal
@@ -861,7 +861,8 @@ app.get('/api/forum/threads/:id', async (req, res) => {
                 f.titulo AS title,
                 f.descripcion AS content,
                 u.nombre_usuario AS author,
-                f.fecha_creacion AS date
+                f.fecha_creacion AS date,
+                u.foto_perfil_url AS author_profile_pic
             FROM
                 foro f
             JOIN
@@ -876,23 +877,63 @@ app.get('/api/forum/threads/:id', async (req, res) => {
         }
 
         const thread = threads[0];
+        // Formatear la URL de la foto de perfil del autor del tema
+        if (thread.author_profile_pic) {
+            thread.author_profile_pic = `${req.protocol}://${req.get('host')}${thread.author_profile_pic}`;
+        } else {
+            thread.author_profile_pic = ''; // Si no hay foto, enviar cadena vacía
+        }
+
 
         // Obtener las respuestas para ese tema
         const [replies] = await pool.query(`
             SELECT
-                fr.id_mensaje AS id,
-                fr.contenido AS content,
+                fm.id_mensaje AS id,
+                fm.contenido AS content,
                 u.nombre_usuario AS author,
-                fr.fecha_publicacion AS date
+                fm.fecha_publicacion AS date,
+                u.foto_perfil_url AS author_profile_pic
             FROM
-                foro_mensaje fr
+                foro_mensaje fm
             JOIN
-                usuarios u ON fr.id_usuario = u.id_usuario
+                usuarios u ON fm.id_usuario = u.id_usuario
             WHERE
-                fr.id_foro = ?
+                fm.id_foro = ?
             ORDER BY
-                fr.fecha_publicacion ASC
+                fm.fecha_publicacion ASC
         `, [threadId]);
+
+        // Para cada respuesta, obtener el conteo de likes y si el usuario actual le dio like
+        for (const reply of replies) {
+            // Formatear la URL de la foto de perfil del autor de la respuesta
+            if (reply.author_profile_pic) {
+                reply.author_profile_pic = `${req.protocol}://${req.get('host')}${reply.author_profile_pic}`;
+            } else {
+                reply.author_profile_pic = '';
+            }
+
+            // Contar likes
+            const [likesResult] = await pool.query(
+                `SELECT COUNT(*) AS likesCount
+                 FROM foro_reaccion
+                 WHERE id_mensaje = ? AND tipo_reaccion = 'like'`,
+                [reply.id]
+            );
+            reply.likesCount = likesResult[0].likesCount;
+
+            // Verificar si el usuario actual le dio like
+            if (userId) { // Solo si hay un usuario autenticado
+                const [userLikeResult] = await pool.query(
+                    `SELECT COUNT(*) AS isLiked
+                     FROM foro_reaccion
+                     WHERE id_mensaje = ? AND id_usuario = ? AND tipo_reaccion = 'like'`,
+                    [reply.id, userId]
+                );
+                reply.likedByCurrentUser = userLikeResult[0].isLiked > 0;
+            } else {
+                reply.likedByCurrentUser = false; // No autenticado, entonces no ha dado like
+            }
+        }
 
         // Añadir las respuestas al objeto del tema
         thread.replies = replies;
@@ -908,8 +949,11 @@ app.get('/api/forum/threads/:id', async (req, res) => {
 
 // 4. Ruta para añadir una RESPUESTA a un tema (requiere autenticación)
 app.post('/api/forum/threads/:id/replies', authenticateToken, async (req, res) => {
+    if (!req.user) {
+        return res.status(401).json({ message: 'No autenticado. Debes iniciar sesión para responder.' });
+    }
     const threadId = req.params.id;
-    const userId = req.user.id_usuario; // ID del usuario del token
+    const userId = req.user.id_usuario;
     const { content } = req.body;
 
     if (!content) {
@@ -937,6 +981,101 @@ app.post('/api/forum/threads/:id/replies', authenticateToken, async (req, res) =
         res.status(500).json({ message: 'Error interno del servidor al añadir respuesta.', error: error.message });
     }
 });
+
+// 5. NUEVA RUTA: Manejar el "me gusta" para una respuesta específica (toggle like/unlike)
+app.post('/api/replies/:replyId/like', authenticateToken, async (req, res) => {
+    if (!req.user) {
+        return res.status(401).json({ message: 'No autenticado. Debes iniciar sesión para dar "me gusta".' });
+    }
+    const replyId = req.params.replyId;
+    const userId = req.user.id_usuario;
+
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        // 1. Verificar si el mensaje (respuesta) existe y obtener su autor
+        const [messageDetails] = await connection.query(
+            `SELECT id_mensaje, id_usuario FROM foro_mensaje WHERE id_mensaje = ?`,
+            [replyId]
+        );
+        if (messageDetails.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ message: 'Mensaje (respuesta) no encontrado.' });
+        }
+
+        const replyAuthorId = messageDetails[0].id_usuario;
+
+        // **AQUÍ LA MODIFICACIÓN:**
+        // Si el ID del usuario autenticado es el mismo que el ID del autor de la respuesta,
+        // no permitir el "me gusta" y enviar el mensaje específico.
+        if (userId === replyAuthorId) {
+            await connection.rollback(); // Revertir la transacción si se abrió
+            return res.status(403).json({ message: 'No puedes reaccionar a tu propia respuesta.' }); // ¡Mensaje modificado aquí!
+        }
+        // **FIN DE LA MODIFICACIÓN**
+
+
+        // 2. Verificar si el usuario ya reaccionó con 'like' a este mensaje
+        const [existingReaction] = await connection.query(
+            `SELECT id_reaccion FROM foro_reaccion
+             WHERE id_mensaje = ? AND id_usuario = ? AND tipo_reaccion = 'like'`,
+            [replyId, userId]
+        );
+
+        let action = ''; // Para saber si se dio like o se quitó
+        if (existingReaction.length > 0) {
+            // Si ya existe, eliminar la reacción (quitar like)
+            await connection.query(
+                `DELETE FROM foro_reaccion
+                 WHERE id_reaccion = ?`,
+                [existingReaction[0].id_reaccion]
+            );
+            action = 'unliked';
+            console.log(`Usuario ${userId} ha quitado el like del mensaje ${replyId}.`);
+        } else {
+            // Si no existe, insertar la reacción (dar like)
+            await connection.query(
+                `INSERT INTO foro_reaccion (id_mensaje, id_usuario, tipo_reaccion, fecha_reaccion)
+                 VALUES (?, ?, ?, NOW())`,
+                [replyId, userId, 'like']
+            );
+            action = 'liked';
+            console.log(`Usuario ${userId} ha dado like al mensaje ${replyId}.`);
+        }
+
+        // 3. Obtener el nuevo conteo de likes para el mensaje
+        const [newLikesCountResult] = await connection.query(
+            `SELECT COUNT(*) AS newLikesCount
+             FROM foro_reaccion
+             WHERE id_mensaje = ? AND tipo_reaccion = 'like'`,
+            [replyId]
+        );
+        const newLikesCount = newLikesCountResult[0].newLikesCount;
+
+        await connection.commit();
+
+        res.json({
+            success: true,
+            message: `Mensaje ${action} exitosamente.`,
+            newLikesCount: newLikesCount,
+            likedByCurrentUser: action === 'liked' // El usuario lo tiene 'like' si la acción fue 'liked'
+        });
+
+    } catch (err) {
+        if (connection) {
+            await connection.rollback();
+        }
+        console.error('Error al procesar el like:', err);
+        res.status(500).json({ message: 'Error interno del servidor al procesar la reacción.' });
+    } finally {
+        if (connection) {
+            connection.release();
+        }
+    }
+});
+
 
 // Ruta de prueba
 app.get('/', (req, res) => {
