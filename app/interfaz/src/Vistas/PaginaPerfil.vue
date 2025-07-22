@@ -25,10 +25,9 @@
     
     <div class="portfolio-section-wrapper">
       <IconoCamara @imageSelected="handlePortfolioImageSelected" class="portfolio-camera-icon" />
-      <PortafolioPerfil :projects="userProjects" />
-    </div>
-
-    <IconoPortafolio :userProfile="userProfile"/>
+      <IconoPortafolio :userProfile="userProfile" @documentSelected="handlePortfolioDocumentSelected"/>
+      <PortafolioPerfil :projects="userProjects" :documents="userDocuments" />
+      </div>
 
     <CrearDesafio
       v-if="CrearDesafioNuevo"
@@ -56,7 +55,7 @@ import TipoPerfil from "../components/TipoPerfil.vue";
 import PortafolioPerfil from "../components/PortafolioPerfil.vue";
 import BotonesDesafios from "../components/BotonesDesafios.vue";
 import IconoCamara from "@/components/IconoCamara.vue";
-import IconoPortafolio from "@/components/IconoPortafolio.vue";
+import IconoPortafolio from "@/components/IconoPortafolio.vue"; // Este componente ahora subirá documentos
 import axios from "axios";
 
 export default {
@@ -68,7 +67,8 @@ export default {
       userId: null,
       userProfile: "",
       userDescription: "",
-      userProjects: [],
+      userProjects: [], // Para proyectos de imagen
+      userDocuments: [], // <-- Nuevo: Para documentos PDF/Word
       CrearDesafioNuevo: false,
       VerDesafiosCreados: false,
     };
@@ -83,7 +83,7 @@ export default {
     PortafolioPerfil,
     BotonesDesafios,
     IconoCamara,
-    IconoPortafolio
+    IconoPortafolio // Este componente ahora maneja la subida de documentos
   },
   mounted() {
     this.loadUserProfileData();
@@ -111,8 +111,11 @@ export default {
           this.profileImageSrc = profile.foto_perfil_url || require("../assets/Usuario.png");
           this.userProfile = profile.tipo_perfil;
           this.userDescription = profile.descripcion_perfil || "Aca va una breve descripcion";
-          this.userProjects = profile.proyectos || []; // Asumiendo que 'proyectos' viene en la respuesta del perfil
           
+          // Asume que el backend ahora envía 'proyectos' (imágenes) y 'documentos' por separado
+          this.userProjects = profile.proyectos || []; 
+          this.userDocuments = profile.documentos || []; // <-- Recibe los documentos del backend
+
           console.log("URL de imagen de perfil obtenida del backend:", this.profileImageSrc);
           console.log("Datos de perfil cargados desde el backend:", {
             userName: this.userName,
@@ -120,7 +123,8 @@ export default {
             userId: this.userId,
             userProfile: this.userProfile,
             userDescription: this.userDescription,
-            userProjects: this.userProjects
+            userProjects: this.userProjects,
+            userDocuments: this.userDocuments // <-- Para depuración
           });
         } else {
           alert("Error al cargar el perfil: " + (response.data.message || "Error desconocido."));
@@ -143,7 +147,6 @@ export default {
       console.log("Archivo recibido en PaginaPerfil para subir la foto de perfil:", file.name);
       const formData = new FormData();
       formData.append("profileImage", file);
-      // formData.append("userId", this.userId); // userId ya se obtiene del token en el backend
 
       try {
         const token = localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
@@ -154,7 +157,7 @@ export default {
         }
 
         const response = await axios.post(
-          "http://localhost:4000/api/upload-profile-image", // URL CORRECTA para foto de perfil
+          "http://localhost:4000/api/upload-profile-image",
           formData,
           {
             headers: {
@@ -183,9 +186,8 @@ export default {
     },
     // Método para subir imágenes al portafolio de proyectos (desde el IconoCamara de portafolio)
     async handlePortfolioImageSelected(file) {
-      console.log("Archivo recibido en PaginaPerfil para subir al portafolio:", file.name);
+      console.log("Archivo recibido en PaginaPerfil para subir al portafolio (IMAGEN):", file.name);
       const formData = new FormData();
-      // ¡IMPORTANTE! 'portfolioImages' debe coincidir con el nombre esperado en Multer (upload.array('portfolioImages', 10))
       formData.append("portfolioImages", file); 
       
       try {
@@ -197,8 +199,7 @@ export default {
         }
 
         const response = await axios.post(
-          // ¡URL CORREGIDA! Ahora apunta a la ruta correcta de tu backend para el portafolio
-          "http://localhost:4000/api/upload-portfolio-images", 
+          "http://localhost:4000/api/upload-portafolio-images", 
           formData,
           {
             headers: {
@@ -210,7 +211,6 @@ export default {
 
         if (response.status === 200) {
           alert("Imagen de portafolio subida exitosamente!");
-          // Es buena idea recargar los datos del perfil o proyectos para que las nuevas imágenes aparezcan
           await this.loadUserProfileData(); 
         } else {
           alert("Error al subir la imagen del portafolio: " + (response.data.message || "Error desconocido."));
@@ -228,9 +228,54 @@ export default {
         }
       }
     },
+    // <-- NUEVO MÉTODO para subir documentos PDF/Word al portafolio (desde IconoPortafolio) -->
+    async handlePortfolioDocumentSelected(file) {
+      console.log("Archivo recibido en PaginaPerfil para subir al portafolio (DOCUMENTO):", file.name);
+      const formData = new FormData();
+      // 'portfolioDocument' es el nombre del campo que tu backend esperará (Multer)
+      formData.append("portfolioDocument", file); 
+
+      try {
+        const token = localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
+        if (!token) {
+          alert("No estás autenticado. Por favor, inicia sesión.");
+          this.$router.push({ name: "Principal" });
+          return;
+        }
+
+        const response = await axios.post(
+          "http://localhost:4000/api/upload-portafolio-document", // <-- RUTA NUEVA PARA DOCUMENTOS
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (response.status === 200) {
+          alert("Documento de portafolio subido exitosamente!");
+          await this.loadUserProfileData(); // Recargar datos para mostrar el nuevo documento
+        } else {
+          alert("Error al subir el documento: " + (response.data.message || "Error desconocido."));
+          console.error("Error en la respuesta del backend al subir documento:", response.data);
+        }
+      } catch (error) {
+        console.error("Error al subir el documento del portafolio:", error);
+        alert("Error al subir el documento. Por favor, inténtalo de nuevo.");
+        if (error.response) {
+          console.error("Respuesta de error:", error.response.status, error.response.data);
+          if (error.response.status === 403) {
+            alert("Tu sesión ha expirado. Por favor, inicia sesión de nuevo.");
+            this.$router.push({ name: "Principal" });
+          }
+        }
+      }
+    },
+    // ... el resto de tus métodos (handleDescriptionUpdate, MostrarRegistro, handleChallengeCreated)
     handleDescriptionUpdate(newDescription) {
       console.log("Recibido evento update-description en PaginaPerfil. Nueva descripción:", newDescription);
-      // Lógica para enviar la actualización de descripción al backend
       try {
         const token = localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
         if (!token) {
