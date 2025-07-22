@@ -4,6 +4,8 @@
       <!-- Barra de Perfil (ahora recibe userName) -->
       <BarraPerfil :userName="userName" />
 
+      <ValorAcumulado/>
+
       <div class="profile-image-section">
         <!-- Imagen de Perfil (ahora recibe profileImageSrc y emite imageSelected) -->
         <ImagenPerfil
@@ -83,7 +85,8 @@ import OpcionPerfil from "../components/OpcionPerfil.vue";
 import ContenidoMenu from "../components/ContenidoMenu.vue";
 import ImagenPerfil from "../components/ImagenPerfil.vue";
 import BarraBusqueda from "../components/BarraBusqueda.vue";
-import BotonesFiltro from "../components/BotonesFiltro.vue"; // Asegúrate de que esta ruta sea correcta
+import BotonesFiltro from "../components/BotonesFiltro.vue";
+import ValorAcumulado from '@/components/ValorAcumulado.vue'; // Asegúrate de que esta ruta sea correcta
 
 export default {
   name: 'PaginaCentral',
@@ -93,7 +96,8 @@ export default {
     ContenidoMenu,
     ImagenPerfil,
     BarraBusqueda,
-    BotonesFiltro, // Asegúrate de registrar BotonesFiltro
+    BotonesFiltro,
+    ValorAcumulado // Asegúrate de registrar BotonesFiltro
   },
   data() {
     return {
