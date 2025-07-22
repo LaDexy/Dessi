@@ -12,6 +12,7 @@
               <div class="Categoria-Tarjeta">
                 <span class="profile-name">{{ profile.nombre_usuario }}</span>
                 <ValorAcumulado :reputacion="profile.reputacion" /> 
+                <IconoInteraccion :totalLikesForo="profile.likes_acumulados_foro" /> 
               </div>
 
               <div class="Texto-Tarjeta">
@@ -35,12 +36,14 @@
 </template>
 
 <script>
-import ValorAcumulado from '@/components/ValorAcumulado.vue'; // Asegúrate de que la ruta sea correcta
+import ValorAcumulado from '@/components/ValorAcumulado.vue'; // Ya existente
+import IconoInteraccion from '@/components/IconoInteraccion.vue'; // Importa el nuevo componente
 
 export default {
   name: "TarjetasPerfiles",
   components: {
-    ValorAcumulado
+    ValorAcumulado,
+    IconoInteraccion // Registra el nuevo componente
   },
   props: {
     profiles: {
@@ -94,22 +97,6 @@ img {
   height: 100%; /* La imagen debe ocupar toda la altura del contenedor */
   width: 100%; /* La imagen debe ocupar todo el ancho del contenedor */
   object-fit: cover; /* Recorta la imagen para que quepa sin distorsión */
-}
-
-/*Nombre de usuario Y la reputación juntos */
-.Categoria-Tarjeta {
-  margin-top: 1rem;
-  display: flex; 
-  align-items: center; /* Alinear verticalmente al centro */
-  justify-content: center; /* Centrar horizontalmente el contenido */
-  gap: 8px; /* Aumentado el espacio entre el nombre y la medalla para mejor legibilidad */
-  flex-wrap: wrap; /* Permite que el contenido se ajuste en una nueva línea si el nombre es muy largo */
-}
-
-.profile-name {
-  font-weight: bold;
-  font-size: 1.1em;
-  color: #333; /* Un color más oscuro para el nombre */
 }
 
 
@@ -176,6 +163,23 @@ body {
   margin: 0;
   padding: 0;
   background-color: #f4f4f4;
+}
+
+/* Ajusta los estilos para alinear el nombre, medalla y corazón */
+.Categoria-Tarjeta {
+  margin-top: 1rem;
+  display: flex; 
+  align-items: center; 
+  justify-content: center; 
+  gap: 8px; /* Espacio entre los elementos (nombre, medalla, corazón) */
+  flex-wrap: wrap; /* Permite que los elementos se ajusten en varias líneas si es necesario */
+  padding: 0 5px; 
+}
+
+.profile-name {
+  font-weight: bold;
+  font-size: 1.1em;
+  color: #333;
 }
 
 </style>
