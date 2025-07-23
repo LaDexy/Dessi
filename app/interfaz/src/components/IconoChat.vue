@@ -21,7 +21,7 @@ export default {
 };
 </script>
 
-<style scoped>
+<style>
 .chat-icon {
   width: 60px;
   height: 60px;
