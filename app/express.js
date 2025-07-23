@@ -441,6 +441,75 @@ app.get("/api/profile/me", authenticateToken, async (req, res) => {
   }
 });
 
+// RUTA DE SOLICITUD
+
+// --- NUEVA RUTA PARA SOLICITUDES DE CONTACTO ---
+app.post('/api/solicitudes-contacto', authenticateToken, async (req, res) => {
+    // Asegúrate de que Express esté configurado para parsear JSON: app.use(express.json());
+    const { id_receptor, email, whatsapp, instagram, tiktok, facebook } = req.body;
+    const id_emisor = req.user.id_usuario; // Obtenido del payload del JWT a través de authenticateToken
+
+    // 1. Validaciones básicas
+    if (!id_emisor || !id_receptor) {
+        return res.status(400).json({ message: 'ID del emisor y receptor son requeridos.' });
+    }
+
+    // Opcional: Validar que el emisor no se envíe una solicitud a sí mismo
+    if (id_emisor === id_receptor) {
+        return res.status(400).json({ message: 'No puedes enviarte una solicitud de contacto a ti mismo.' });
+    }
+
+    // Opcional: Validar si ya existe una solicitud PENDIENTE del mismo emisor al mismo receptor
+    try {
+        const [existingRequests] = await pool.query( // [rows] para desestructurar el resultado de mysql2/promise
+            'SELECT * FROM solicitudes_contacto WHERE id_emisor = ? AND id_receptor = ? AND estatus = ?',
+            [id_emisor, id_receptor, 'Pendiente'] // Usa 'estatus' y 'Pendiente' según tu tabla
+        );
+
+        if (existingRequests.length > 0) {
+            return res.status(409).json({ message: 'Ya existe una solicitud pendiente para este usuario.' });
+        }
+    } catch (error) {
+        console.error('Error al verificar solicitud existente:', error);
+        return res.status(500).json({ message: 'Error interno del servidor al verificar solicitud existente.' });
+    }
+
+    // 2. Insertar la solicitud en la base de datos
+    try {
+        const query = `
+            INSERT INTO solicitudes_contacto (
+                id_emisor,
+                id_receptor,
+                email,          -- Nombre de columna en tu DB
+                whatsapp,       -- Nombre de columna en tu DB
+                instagram,      -- Nombre de columna en tu DB
+                tiktok,         -- Nombre de columna en tu DB
+                facebook,       -- Nombre de columna en tu DB
+                estatus,        -- Nombre de columna en tu DB
+                creado_fecha    -- Nombre de columna en tu DB
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP())
+        `;
+        const values = [
+            id_emisor,
+            id_receptor,
+            email || null, // Guarda null si el campo está vacío
+            whatsapp || null,
+            instagram || null,
+            tiktok || null,
+            facebook || null,
+            'Pendiente' // Estado inicial de la solicitud, según tu ENUM
+        ];
+
+        const [result] = await pool.query(query, values); // [result] para desestructurar el resultado
+        res.status(201).json({ message: 'Solicitud de contacto enviada con éxito.', id_solicitud: result.insertId });
+
+    } catch (error) {
+        console.error('Error al enviar solicitud de contacto:', error);
+        res.status(500).json({ message: 'Error interno del servidor al procesar la solicitud de contacto.' });
+    }
+});
+
 // --- RUTA PARA SUBIR FOTO DE PERFIL (INDIVIDUAL) ---
 app.post(
   "/api/upload-profile-image",
