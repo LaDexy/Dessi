@@ -139,11 +139,21 @@ export default {
 <style>
 /*centrar los requisitos*/
 .TodoCuatro {
-  position: absolute;
-  left: 500px;
+ 
+
   top: 50px;
   padding: 40px;
   font-family: "Times New Roman", serif;
+    position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7); /* Fondo más oscuro */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2500; /* Asegura que esté por encima de otros modales */
 }
 
 .Boton {
@@ -234,7 +244,7 @@ export default {
 }
 
 .remember-forgot label input {
-  accent-color: #861c78;
+  accent-color: hsl(300, 29%, 78%);
   margin-right: 3px;
 }
 
@@ -250,7 +260,7 @@ export default {
 .Registro {
   width: 100%;
   height: 45px;
-  background: #440857;
+  background: hsl(300, 29%, 78%);
   border: none;
   outline: none;
   border-radius: 6px;

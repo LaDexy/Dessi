@@ -141,11 +141,20 @@ export default {
 /*centrar los requisitos*/
 .TodoTres{
 
-position: absolute;
-left: 500px;
-top: 50px;
-padding: 40px;
-font-family: "Times New Roman", serif;
+position: fixed; /* Fijo en el viewport */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6); /* Fondo oscuro translúcido */
+  display: flex; /* Usamos flexbox para centrar el modal */
+  justify-content: center; /* Centra horizontalmente */
+  align-items: center; /* Centra verticalmente */
+  z-index: 9999; /* Asegura que el modal esté por encima de todo */
+  /* Opcional: transición para que aparezca suavemente */
+  opacity: 1; /* Asumiendo que Vue controla la visibilidad con v-if */
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(5px); /* Un ligero desenfoque del fondo */
 
 }
 

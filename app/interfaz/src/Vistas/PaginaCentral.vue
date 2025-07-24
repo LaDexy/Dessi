@@ -404,4 +404,66 @@ export default {
 };
 </script>
 
-<style></style>
+<style>
+
+/* Estilos para el contenedor del nombre de usuario y tipo de perfil */
+.user-name-display-wrapper {
+  text-align: center; /* Centra el texto horizontalmente */
+  margin-top: 20px; /* Espacio superior para separarlo de elementos anteriores, ajusta según necesites */
+  margin-bottom: 30px; /* Espacio inferior para separarlo de elementos siguientes */
+  padding: 0 20px; /* Padding horizontal para que no se pegue a los bordes en móviles */
+}
+
+/* Estilos para el nombre de usuario (h1) */
+.user-name-display {
+  font-family: "Times New Roman", serif; /* Mantener la fuente consistente */
+  font-size: 2.8em; /* Un tamaño de fuente grande para el nombre */
+  color: #333; /* Un color oscuro pero no negro puro */
+  margin-bottom: 5px; /* Espacio pequeño entre el nombre y el tipo de perfil */
+  font-weight: bold; /* Nombre en negrita */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1); /* Sombra suave para un poco de profundidad */
+}
+
+/* Estilos para el tipo de perfil (p) */
+.user-profile-type {
+  font-family: "Times New Roman", serif; /* Mantener la fuente consistente */
+  font-size: 1.3em; /* Tamaño de fuente para el tipo de perfil */
+  color: #6a1b9a; /* Un tono morado/rosado más oscuro para el tipo de perfil */
+  font-weight: 500; /* Un poco más de peso */
+  text-transform: capitalize; /* Capitaliza la primera letra (ej. "emprendedor" -> "Emprendedor") */
+}
+
+/* Media Queries para Responsividad */
+
+/* Para pantallas medianas (ej. tablets, 768px y abajo) */
+@media (max-width: 768px) {
+  .user-name-display {
+    font-size: 2.2em; /* Reduce el tamaño del nombre */
+  }
+
+  .user-profile-type {
+    font-size: 1.1em; /* Reduce el tamaño del tipo de perfil */
+  }
+  .user-name-display-wrapper {
+    margin-top: 15px;
+    margin-bottom: 25px;
+  }
+}
+
+/* Para pantallas pequeñas (ej. móviles, 480px y abajo) */
+@media (max-width: 480px) {
+  .user-name-display {
+    font-size: 1.8em; /* Más reducción para móviles */
+  }
+
+  .user-profile-type {
+    font-size: 1em; /* Más reducción para móviles */
+  }
+  .user-name-display-wrapper {
+    margin-top: 10px;
+    margin-bottom: 20px;
+  }
+}
+
+
+</style>

@@ -13,19 +13,18 @@ export default {
 </script>
 
 <style>
-html,
-body {
-  display: flex;
-  margin: 0px;
-  background-color: hsla(0, 0%, 100%, 0.979);
+/* Restablecimiento global para eliminar márgenes y paddings por defecto */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%; /* Asegura que el body ocupe toda la altura también */
+  overflow-x: hidden; /* Evita barras de desplazamiento horizontales si algo se desborda accidentalmente */
 }
 
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #000000;
-  margin-top: 10px;
+/* Opcional: Un estilo de fuente base para toda la aplicación */
+body {
+  font-family: 'Arial', sans-serif; /* O la fuente que prefieras */
+  color: #333; /* Color de texto por defecto */
 }
 </style>

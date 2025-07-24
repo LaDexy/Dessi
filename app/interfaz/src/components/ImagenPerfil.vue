@@ -35,13 +35,17 @@ export default {
 
 <style scoped>
 .Perfil {
+  position: fixed; /* Cambiado de 'absolute' a 'fixed' */
+  top: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
   display: flex;
   justify-content: center;
-  /* No margin-top aquí; el componente padre (PaginaPerfil) manejará el espaciado vertical */
 }
 
 .circulo {
-  position: relative;
+  position: relative; /* Mantenemos esto si quieres elementos dentro del círculo con position absolute */
   width: 200px; /* Tamaño definitivo del círculo */
   height: 200px;
   background-color: rgb(199, 127, 199); /* Color de fondo del círculo */
@@ -60,4 +64,4 @@ export default {
   object-fit: cover; /* Asegura que la imagen cubra el círculo sin distorsionarse */
   border-radius: 50%; /* ¡Importante! También redondea la imagen misma */
 }
-</style>
+</style>  

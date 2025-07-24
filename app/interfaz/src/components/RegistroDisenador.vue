@@ -144,29 +144,36 @@ export default {
 /*centrar los requisitos*/
 .TodoDos{
 
-position: absolute;
-left: 500px;
-top: 50px;
-padding: 40px;
-font-family: "Times New Roman", serif;
+position: fixed; /* Fijo en el viewport */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6); /* Fondo oscuro translúcido */
+  display: flex; /* Usamos flexbox para centrar el modal */
+  justify-content: center; /* Centra horizontalmente */
+  align-items: center; /* Centra verticalmente */
+  z-index: 9999; /* Asegura que el modal esté por encima de todo */
+  /* Opcional: transición para que aparezca suavemente */
+  opacity: 1; /* Asumiendo que Vue controla la visibilidad con v-if */
+  transition: opacity 0.3s ease;
+  backdrop-filter: blur(5px); /* Un ligero desenfoque del fondo */
 
 }
 
 .wrapper {
 
-position: relative;
-width: 450px;
-height: 600px;
-background: white;
-border: 5px solid rgba(0, 0, 0, 0.5);
-border-radius: 100px;
-backdrop-filter: blur(20px);
-box-shadow: 0 0 30px rgba(0, 0, 0, .5);
-display: flex;
-justify-content: center;
-align-items: center;
-overflow: hidden;
-opacity: 0.9;
+/* Eliminamos position: absolute, left, top. Ahora está centrado por #Iniciar */
+  /* Eliminamos padding: 40px aquí, ya que el .form-box lo tiene */
+  font-family: "Times New Roman", serif;
+  /* El width y height se definirán en .Boton, que es el contenedor visual */
+  display: flex; /* Para centrar el .Boton si es necesario, aunque .Boton ya es flex */
+  justify-content: center;
+  align-items: center;
+  /* Asegura que no se desborde */
+  max-width: 90%; /* Limita el ancho máximo del contenedor en pantallas grandes */
+  max-height: 90vh; /* Limita la altura máxima para que quepa en el viewport */
+  overflow-y: auto; /* Permite desplazamiento si el contenido es muy largo */
 
 }
 
@@ -206,7 +213,7 @@ text-align: center;
 position: relative;
 width: 100%;
 height: 50px;
-border-bottom: 2px solid #000000;
+border-bottom: 2px solid hsl(300, 29%, 78%);
 margin: 30px 0;
 
 }

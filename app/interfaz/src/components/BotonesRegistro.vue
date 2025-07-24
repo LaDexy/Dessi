@@ -58,7 +58,7 @@ export default {
 /*Boton de Inicio de Sesion*/
 .Inicio{
 
-left: 35%;
+left: 75%;
 position: relative;
 display: inline-block;
 top: 9.5px;
@@ -79,7 +79,7 @@ cursor: pointer;
 
 .dropdown{
 
-left: 40%;
+left: 80%;
 position: relative;
 display: inline-block;
 top: 10px;
