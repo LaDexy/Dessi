@@ -53,7 +53,7 @@ export default {
 
 </script>
 
-<style>
+<style scoped>
 
 /*Boton de Inicio de Sesion*/
 .Inicio{
@@ -67,7 +67,7 @@ top: 9.5px;
 
 .Inicio button{
 
-background-color: antiquewhite;
+background-color:hsl(300, 29%, 78%);
 color: white;
 padding: 10px 15px;
 border: none;
@@ -89,8 +89,8 @@ top: 10px;
 .dropdown button{
 
 
-background-color: antiquewhite;
-color: white;
+background-color: hsl(300, 29%, 78%);
+color: white  ;
 padding: 10px 15px;
 border: none;
 cursor: pointer;
@@ -111,7 +111,7 @@ padding: 10px 15px;
 
 display: none;
 position: absolute;
-background-color: antiquewhite;
+background-color:hsl(300, 29%, 78%);
 min-width: 100px;
 box-shadow: 2px 2px 5px  hsla(0, 0%, 0%, 0.8) ;
 }
@@ -124,14 +124,20 @@ display: block;
 
 .dropdown:hover button{
 
-background-color: hsl(0, 0%, 70%);
+background-color: #D8BFD8;
 
 }
 
 
 .dropdown a:hover{
 
-background-color: hsl(0, 0%, 90%);
+background-color: #D8BFD8;
+
+}
+
+.content{
+
+color: white;
 
 }
 

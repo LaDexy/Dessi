@@ -1,5 +1,9 @@
 <template>
   <div>
+
+    <!--Renderizar ancho de app en navegador-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <!-- Este componente ahora solo muestra el contenido de la página de inicio -->
     <TituloInicial />
     <BotonesRegistro @MostrarRegistro="MostrarRegistro" />
