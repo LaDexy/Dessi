@@ -445,7 +445,7 @@ app.get("/api/profile/me", authenticateToken, async (req, res) => {
 
 // --- RUTAS DE SOLICITUDES DE CONTACTO ---
 
-// 1. Ruta para ENVIAR una solicitud de contacto (SIN CAMBIOS AQUÍ)
+// 1. Ruta para ENVIAR una solicitud de contacto (ESTA YA ESTÁ CORRECTA)
 app.post('/api/solicitudes-contacto', authenticateToken, async (req, res) => {
     const { id_receptor, email, whatsapp, instagram, tiktok, facebook } = req.body;
     const id_emisor = req.user.id_usuario;
@@ -457,15 +457,25 @@ app.post('/api/solicitudes-contacto', authenticateToken, async (req, res) => {
         return res.status(400).json({ message: 'No puedes enviarte una solicitud de contacto a ti mismo.' });
     }
 
+    let connection; // Usamos una conexión para la transacción
     try {
-        const [existingRequests] = await pool.query(
+        connection = await pool.getConnection();
+        await connection.beginTransaction(); // Iniciar transacción
+
+        const [existingRequests] = await connection.query( // Usar connection.query
             'SELECT * FROM solicitudes_contacto WHERE id_emisor = ? AND id_receptor = ? AND estatus = ?',
             [id_emisor, id_receptor, 'Pendiente']
         );
 
         if (existingRequests.length > 0) {
+            await connection.rollback(); // Rollback si ya existe
             return res.status(409).json({ message: 'Ya existe una solicitud pendiente para este usuario.' });
         }
+
+        // Obtener el nombre del emisor para la notificación
+        const [emisorProfile] = await connection.query('SELECT nombre_usuario FROM usuarios WHERE id_usuario = ?', [id_emisor]);
+        const emisor_nombre = emisorProfile.length > 0 ? emisorProfile[0].nombre_usuario : 'Usuario Desconocido';
+
 
         const query = `
             INSERT INTO solicitudes_contacto (
@@ -492,12 +502,30 @@ app.post('/api/solicitudes-contacto', authenticateToken, async (req, res) => {
             'Pendiente'
         ];
 
-        const [result] = await pool.query(query, values);
-        res.status(201).json({ message: 'Solicitud de contacto enviada con éxito.', id_solicitud: result.insertId });
+        const [result] = await connection.query(query, values); // Usar connection.query
+        const id_solicitud_generada = result.insertId; // ID de la solicitud de contacto
+
+        // --- AÑADIR: Insertar una notificación para el RECEPTOR ---
+        const notificationTitle = 'Nueva Solicitud de Contacto';
+        const notificationMessage = `¡${emisor_nombre} te ha enviado una solicitud de contacto!`;
+        const notificationUrl = `/notificaciones?solicitud=${id_solicitud_generada}`; // Ruta a la página de notificaciones con parámetro
+        const notificationType = 'solicitud_contacto';
+
+        await connection.query(
+            'INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [id_receptor, notificationType, notificationTitle, notificationMessage, notificationUrl, id_solicitud_generada, false]
+        );
+        // --- FIN AÑADIR ---
+
+        await connection.commit(); // Confirmar transacción
+        res.status(201).json({ message: 'Solicitud de contacto enviada con éxito.', id_solicitud: id_solicitud_generada });
 
     } catch (error) {
+        if (connection) await connection.rollback(); // Deshacer si hay error
         console.error('Error al enviar solicitud de contacto:', error);
         res.status(500).json({ message: 'Error interno del servidor al procesar la solicitud de contacto.' });
+    } finally {
+        if (connection) connection.release(); // Liberar conexión
     }
 });
 
@@ -555,9 +583,9 @@ app.patch('/api/solicitudes/:id_solicitud/aceptar', authenticateToken, async (re
         connection = await pool.getConnection();
         await connection.beginTransaction();
 
-        // 1. Obtener la solicitud para obtener el id_emisor
+        // 1. Obtener la solicitud para obtener el id_emisor y el nombre del receptor para la notificación
         const [requests] = await connection.query(
-            'SELECT id_emisor FROM solicitudes_contacto WHERE id_solicitud = ? AND id_receptor = ? AND estatus = ?',
+            'SELECT sc.id_emisor, u.nombre_usuario AS receptor_nombre FROM solicitudes_contacto sc JOIN usuarios u ON sc.id_receptor = u.id_usuario WHERE sc.id_solicitud = ? AND sc.id_receptor = ? AND sc.estatus = ?',
             [id_solicitud, id_receptor, 'Pendiente']
         );
 
@@ -567,6 +595,7 @@ app.patch('/api/solicitudes/:id_solicitud/aceptar', authenticateToken, async (re
         }
 
         const id_emisor = requests[0].id_emisor; // Obtenemos el ID del emisor
+        const receptor_nombre = requests[0].receptor_nombre; // Nombre del usuario que acepta la solicitud
 
         // 2. Actualizar el estatus de la solicitud a 'Aceptada'
         const [result] = await connection.query(
@@ -580,12 +609,13 @@ app.patch('/api/solicitudes/:id_solicitud/aceptar', authenticateToken, async (re
         }
 
         // 3. Crear una notificación para el EMISOR
-        const mensajeNotificacion = `Tu solicitud de contacto ha sido ACEPTADA.`;
-        const urlRedireccion = `/mis-solicitudes-enviadas/${id_solicitud}`; // O a una vista de detalles de la solicitud
+        const notificationTitleEmisorAccepted = 'Solicitud de Contacto Aceptada';
+        const mensajeNotificacionAccepted = `¡Tu solicitud de contacto ha sido ACEPTADA por ${receptor_nombre}!`; // Usamos el nombre del receptor
+        const urlRedireccionAccepted = `/notificaciones?solicitud=${id_solicitud}`; // O a una vista de detalles de la solicitud
 
         await connection.query(
-            'INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, mensaje, url_redireccion, id_referencia, leida) VALUES (?, ?, ?, ?, ?, ?)',
-            [id_emisor, 'solicitud_aceptada', mensajeNotificacion, urlRedireccion, id_solicitud, false]
+            'INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [id_emisor, 'solicitud_aceptada', notificationTitleEmisorAccepted, mensajeNotificacionAccepted, urlRedireccionAccepted, id_solicitud, false]
         );
 
         await connection.commit();
@@ -635,12 +665,13 @@ app.patch('/api/solicitudes/:id_solicitud/rechazar', authenticateToken, async (r
         }
 
         // 3. Crear una notificación para el EMISOR
-        const mensajeNotificacion = `Tu solicitud de contacto ha sido RECHAZADA.`;
-        const urlRedireccion = `/mis-solicitudes-enviadas/${id_solicitud}`; // O a una vista de detalles de la solicitud
+        const notificationTitleEmisorRejected = 'Solicitud de Contacto Rechazada';
+        const mensajeNotificacionRejected = `Tu solicitud de contacto ha sido RECHAZADA.`;
+        const urlRedireccionRejected = `/notificaciones?solicitud=${id_solicitud}`; // O a una vista de detalles de la solicitud
 
         await connection.query(
-            'INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, mensaje, url_redireccion, id_referencia, leida) VALUES (?, ?, ?, ?, ?, ?)',
-            [id_emisor, 'solicitud_rechazada', mensajeNotificacion, urlRedireccion, id_solicitud, false]
+            'INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida) VALUES (?, ?, ?, ?, ?, ?, ?)', // Añadir 'titulo'
+            [id_emisor, 'solicitud_rechazada', notificationTitleEmisorRejected, mensajeNotificacionRejected, urlRedireccionRejected, id_solicitud, false]
         );
 
         await connection.commit();
@@ -665,27 +696,47 @@ app.get('/api/notificaciones', authenticateToken, async (req, res) => {
     try {
         let query = `
             SELECT
-                id_notificacion,
-                tipo_notificacion,
-                mensaje,
-                url_redireccion,
-                id_referencia,
-                leida,
-                creado_fecha
+                n.id_notificacion,
+                n.tipo_notificacion,
+                n.titulo,
+                n.mensaje,
+                n.url_redireccion,
+                n.id_referencia,
+                n.leida,
+                n.creado_en,
+                -- Incluir datos de la solicitud de contacto si es de ese tipo
+                sc.email AS emisor_email,
+                sc.whatsapp AS emisor_whatsapp,
+                sc.instagram AS emisor_instagram,
+                sc.tiktok AS emisor_tiktok,
+                sc.facebook AS emisor_facebook,
+                u_emisor.nombre_usuario AS emisor_nombre,
+                u_emisor.foto_perfil_url AS emisor_foto_perfil
             FROM
-                notificaciones
+                notificaciones n
+            LEFT JOIN
+                solicitudes_contacto sc ON n.id_referencia = sc.id_solicitud AND n.tipo_notificacion = 'solicitud_contacto'
+            LEFT JOIN
+                usuarios u_emisor ON sc.id_emisor = u_emisor.id_usuario
             WHERE
-                id_usuario_receptor = ?
+                n.id_usuario_receptor = ?
         `;
         const values = [id_usuario_receptor];
 
         if (soloNoLeidas) {
-            query += ` AND leida = FALSE`;
+            query += ` AND n.leida = FALSE`;
         }
 
-        query += ` ORDER BY creado_fecha DESC`;
+        query += ` ORDER BY n.creado_en DESC`;
 
         const [rows] = await pool.query(query, values);
+
+        rows.forEach(notification => {
+            if (notification.emisor_foto_perfil) {
+                notification.emisor_foto_perfil = `${req.protocol}://${req.get('host')}${notification.emisor_foto_perfil}`;
+            }
+        });
+
         res.json(rows);
 
     } catch (error) {
@@ -714,6 +765,8 @@ app.patch('/api/notificaciones/:id_notificacion/marcar-leida', authenticateToken
     } catch (error) {
         console.error('Error al marcar notificación como leída:', error);
         res.status(500).json({ message: 'Error interno del servidor al marcar la notificación como leída.' });
+    } finally {
+        // No es necesario liberar conexión aquí si pool.query ya lo hace automáticamente
     }
 });
 

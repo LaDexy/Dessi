@@ -1,7 +1,6 @@
 <template>
   <div class="main-wrapper">
     <div class="content-card">
-      <!-- Componentes de perfil y navegación -->
       <BarraPerfil :userName="userName" />
 
       <div class="profile-image-section">
@@ -43,109 +42,10 @@
       </p>
     </div>
 
-    <!-- Icono de Chat Flotante -->
-    <div class="chat-icon-wrapper-fixed">
-      <IconoChat
-        @click="toggleChatbotModal"
-        :has-new-requests="hasNewRequests"
-      />
-    </div>
-
-    <!-- Icono de Notificaciones Flotante -->
     <div class="notifications-icon-wrapper-fixed">
-      <IconoNotificaciones />
+      <IconoNotificaciones @click="goToNotificationsPage" />
     </div>
 
-    <!--Modal abierto -->
-
-    <div
-      v-if="showChatbotModal"
-      style="
-        position: fixed;
-        top: 10px;
-        left: 10px;
-        background: red;
-        color: white;
-        padding: 5px;
-        z-index: 9999;
-      "
-    >
-      MODAL DE CHAT DEBERIA ESTAR ABIERTO!
-    </div>
-
-    <!-- Modal del Chatbot (Solicitudes Recibidas) -->
-    <div v-if="showChatbotModal" class="chatbot-modal-overlay">
-      <div class="chatbot-modal-content">
-        <div class="chatbot-header">
-          <h3 class="chatbot-title">Solicitudes Recibidas</h3>
-          <button @click="toggleChatbotModal" class="chatbot-close-button">
-            &times;
-          </button>
-        </div>
-        <div class="chatbot-messages">
-          <div v-if="receivedRequests.length === 0" class="no-requests-message">
-            No tienes solicitudes de contacto pendientes.
-          </div>
-          <div
-            v-for="request in receivedRequests"
-            :key="request.id_solicitud"
-            class="request-message-card"
-          >
-            <div class="message-header">
-              <img
-                :src="
-                  request.emisor_foto_perfil || 'https://via.placeholder.com/50'
-                "
-                alt="Foto de perfil"
-                class="message-profile-image"
-              />
-              <div>
-                <p class="message-sender-name">
-                  {{ request.emisor_nombre }} te ha enviado una solicitud de
-                  contacto.
-                </p>
-                <p class="message-date">
-                  Recibida el: {{ formatDate(request.creado_fecha) }}
-                </p>
-              </div>
-            </div>
-            <div class="message-contact-info">
-              <p v-if="request.emisor_email">
-                Email: {{ request.emisor_email }}
-              </p>
-              <p v-if="request.emisor_whatsapp">
-                WhatsApp: {{ request.emisor_whatsapp }}
-              </p>
-              <p v-if="request.emisor_instagram">
-                Instagram: {{ request.emisor_instagram }}
-              </p>
-              <p v-if="request.emisor_tiktok">
-                TikTok: {{ request.emisor_tiktok }}
-              </p>
-              <p v-if="request.emisor_facebook">
-                Facebook: {{ request.emisor_facebook }}
-              </p>
-            </div>
-            <div class="message-actions">
-              <button
-                @click="acceptRequest(request.id_solicitud)"
-                class="button-base button-primary button-small"
-              >
-                Aceptar
-              </button>
-              <button
-                @click="rejectRequest(request.id_solicitud)"
-                class="button-base button-secondary button-small"
-              >
-                Rechazar
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Modal de Mensaje Genérico -->
     <div v-if="showMessageModal" class="message-modal-overlay">
       <div class="message-modal-content">
         <h3 class="message-modal-title">{{ messageModalTitle }}</h3>
@@ -158,7 +58,6 @@
       </div>
     </div>
 
-    <!-- Modal para Enviar Solicitud de Contacto -->
     <VentanaSolicitud
       :show="showVentanaSolicitud"
       :targetProfileId="selectedProfileId"
@@ -179,7 +78,6 @@ import BarraBusqueda from "../components/BarraBusqueda.vue";
 import BotonesFiltro from "../components/BotonesFiltro.vue";
 import TarjetasPerfiles from "@/components/TarjetasPerfiles.vue";
 import VentanaSolicitud from "@/components/VentanaSolicitud.vue";
-import IconoChat from "@/components/IconoChat.vue"; // Importa IconoChat
 import IconoNotificaciones from "@/components/IconoNotificaciones.vue"; // Importa IconoNotificaciones
 
 export default {
@@ -193,7 +91,6 @@ export default {
     BotonesFiltro,
     TarjetasPerfiles,
     VentanaSolicitud,
-    IconoChat, // Registra IconoChat
     IconoNotificaciones, // Registra IconoNotificaciones
   },
   data() {
@@ -211,9 +108,9 @@ export default {
       showVentanaSolicitud: false,
       selectedProfileId: null,
       selectedProfileName: "",
-      showChatbotModal: false, // Controla la visibilidad del modal del chatbot
-      receivedRequests: [], // Almacenará las solicitudes de contacto recibidas
-      hasNewRequests: false, // Para indicar visualmente si hay nuevas solicitudes
+      // showChatbotModal: false, // ELIMINADO: Ya no usaremos este modal aquí
+      // receivedRequests: [], // ELIMINADO: Las solicitudes se gestionarán en la página de notificaciones
+      // hasNewRequests: false, // ELIMINADO: La cuenta de notificaciones la manejará IconoNotificaciones
     };
   },
   computed: {
@@ -242,7 +139,7 @@ export default {
   async created() {
     await this.fetchLoggedInUserProfile();
     await this.fetchAllProfiles();
-    await this.fetchReceivedRequests(); // Carga las solicitudes recibidas al inicio
+    // await this.fetchReceivedRequests(); // ELIMINADO: Ya no se carga aquí
   },
   methods: {
     async fetchLoggedInUserProfile() {
@@ -420,6 +317,8 @@ export default {
             "Solicitud Enviada",
             "¡Tu solicitud de contacto ha sido enviada con éxito!"
           );
+          // Opcional: Podrías aquí refrescar las notificaciones del IconoNotificaciones
+          // this.$refs.iconoNotificaciones.fetchNotificationsCount();
         } else {
           this.showErrorMessage(
             "Error al Enviar",
@@ -491,113 +390,16 @@ export default {
       };
       return new Date(dateString).toLocaleDateString("es-ES", options);
     },
-    // --- FUNCIONES DEL CHATBOT (SOLICITUDES RECIBIDAS) ---
-    async fetchReceivedRequests() {
-      const token =
-        localStorage.getItem("userToken") ||
-        sessionStorage.getItem("userToken");
-      if (!token) return;
-
-      try {
-        const response = await axios.get(
-          "http://localhost:4000/api/solicitudes-recibidas?estatus=Pendiente",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-        this.receivedRequests = response.data;
-        this.hasNewRequests = this.receivedRequests.length > 0;
-      } catch (error) {
-        console.error("Error fetching received requests:", error);
-        if (
-          axios.isAxiosError(error) &&
-          error.response &&
-          error.response.status === 401
-        ) {
-          // Si el token expira aquí, limpia y redirige
-          localStorage.removeItem("userToken");
-          sessionStorage.removeItem("userToken");
-          this.$router.push({ name: "Principal" });
-          this.showErrorMessage(
-            "Sesión Expirada",
-            "Tu sesión ha expirado. Por favor, inicia sesión de nuevo."
-          );
-        }
-      }
+    // NUEVO MÉTODO: Navegar a la página de notificaciones
+    goToNotificationsPage() {
+      this.$router.push({ name: "Notificaciones" });
     },
-    toggleChatbotModal() {
-      console.log(
-        "PaginaCentral: toggleChatbotModal llamado. Valor actual de showChatbotModal:",
-        this.showChatbotModal
-      ); // <--- console.log para depuración
-      this.showChatbotModal = !this.showChatbotModal;
-      if (this.showChatbotModal) {
-        this.fetchReceivedRequests(); // Recargar solicitudes cada vez que se abre el modal
-        this.hasNewRequests = false; // Una vez abierto, el usuario ya vio las solicitudes
-      }
-    },
-    async acceptRequest(requestId) {
-      const token =
-        localStorage.getItem("userToken") ||
-        sessionStorage.getItem("userToken");
-      if (!token) return;
-
-      try {
-        await axios.patch(
-          `http://localhost:4000/api/solicitudes/${requestId}/aceptar`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        this.showMessage(
-          "Solicitud Aceptada",
-          "¡Has aceptado la solicitud de contacto!"
-        );
-        this.fetchReceivedRequests(); // Actualiza la lista después de aceptar
-      } catch (error) {
-        console.error("Error accepting request:", error);
-        this.showErrorMessage(
-          "Error al Aceptar",
-          error.response?.data?.message || "Error al aceptar la solicitud."
-        );
-      }
-    },
-    async rejectRequest(requestId) {
-      const token =
-        localStorage.getItem("userToken") ||
-        sessionStorage.getItem("userToken");
-      if (!token) return;
-
-      try {
-        await axios.patch(
-          `http://localhost:4000/api/solicitudes/${requestId}/rechazar`,
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        this.showMessage(
-          "Solicitud Rechazada",
-          "Has rechazado la solicitud de contacto."
-        );
-        this.fetchReceivedRequests(); // Actualiza la lista después de rechazar
-      } catch (error) {
-        console.error("Error rejecting request:", error);
-        this.showErrorMessage(
-          "Error al Rechazar",
-          error.response?.data?.message || "Error al rechazar la solicitud."
-        );
-      }
-    },
+    // ELIMINADO: Ya no necesitamos estos métodos de gestión de solicitudes en PaginaCentral
+    // toggleChatbotModal() { /* ... */ },
+    // fetchReceivedRequests() { /* ... */ },
+    // acceptRequest() { /* ... */ },
+    // rejectRequest() { /* ... */ },
+    // handleReceivedRequestNotification() { /* ... */ },
   },
 };
 </script>

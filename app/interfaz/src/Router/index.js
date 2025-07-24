@@ -5,6 +5,7 @@ import PaginaCentral from '../Vistas/PaginaCentral.vue';
 import PaginaPerfil from '@/Vistas/PaginaPerfil.vue';
 import PaginaForo from '@/Vistas/PaginaForo.vue';
 import ForoInteraccion from '@/components/ForoInteraccion.vue';
+import PaginaNotificaciones from '@/Vistas/PaginaNotificaciones.vue';
 
 
 const routes = [
@@ -29,6 +30,12 @@ const routes = [
     path: '/perfil',
     name: 'Perfil',
     component: PaginaPerfil,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/notificaciones',
+    name: 'Notificaciones',
+    component: PaginaNotificaciones,
     meta: { requiresAuth: true }
   },
   {
