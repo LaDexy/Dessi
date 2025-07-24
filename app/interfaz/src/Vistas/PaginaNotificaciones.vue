@@ -1,141 +1,94 @@
 <template>
-  <div class="notifications-page-wrapper p-4 sm:p-6 md:p-8 lg:p-10">
-    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-lg p-6 sm:p-8">
-      <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-8 text-center">
-        Tus Notificaciones
-      </h1>
+  <div class="pagina-notificaciones-container">
+    <h2>Tus Notificaciones</h2>
+    <button @click="goBack" class="back-button">
+      <i class="fas fa-arrow-left mr-2"></i> Volver
+    </button>
 
-      <button
-        @click="goBack"
-        class="mb-6 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200"
+    <div v-if="isLoading" class="loading-message">Cargando notificaciones...</div>
+    <div v-else-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+    <div v-else-if="notifications.length > 0" class="notifications-list">
+      <div
+        v-for="notification in notifications"
+        :key="notification.id_notificacion"
+        :class="['notification-card', { 'unread': !notification.leida }]"
+        @click="handleNotificationClick(notification)"
       >
-        <i class="fas fa-arrow-left mr-2"></i> Volver
-      </button>
+        <div class="notification-header">
+          <i :class="getNotificationIcon(notification.tipo_notificacion)"></i>
+          <h3>{{ notification.titulo }}</h3>
+        </div>
+        <p class="notification-message">{{ notification.mensaje }}</p>
+        <p class="notification-date">{{ formatDate(notification.creado_fecha) }}</p>
 
-      <div v-if="loading" class="text-center py-10">
-        <p class="text-gray-600 text-lg">Cargando notificaciones...</p>
-        <i class="fas fa-spinner fa-spin text-4xl text-blue-500 mt-4"></i>
-      </div>
-
-      <div v-else-if="error" class="text-center py-10 text-red-600">
-        <p class="text-lg font-semibold">Error al cargar notificaciones:</p>
-        <p>{{ error }}</p>
-      </div>
-
-      <div v-else-if="notifications.length === 0" class="text-center py-10">
-        <p class="text-gray-500 text-xl">
-          <i class="fas fa-bell-slash text-5xl mb-4 text-gray-400"></i><br />
-          No tienes notificaciones por el momento.
-        </p>
-      </div>
-
-      <div v-else class="space-y-4">
-        <div
-          v-for="notification in sortedNotifications"
-          :key="notification.id_notificacion"
-          :class="[
-            'notification-card p-4 rounded-lg shadow-sm transition-all duration-300 ease-in-out',
-            notification.leida ? 'bg-gray-100 text-gray-600 opacity-80' : 'bg-white text-gray-800 border border-blue-200',
-            { 'border-l-4 border-blue-500': !notification.leida && notification.tipo_notificacion !== 'solicitud_contacto' },
-            { 'border-l-4 border-green-500': notification.tipo_notificacion === 'solicitud_contacto' && notification.estatus_solicitud === 'Pendiente' && !notification.leida }
-          ]"
-        >
-          <div class="flex items-start space-x-4">
-            <div class="flex-shrink-0">
-              <i :class="getNotificationIcon(notification.tipo_notificacion)" class="text-2xl sm:text-3xl text-blue-500"></i>
-            </div>
-            <div class="flex-grow">
-              <h3 class="font-bold text-lg sm:text-xl mb-1">{{ notification.titulo }}</h3>
-              <p class="text-sm sm:text-base mb-2">{{ notification.mensaje }}</p>
-              <p class="text-xs text-gray-400 mt-1">
-                Recibida el: {{ formatDate(notification.creado_en) }}
-              </p>
-
-              <!-- Acciones para Solicitudes de Contacto Pendientes -->
-              <div
-                v-if="notification.tipo_notificacion === 'solicitud_contacto' && notification.estatus_solicitud === 'Pendiente'"
-                class="mt-3 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2"
-              >
-                <button
-                  @click="acceptRequest(notification.id_referencia, notification.id_notificacion)"
-                  class="flex-1 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors duration-200 text-sm font-medium shadow-md"
-                >
-                  <i class="fas fa-check-circle mr-2"></i> Aceptar
-                </button>
-                <button
-                  @click="rejectRequest(notification.id_referencia, notification.id_notificacion)"
-                  class="flex-1 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors duration-200 text-sm font-medium shadow-md"
-                >
-                  <i class="fas fa-times-circle mr-2"></i> Rechazar
-                </button>
-              </div>
-              <!-- Estado de Solicitudes de Contacto ya manejadas -->
-              <div
-                v-else-if="notification.tipo_notificacion === 'solicitud_contacto' && notification.estatus_solicitud !== 'Pendiente'"
-                :class="[
-                  'mt-3 text-sm font-semibold',
-                  notification.estatus_solicitud === 'Aceptada' ? 'text-green-600' : 'text-red-600'
-                ]"
-              >
-                <i :class="notification.estatus_solicitud === 'Aceptada' ? 'fas fa-check-double' : 'fas fa-ban'" class="mr-1"></i>
-                Solicitud {{ notification.estatus_solicitud }}
-              </div>
-
-              <!-- Botón para marcar como leído (para otras notificaciones no manejables) -->
-              <div v-if="!notification.leida && notification.tipo_notificacion !== 'solicitud_contacto'" class="mt-3">
-                <button
-                  @click="markAsRead(notification.id_notificacion)"
-                  class="px-3 py-1 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors duration-200 text-xs font-medium"
-                >
-                  Marcar como leído
-                </button>
-              </div>
-            </div>
+        <div v-if="notification.tipo_notificacion === 'solicitud_contacto'" class="solicitud-acciones">
+          <p class="solicitud-estado">Estado: {{ notification.estatus_solicitud || 'Pendiente' }}</p>
+          <div v-if="notification.estatus_solicitud === 'Pendiente'" class="action-buttons">
+            <button @click.stop="acceptContactRequest(notification)" class="btn-accept">Aceptar</button>
+            <button @click.stop="rejectContactRequest(notification)" class="btn-reject">Rechazar</button>
+          </div>
+          <div v-if="notification.estatus_solicitud === 'Aceptada' && notification.email_emisor" class="contact-details">
+            <p><strong>Contacto:</strong></p>
+            <p>Email: {{ notification.email_emisor }}</p>
+            <p v-if="notification.emisor_whatsapp">WhatsApp: {{ notification.emisor_whatsapp }}</p>
+            <p v-if="notification.emisor_instagram">Instagram: {{ notification.emisor_instagram }}</p>
+            <p v-if="notification.emisor_tiktok">TikTok: {{ notification.emisor_tiktok }}</p>
+            <p v-if="notification.emisor_facebook">Facebook: {{ notification.emisor_facebook }}</p>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- Modal para mostrar datos de contacto al aceptar -->
-    <div v-if="showContactDetailsModal" class="modal-overlay">
-      <div class="modal-content">
-        <button @click="closeContactDetailsModal" class="modal-close-button">
-          &times;
-        </button>
-        <h3 class="text-2xl font-bold text-gray-800 mb-4">
-          Datos de Contacto de {{ currentContactDetails.emisor_nombre }}
-        </h3>
-        <div class="text-left text-gray-700 space-y-2">
-          <p v-if="currentContactDetails.emisor_email">
-            <strong>Correo:</strong> {{ currentContactDetails.emisor_email }}
-          </p>
-          <p v-if="currentContactDetails.emisor_whatsapp">
-            <strong>WhatsApp:</strong> {{ currentContactDetails.emisor_whatsapp }}
-          </p>
-          <p v-if="currentContactDetails.emisor_instagram">
-            <strong>Instagram:</strong> {{ currentContactDetails.emisor_instagram }}
-          </p>
-          <p v-if="currentContactDetails.emisor_tiktok">
-            <strong>TikTok:</strong> {{ currentContactDetails.emisor_tiktok }}
-          </p>
-          <p v-if="currentContactDetails.emisor_facebook">
-            <strong>Facebook:</strong> {{ currentContactDetails.emisor_facebook }}
-          </p>
+        <div v-else-if="notification.tipo_notificacion === 'solicitud_aceptada' || notification.tipo_notificacion === 'solicitud_rechazada'">
+          <button @click.stop="openAcceptedRejectedModal(notification)" class="btn-view-status">Ver Estado</button>
         </div>
-        <button @click="closeContactDetailsModal" class="button-primary mt-6">
-          Cerrar
-        </button>
+        
       </div>
     </div>
+    <div v-else class="no-notifications-message">
+      No tienes notificaciones por el momento.
+    </div>
 
-    <!-- Modal de Mensaje Genérico (reutilizado de PaginaCentral) -->
     <div v-if="showMessageModal" class="message-modal-overlay">
       <div class="message-modal-content">
         <h3 class="message-modal-title">{{ messageModalTitle }}</h3>
         <p class="message-modal-message">{{ messageModalMessage }}</p>
         <div class="message-modal-actions">
-          <button @click="closeMessageModal" class="message-modal-button-close">
-            Cerrar
+          <button @click="closeMessageModal" class="message-modal-button-close">Cerrar</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showContactDetailsModal" class="message-modal-overlay">
+      <div class="message-modal-content">
+        <button @click="closeContactDetailsModal" class="modal-close-button">&times;</button>
+        <h3 class="message-modal-title">Datos de Contacto de {{ selectedContactDetails.nombre_usuario }}</h3>
+        <div class="contact-details-modal-info">
+          <p>Email: {{ selectedContactDetails.email }}</p>
+          <p v-if="selectedContactDetails.whatsapp">WhatsApp: {{ selectedContactDetails.whatsapp }}</p>
+          <p v-if="selectedContactDetails.instagram">Instagram: {{ selectedContactDetails.instagram }}</p>
+          <p v-if="selectedContactDetails.tiktok">TikTok: {{ selectedContactDetails.tiktok }}</p>
+          <p v-if="selectedContactDetails.facebook">Facebook: {{ selectedContactDetails.facebook }}</p>
+        </div>
+        <button @click="markAsReadAndCloseContactModal(selectedContactDetails.id_notificacion)" class="message-modal-button-close">
+          Cerrar
+        </button>
+      </div>
+    </div>
+
+    <div v-if="showAcceptedRejectedModal" class="message-modal-overlay">
+      <div class="message-modal-content">
+        <button @click="closeAcceptedRejectedModal" class="modal-close-button">&times;</button>
+        <div class="icon-container">
+            <i :class="{'fas fa-check-circle success-icon': acceptedRejectedNotification.tipo_notificacion === 'solicitud_aceptada', 'fas fa-times-circle error-icon': acceptedRejectedNotification.tipo_notificacion === 'solicitud_rechazada'}"></i>
+        </div>
+        <h3 class="message-modal-title" :class="{'success-title': acceptedRejectedNotification.tipo_notificacion === 'solicitud_aceptada', 'error-title': acceptedRejectedNotification.tipo_notificacion === 'solicitud_rechazada'}">
+          {{ acceptedRejectedNotification.tipo_notificacion === 'solicitud_aceptada' ? 'Solicitud de Contacto Aceptada' : 'Solicitud de Contacto Rechazada' }}
+        </h3>
+        <p class="message-modal-message">
+          {{ acceptedRejectedNotification.tipo_notificacion === 'solicitud_aceptada' ? '¡Tu solicitud de contacto ha sido ACEPTADA por ' + (acceptedRejectedNotification.nombre_usuario_emisor || 'el emprendedor') + '!' : 'Tu solicitud de contacto ha sido RECHAZADA por ' + (acceptedRejectedNotification.nombre_usuario_emisor || 'el emprendedor') + '.' }}
+        </p>
+        <p class="received-date">Recibida el: {{ formatDate(acceptedRejectedNotification.creado_fecha) }}</p>
+        <div class="message-modal-actions">
+          <button @click="markAsReadAndCloseAcceptedRejectedModal(acceptedRejectedNotification.id_notificacion)" class="message-modal-button-close">
+            Marcar como leído
           </button>
         </div>
       </div>
@@ -144,316 +97,411 @@
 </template>
 
 <script>
-import axios from "axios";
+import axios from 'axios';
 
 export default {
-  name: "PaginaNotificaciones",
+  name: 'PaginaNotificaciones',
   data() {
     return {
       notifications: [],
-      loading: true,
-      error: null,
+      isLoading: true,
+      errorMessage: '',
+      showMessageModal: false,
+      messageModalTitle: '',
+      messageModalMessage: '',
       showContactDetailsModal: false,
-      currentContactDetails: {},
-      showMessageModal: false, // Para mensajes de éxito/error
-      messageModalTitle: "",
-      messageModalMessage: "",
+      selectedContactDetails: {},
+      showAcceptedRejectedModal: false,
+      acceptedRejectedNotification: {}, // Para la notificación de solicitud aceptada/rechazada
     };
-  },
-  computed: {
-    sortedNotifications() {
-      // Ordenar notificaciones: no leídas/pendientes primero, luego por fecha descendente
-      return [...this.notifications].sort((a, b) => {
-        // Solicitudes pendientes primero
-        const aIsPendingRequest = a.tipo_notificacion === 'solicitud_contacto' && a.estatus_solicitud === 'Pendiente';
-        const bIsPendingRequest = b.tipo_notificacion === 'solicitud_contacto' && b.estatus_solicitud === 'Pendiente';
-
-        if (aIsPendingRequest && !bIsPendingRequest) return -1;
-        if (!aIsPendingRequest && bIsPendingRequest) return 1;
-
-        // Luego, notificaciones no leídas
-        if (!a.leida && b.leida) return -1;
-        if (a.leida && !b.leida) return 1;
-
-        // Finalmente, por fecha (más reciente primero)
-        return new Date(b.creado_en) - new Date(a.creado_en);
-      });
-    },
   },
   async created() {
     await this.fetchNotifications();
   },
   methods: {
     goBack() {
-      this.$router.go(-1); // Vuelve a la página anterior
+      this.$router.go(-1);
     },
     async fetchNotifications() {
-      this.loading = true;
-      this.error = null;
+      this.isLoading = true;
+      this.errorMessage = '';
       try {
-        const token =
-          localStorage.getItem("userToken") ||
-          sessionStorage.getItem("userToken");
+        const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
         if (!token) {
-          this.error = "No hay token de autenticación. Por favor, inicia sesión.";
-          this.$router.push({ name: "Principal" }); // Redirige al login si no hay token
+          this.errorMessage = 'No hay token de autenticación. Por favor, inicia sesión.';
+          this.$router.push({ name: 'Principal' });
           return;
         }
 
-        // Obtener todas las notificaciones (leídas y no leídas)
-        const response = await axios.get("http://localhost:4000/api/notificaciones", {
-          headers: { Authorization: `Bearer ${token}` },
+        const response = await axios.get('http://localhost:4000/api/notificaciones', {
+          headers: { Authorization: `Bearer ${token}` }
         });
-        this.notifications = response.data;
 
-        // Si se llegó a esta página desde una solicitud específica, marcarla como leída
-        // y opcionalmente abrir el modal de detalles si es una solicitud de contacto
-        const solicitudIdFromUrl = this.$route.query.solicitud;
-        if (solicitudIdFromUrl) {
-          const notificationForRequest = this.notifications.find(
-            (n) => n.tipo_notificacion === 'solicitud_contacto' && String(n.id_referencia) === solicitudIdFromUrl
-          );
-          if (notificationForRequest && !notificationForRequest.leida) {
-            await this.markAsRead(notificationForRequest.id_notificacion);
-            // Si es una solicitud pendiente, abrir el modal de detalles
-            if (notificationForRequest.estatus_solicitud === 'Pendiente') {
-              this.currentContactDetails = notificationForRequest;
-              this.showContactDetailsModal = true;
-            }
-          }
-        }
-
-      } catch (err) {
-        console.error("Error al cargar notificaciones:", err);
-        if (axios.isAxiosError(err) && err.response && err.response.status === 401) {
-          this.error = "Tu sesión ha expirado. Por favor, inicia sesión de nuevo.";
-          this.$router.push({ name: "Principal" });
+        if (response.status === 200) {
+          this.notifications = response.data;
+          console.log('Notificaciones cargadas:', this.notifications);
         } else {
-          this.error = "No se pudieron cargar las notificaciones. Inténtalo de nuevo más tarde.";
+          this.errorMessage = 'Error al cargar notificaciones: ' + (response.data.message || 'Error desconocido.');
+          console.error('Error al cargar notificaciones:', response.status, response.data);
+        }
+      } catch (error) {
+        console.error('Error en la solicitud para obtener notificaciones:', error);
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+          this.errorMessage = 'Tu sesión ha expirado o no tienes permisos. Por favor, inicia sesión.';
+          localStorage.removeItem('userToken');
+          sessionStorage.removeItem('userToken');
+          this.$router.push({ name: 'Principal' });
+        } else {
+          this.errorMessage = 'Error de conexión con el servidor o al obtener notificaciones.';
         }
       } finally {
-        this.loading = false;
+        this.isLoading = false;
       }
-    },
-    async markAsRead(notificationId) {
-      try {
-        const token =
-          localStorage.getItem("userToken") ||
-          sessionStorage.getItem("userToken");
-        if (!token) return;
-
-        await axios.patch(
-          `http://localhost:4000/api/notificaciones/${notificationId}/marcar-leida`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        // Actualizar el estado 'leida' en el array local de notificaciones
-        const index = this.notifications.findIndex(
-          (n) => n.id_notificacion === notificationId
-        );
-        if (index !== -1) {
-          this.notifications[index].leida = true;
-        }
-        // Emitir un evento global para que IconoNotificaciones actualice su contador
-        this.$emit('notifications-updated'); // Esto lo escuchará el componente padre (App.vue o similar)
-      } catch (err) {
-        console.error("Error al marcar notificación como leída:", err);
-        this.showErrorMessage("Error", "No se pudo marcar la notificación como leída.");
-      }
-    },
-    async acceptRequest(solicitudId, notificationId) {
-      try {
-        const token =
-          localStorage.getItem("userToken") ||
-          sessionStorage.getItem("userToken");
-        if (!token) return;
-
-        await axios.patch(
-          `http://localhost:4000/api/solicitudes/${solicitudId}/aceptar`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        // Actualizar el estado de la solicitud en el array local
-        const notificationIndex = this.notifications.findIndex(
-          (n) => n.id_referencia === solicitudId && n.tipo_notificacion === 'solicitud_contacto'
-        );
-        if (notificationIndex !== -1) {
-          this.notifications[notificationIndex].estatus_solicitud = 'Aceptada';
-          this.notifications[notificationIndex].leida = true; // Marcar como leída al manejar
-        }
-
-        // Marcar la notificación específica como leída en la DB
-        await this.markAsRead(notificationId);
-
-        // Mostrar el modal con los datos de contacto
-        const acceptedNotification = this.notifications[notificationIndex];
-        this.currentContactDetails = {
-          emisor_nombre: acceptedNotification.emisor_nombre,
-          emisor_email: acceptedNotification.emisor_email,
-          emisor_whatsapp: acceptedNotification.emisor_whatsapp,
-          emisor_instagram: acceptedNotification.emisor_instagram,
-          emisor_tiktok: acceptedNotification.emisor_tiktok,
-          emisor_facebook: acceptedNotification.emisor_facebook,
-        };
-        this.showContactDetailsModal = true;
-        this.showMessage("Solicitud Aceptada", "¡Has aceptado la solicitud de contacto!");
-
-      } catch (err) {
-        console.error("Error al aceptar solicitud:", err);
-        this.showErrorMessage("Error", "No se pudo aceptar la solicitud.");
-      }
-    },
-    async rejectRequest(solicitudId, notificationId) {
-      try {
-        const token =
-          localStorage.getItem("userToken") ||
-          sessionStorage.getItem("userToken");
-        if (!token) return;
-
-        await axios.patch(
-          `http://localhost:4000/api/solicitudes/${solicitudId}/rechazar`,
-          {},
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
-
-        // Actualizar el estado de la solicitud en el array local
-        const notificationIndex = this.notifications.findIndex(
-          (n) => n.id_referencia === solicitudId && n.tipo_notificacion === 'solicitud_contacto'
-        );
-        if (notificationIndex !== -1) {
-          this.notifications[notificationIndex].estatus_solicitud = 'Rechazada';
-          this.notifications[notificationIndex].leida = true; // Marcar como leída al manejar
-        }
-
-        // Marcar la notificación específica como leída en la DB
-        await this.markAsRead(notificationId);
-        this.showMessage("Solicitud Rechazada", "Has rechazado la solicitud de contacto.");
-      } catch (err) {
-        console.error("Error al rechazar solicitud:", err);
-        this.showErrorMessage("Error", "No se pudo rechazar la solicitud.");
-      }
-    },
-    closeContactDetailsModal() {
-      this.showContactDetailsModal = false;
-      this.currentContactDetails = {};
-      // Después de cerrar el modal de detalles, recargar las notificaciones
-      // para asegurar que el estado visual esté actualizado (ej. el badge)
-      this.fetchNotifications();
     },
     getNotificationIcon(type) {
       switch (type) {
         case 'solicitud_contacto':
+          return 'fas fa-handshake';
         case 'solicitud_aceptada':
+          return 'fas fa-check-circle text-success';
         case 'solicitud_rechazada':
-          return 'fas fa-handshake'; // Icono para solicitudes
-        case 'desafio_participacion':
-          return 'fas fa-trophy'; // Icono para desafíos
-        case 'foro_reaccion':
-          return 'fas fa-heart'; // Icono para reacciones en foro
-        case 'foro_respuesta':
-          return 'fas fa-reply'; // Icono para respuestas en foro
-        case 'desafio_propuesta':
-          return 'fas fa-lightbulb'; // Icono para propuestas en desafío
+          return 'fas fa-times-circle text-danger';
+        case 'nuevo_desafio': // Icono para nuevos desafíos
+          return 'fas fa-bullhorn';
+        // Agrega más tipos de notificación e iconos aquí
         default:
-          return 'fas fa-bell'; // Icono por defecto
+          return 'fas fa-bell';
       }
     },
-    formatDate(dateString) {
-      const options = {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      };
-      return new Date(dateString).toLocaleDateString("es-ES", options);
+    async markNotificationAsRead(id_notificacion) {
+      try {
+        const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+        if (!token) {
+          console.warn('No hay token de autenticación para marcar notificación como leída.');
+          return;
+        }
+        await axios.patch(`http://localhost:4000/api/notificaciones/${id_notificacion}/leida`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        // Actualizar el estado en el frontend
+        const index = this.notifications.findIndex(n => n.id_notificacion === id_notificacion);
+        if (index !== -1) {
+          this.$set(this.notifications[index], 'leida', 1);
+        }
+      } catch (error) {
+        console.error('Error al marcar notificación como leída:', error);
+      }
+    },
+    handleNotificationClick(notification) {
+      // Marcar la notificación como leída si no lo está
+      if (!notification.leida) {
+        this.markNotificationAsRead(notification.id_notificacion);
+      }
+
+      // Lógica de redirección o apertura de modal según el tipo de notificación
+      if (notification.tipo_notificacion === 'solicitud_contacto') {
+        // Si es una solicitud de contacto, se maneja con los botones Aceptar/Rechazar
+        // o con la visualización de detalles de contacto si ya fue aceptada.
+        // No hay una acción de clic global que haga algo si ya está aceptada/rechazada.
+        // Puedes implementar aquí abrir un modal con la información si lo deseas.
+        console.log("Notificación de solicitud de contacto clickeada. Las acciones están en los botones.");
+      } else if (notification.tipo_notificacion === 'solicitud_aceptada' || notification.tipo_notificacion === 'solicitud_rechazada') {
+        this.openAcceptedRejectedModal(notification);
+      } else if (notification.tipo_notificacion === 'nuevo_desafio') {
+        // NUEVA LÓGICA: Redirigir a la página de detalles del desafío
+        if (notification.id_referencia) { // id_referencia debe ser el id_desafio
+          this.$router.push({ name: 'PaginaDetalleDesafio', params: { id: notification.id_referencia } });
+          console.log('Redirigiendo a detalles del desafío:', notification.id_referencia);
+        } else {
+          console.warn('Notificación de nuevo desafío sin id_referencia. No se puede redirigir.');
+          this.showMessage('Error de Notificación', 'Esta notificación de desafío no tiene un ID válido para redirigir.');
+        }
+      }
+      // Puedes añadir más casos para otros tipos de notificación aquí
+    },
+    async acceptContactRequest(notification) {
+      console.log('Aceptando solicitud:', notification.id_referencia);
+      try {
+        const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+        const response = await axios.patch(`http://localhost:4000/api/solicitudes/${notification.id_referencia}/aceptar`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.status === 200) {
+          this.showMessage('Solicitud Aceptada', '¡Has aceptado la solicitud de contacto!');
+          await this.markNotificationAsRead(notification.id_notificacion);
+          await this.fetchNotifications(); // Recargar notificaciones para actualizar el estado
+        } else {
+          this.showErrorMessage('Error al Aceptar Solicitud', 'No se pudo aceptar la solicitud. Inténtalo de nuevo.');
+        }
+      } catch (error) {
+        console.error('Error al aceptar solicitud:', error);
+        this.showErrorMessage('Error al Aceptar Solicitud', 'Error de conexión o problema al procesar la solicitud.');
+      }
+    },
+    async rejectContactRequest(notification) {
+      console.log('Rechazando solicitud:', notification.id_referencia);
+      try {
+        const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+        const response = await axios.patch(`http://localhost:4000/api/solicitudes/${notification.id_referencia}/rechazar`, {}, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.status === 200) {
+          this.showMessage('Solicitud Rechazada', 'Has rechazado la solicitud de contacto.');
+          await this.markNotificationAsRead(notification.id_notificacion);
+          await this.fetchNotifications(); // Recargar notificaciones
+        } else {
+          this.showErrorMessage('Error al Rechazar Solicitud', 'No se pudo rechazar la solicitud. Inténtalo de nuevo.');
+        }
+      } catch (error) {
+        console.error('Error al rechazar solicitud:', error);
+        this.showErrorMessage('Error al Rechazar Solicitud', 'Error de conexión o problema al procesar la solicitud.');
+      }
+    },
+    // Métodos para mostrar/ocultar modales
+    showMessage(title, message) {
+      this.messageModalTitle = title;
+      this.messageModalMessage = message;
+      this.showMessageModal = true;
     },
     showErrorMessage(title, message) {
       this.messageModalTitle = title;
       this.messageModalMessage = message;
       this.showMessageModal = true;
     },
-    showMessage(title, message) {
-      this.messageModalTitle = title;
-      this.messageModalMessage = message;
-      this.showMessageModal = true;
-    },
     closeMessageModal() {
       this.showMessageModal = false;
-      this.messageModalTitle = "";
-      this.messageModalMessage = "";
+      this.messageModalTitle = '';
+      this.messageModalMessage = '';
     },
-  },
+    openAcceptedRejectedModal(notification) {
+      this.acceptedRejectedNotification = { ...notification }; // Copiar para evitar mutar el original
+      this.showAcceptedRejectedModal = true;
+    },
+    closeAcceptedRejectedModal() {
+      this.showAcceptedRejectedModal = false;
+      this.acceptedRejectedNotification = {};
+    },
+    markAsReadAndCloseAcceptedRejectedModal(id_notificacion) {
+      this.markNotificationAsRead(id_notificacion);
+      this.closeAcceptedRejectedModal();
+      this.fetchNotifications(); // Recargar para que la notificación se actualice como leída
+    },
+    // Este método es para mostrar los detalles de contacto de una solicitud ACEPTADA
+    async openContactDetailsModal(notification) {
+      try {
+        const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+        const response = await axios.get(`http://localhost:4000/api/solicitudes/${notification.id_referencia}/details`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.status === 200) {
+          this.selectedContactDetails = response.data; // Aquí debes recibir los datos de contacto y el nombre del usuario emisor
+          this.showContactDetailsModal = true;
+          // Marcar como leída después de abrir el modal si no lo está
+          if (!notification.leida) {
+            this.markNotificationAsRead(notification.id_notificacion);
+          }
+        } else {
+          this.showErrorMessage('Error', 'No se pudieron cargar los detalles de contacto.');
+        }
+      } catch (error) {
+        console.error('Error al obtener detalles de contacto:', error);
+        this.showErrorMessage('Error', 'Error de conexión o al obtener detalles de contacto.');
+      }
+    },
+    closeContactDetailsModal() {
+      this.showContactDetailsModal = false;
+      this.selectedContactDetails = {};
+    },
+    markAsReadAndCloseContactModal(id_notificacion) {
+      this.markNotificationAsRead(id_notificacion);
+      this.closeContactDetailsModal();
+      this.fetchNotifications(); // Recargar para que la notificación se actualice como leída
+    },
+    formatDate(dateString) {
+      if (!dateString) return 'N/A';
+      const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+      return new Date(dateString).toLocaleDateString('es-ES', options);
+    }
+  }
 };
 </script>
 
-<style>
-/* Estilos generales de la página de notificaciones */
-.notifications-page-wrapper {
-  min-height: calc(100vh - 80px); /* Ajusta según el header/footer si tienes */
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start; /* Alinea el contenido arriba */
-  align-items: center;
-  background-color: #f0f2f5; /* Fondo suave */
-}
-
-.notification-card {
-  border-radius: 0.75rem; /* rounded-lg */
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* shadow-md */
-}
-
-.notification-card.bg-white {
-    border: 1px solid #e2e8f0; /* border-gray-200 */
-}
-
-.notification-card.bg-gray-100 {
-    border: 1px solid #cbd5e0; /* border-gray-300 */
-}
-
-/* Estilos para el modal de datos de contacto (reutilizados del simulador) */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-}
-
-.modal-content {
-  background-color: white;
-  padding: 30px;
-  border-radius: 15px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-  max-width: 500px;
-  width: 90%;
-  text-align: center;
-  position: relative;
-}
-
-.modal-close-button {
-  position: absolute;
-  top: 15px;
-  right: 15px;
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
+<style scoped>
+/* Estilos existentes */
+.pagina-notificaciones-container {
+  padding: 20px;
+  max-width: 800px;
+  margin: 20px auto;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   color: #333;
 }
 
-.modal-close-button:hover {
-  color: #ff4d4f;
+h2 {
+  text-align: center;
+  color: #0056b3;
+  margin-bottom: 30px;
 }
 
-/* Estilos para el modal de mensaje genérico (reutilizados de PaginaCentral) */
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 15px;
+  background-color: #6c757d; /* Gris */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.2s ease;
+  margin-bottom: 25px;
+}
+
+.back-button:hover {
+  background-color: #5a6268;
+}
+
+.loading-message, .error-message, .no-notifications-message {
+  text-align: center;
+  padding: 20px;
+  font-size: 1.1em;
+  color: #666;
+}
+
+.error-message {
+  color: #d9534f;
+  background-color: #f2dede;
+  border: 1px solid #ebccd1;
+  border-radius: 4px;
+}
+
+.notifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.notification-card {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease-in-out, background-color 0.2s ease;
+  cursor: pointer;
+}
+
+.notification-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
+}
+
+.notification-card.unread {
+  background-color: #e6f7ff; /* Fondo azul claro para no leídas */
+  border-left: 5px solid #007bff; /* Barra lateral azul */
+}
+
+.notification-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.notification-header i {
+  font-size: 1.5em;
+  margin-right: 10px;
+  color: #007bff; /* Color predeterminado para iconos */
+}
+
+.notification-header h3 {
+  margin: 0;
+  font-size: 1.2em;
+  color: #333;
+  flex-grow: 1;
+}
+
+.notification-message {
+  font-size: 0.95em;
+  color: #555;
+  margin-bottom: 10px;
+}
+
+.notification-date {
+  font-size: 0.8em;
+  color: #888;
+  text-align: right;
+}
+
+/* Estilos específicos para solicitudes de contacto */
+.solicitud-acciones {
+  margin-top: 15px;
+  padding-top: 10px;
+  border-top: 1px solid #eee;
+}
+
+.solicitud-estado {
+  font-weight: bold;
+  color: #007bff;
+  margin-bottom: 10px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.btn-accept, .btn-reject, .btn-view-status {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.2s ease;
+}
+
+.btn-accept {
+  background-color: #28a745;
+  color: white;
+}
+
+.btn-accept:hover {
+  background-color: #218838;
+}
+
+.btn-reject {
+  background-color: #dc3545;
+  color: white;
+}
+
+.btn-reject:hover {
+  background-color: #c82333;
+}
+
+.btn-view-status {
+  background-color: #007bff;
+  color: white;
+}
+
+.btn-view-status:hover {
+  background-color: #0056b3;
+}
+
+.contact-details {
+  margin-top: 10px;
+  background-color: #f0f8ff;
+  border: 1px solid #cceeff;
+  border-radius: 5px;
+  padding: 10px;
+  font-size: 0.9em;
+}
+
+.contact-details p {
+  margin: 5px 0;
+}
+
+/* Estilos para modales (reutilizados y específicos) */
 .message-modal-overlay {
   position: fixed;
   top: 0;
@@ -464,7 +512,7 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 3000; /* Asegúrate de que esté por encima de otros modales si se usan juntos */
+  z-index: 1000;
 }
 
 .message-modal-content {
@@ -472,27 +520,42 @@ export default {
   padding: 25px;
   border-radius: 12px;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
-  max-width: 400px;
+  max-width: 450px;
   width: 90%;
   text-align: center;
   position: relative;
 }
 
+.modal-close-button {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #999;
+}
+.modal-close-button:hover {
+  color: #555;
+}
+
+
 .message-modal-title {
-  font-size: 1.5rem; /* text-2xl */
+  font-size: 1.5rem;
   font-weight: bold;
   color: #333;
   margin-bottom: 15px;
 }
 
 .message-modal-message {
-  font-size: 1rem; /* text-base */
+  font-size: 1rem;
   color: #555;
   margin-bottom: 20px;
 }
 
 .message-modal-button-close {
-  background-color: #007bff; /* blue-600 */
+  background-color: #007bff;
   color: white;
   padding: 10px 20px;
   border-radius: 8px;
@@ -503,12 +566,39 @@ export default {
 }
 
 .message-modal-button-close:hover {
-  background-color: #0056b3; /* blue-700 */
+  background-color: #0056b3;
 }
 
-/* Estilos para botones de acción en notificaciones */
-.button-small {
-    padding: 0.375rem 0.75rem; /* px-3 py-1.5 */
-    font-size: 0.875rem; /* text-sm */
+.contact-details-modal-info p {
+  margin: 8px 0;
+  font-size: 1em;
+  color: #444;
+}
+
+.icon-container {
+  font-size: 3em;
+  margin-bottom: 15px;
+}
+
+.success-icon {
+  color: #28a745; /* Verde para éxito */
+}
+
+.error-icon {
+  color: #dc3545; /* Rojo para error */
+}
+
+.success-title {
+  color: #28a745;
+}
+
+.error-title {
+  color: #dc3545;
+}
+
+.received-date {
+  font-size: 0.9em;
+  color: #777;
+  margin-top: 15px;
 }
 </style>

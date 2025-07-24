@@ -7,6 +7,7 @@ import PaginaForo from '@/Vistas/PaginaForo.vue';
 import ForoInteraccion from '@/components/ForoInteraccion.vue';
 import PaginaNotificaciones from '@/Vistas/PaginaNotificaciones.vue';
 import PaginaDesafios from '@/Vistas/PaginaDesafios.vue';
+import PaginaDetalleDesafio from '@/Vistas/PaginaDetalleDesafio.vue';
 
 
 const routes = [
@@ -31,6 +32,13 @@ const routes = [
     path: '/desafiosActivos',
     name: 'desafiosActivos',
     component: PaginaDesafios,
+    meta: { requiresAuth: true }
+  },
+  {
+    path:  '/desafios/:id',
+    name: 'PaginaDetalleDesafio',
+    component: PaginaDetalleDesafio,
+    props: true,
     meta: { requiresAuth: true }
   },
   {
