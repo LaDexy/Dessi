@@ -47,34 +47,20 @@
             </p>
           </div>
 
+          <!-- CAMBIO CLAVE AQUÍ: Desafios Activos ahora es un enlace de navegación -->
           <div class="Desafios" v-if="userRole === 'Diseñador' || userRole === 'Marketing'">
             <p>
               <a
                 class="btn btn-primary"
-                data-bs-toggle="collapse"
-                href="#desafiosCollapse"
+                @click="goToPaginaDesafios"
                 role="button"
                 aria-expanded="false"
                 aria-controls="desafiosCollapse"
-                @click="fetchDesafios" >
+              >
                 Desafios Activos
               </a>
             </p>
-
-            <div class="collapse" id="desafiosCollapse">
-              <div class="card card-body">
-                <div v-if="isLoading">Cargando desafíos...</div>
-                <div v-else-if="desafios.length > 0">
-                  <div v-for="desafio in desafios" :key="desafio.id_desafio" class="desafio-item">
-                    <h4>{{ desafio.nombre_desafio }}</h4>
-                    <p>{{ desafio.descripcion_desafio }}</p>
-                    <p>Estado: {{ desafio.estado }}</p>
-                    <p v-if="desafio.nombre_usuario_emprendedor">Creado por: {{ desafio.nombre_usuario_emprendedor }}</p>
-                  </div>
-                </div>
-                <p v-else>No hay desafíos activos de emprendedores en este momento.</p>
-              </div>
-            </div>
+            <!-- ELIMINADO: Ya no hay div.collapse con la lista de desafíos aquí -->
           </div>
 
           <div class="Convenio">
@@ -96,26 +82,6 @@
             </div>
           </div>
 
-          <div class="Favorito">
-            <p>
-              <a
-                class="btn btn-primary"
-                data-bs-toggle="collapse"
-                href="#collapseExample4"
-                role="button"
-                aria-expanded="false"
-                aria-controls="collapseExample"
-              >
-                Mis favoritos
-              </a>
-            </p>
-
-            <div class="collapse" id="collapseExample4">
-              <div class="card card-body">
-                Aca saldran los perfiles favoritos
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -123,7 +89,7 @@
 </template>
 
 <script>
-import axios from 'axios';
+ // Se mantiene por si hay otros métodos que lo usen, aunque fetchDesafios se elimina
 
 export default {
   name: "ContenidoMenu",
@@ -135,8 +101,8 @@ export default {
   },
   data() {
     return {
-      desafios: [],
-      isLoading: false, // Nuevo estado de carga para el fetch
+      // ELIMINADO: desafios: [],
+      // ELIMINADO: isLoading: false,
     };
   },
   methods: {
@@ -148,43 +114,16 @@ export default {
       });
       console.log("Intentando navegar a PaginaForo...");
     },
-    async fetchDesafios() {
-      this.isLoading = true; // Inicia la carga
-      this.desafios = []; // Limpia desafíos anteriores
-      try {
-        const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
-        if (!token) {
-          console.warn('No se encontró token de autenticación. No se pueden obtener los desafíos.');
-          // Opcional: Podrías emitir un evento para que PaginaCentral.vue maneje esto
-          return;
+    // NUEVO MÉTODO: Para navegar a la nueva página de desafíos
+    goToPaginaDesafios() {
+      this.$router.push({ name: "PaginaDesafios" }).catch((err) => {
+        if (err.name !== "NavigationDuplicated") {
+          console.error("Error de navegación a PaginaDesafios:", err);
         }
-
-        // Esta es la URL al endpoint que te proporcioné para obtener todos los desafíos activos
-        const response = await axios.get('http://localhost:4000/api/desafios_activos_emprendedores', {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        });
-
-        if (response.status === 200) {
-          this.desafios = response.data;
-          console.log('Desafíos activos cargados para Diseñador/Marketing:', this.desafios);
-        } else {
-          console.error('Error al cargar desafíos:', response.status, response.data);
-          // Opcional: mostrar un mensaje de error en la UI
-        }
-      } catch (error) {
-        console.error('Error en la solicitud para obtener desafíos:', error);
-        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-            console.error('Error de autenticación/autorización al obtener desafíos. Redirigiendo a la página principal.');
-            this.$router.push({ name: 'Principal' }); // Redirigir a login
-        } else {
-            console.error('Error de red o del servidor al obtener desafíos.');
-        }
-      } finally {
-        this.isLoading = false; // Finaliza la carga
-      }
-    }
+      });
+      console.log("Intentando navegar a PaginaDesafios...");
+    },
+   
   },
 };
 </script>

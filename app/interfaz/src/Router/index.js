@@ -6,6 +6,7 @@ import PaginaPerfil from '@/Vistas/PaginaPerfil.vue';
 import PaginaForo from '@/Vistas/PaginaForo.vue';
 import ForoInteraccion from '@/components/ForoInteraccion.vue';
 import PaginaNotificaciones from '@/Vistas/PaginaNotificaciones.vue';
+import PaginaDesafios from '@/Vistas/PaginaDesafios.vue';
 
 
 const routes = [
@@ -24,6 +25,12 @@ const routes = [
     path: '/central',
     name: 'Central',
     component: PaginaCentral,
+    meta: { requiresAuth: true }
+  },
+   {
+    path: '/desafiosActivos',
+    name: 'desafiosActivos',
+    component: PaginaDesafios,
     meta: { requiresAuth: true }
   },
   {
