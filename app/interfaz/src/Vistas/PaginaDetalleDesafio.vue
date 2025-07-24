@@ -53,7 +53,7 @@
       No se pudo cargar la información del desafío.
     </div>
 
-    <div v-if="showParticipateModal && canPropose" class="modal-overlay">
+    <div v-if="showParticipateModal && challenge && challenge.estado === 'Activo'" class="modal-overlay">
       <div class="modal-content">
         <button @click="closeParticipateModal" class="modal-close-button">&times;</button>
         <h3 class="modal-title">Enviar Propuesta para "{{ challenge.nombre_desafio }}"</h3>
@@ -117,10 +117,8 @@ export default {
       errorMessage: '',
       showParticipateModal: false,
       proposalText: '',
-      // --- NUEVAS VARIABLES PARA LA IMAGEN ---
       imagenPropuesta: null, // Para el archivo de imagen seleccionado
       imagenPropuestaPreview: null, // Para la URL de la vista previa de la imagen
-      // --- FIN NUEVAS VARIABLES ---
       showMessageModal: false,
       messageModalTitle: '',
       messageModalMessage: '',
@@ -130,29 +128,10 @@ export default {
     await this.fetchChallengeDetails();
   },
   computed: {
-    // Determina si el usuario logeado es Diseñador o Marketing
-    isDesignerOrMarketing() {
-      const userType = localStorage.getItem('userType'); // Asume que 'userType' se guarda aquí
-      return userType === 'Diseñador' || userType === 'Marketing';
-    },
-    // Obtiene el ID del usuario logeado
-    currentUserId() {
-        // Asume que 'userId' se guarda en localStorage
-        return parseInt(localStorage.getItem('userId'));
-    },
-    // Determina si el usuario logeado es el creador de este desafío
-    isChallengeCreator() {
-        // IMPORTANTE: Tu backend (GET /api/desafios/:id) debe retornar el id_usuario del creador
-        // Si tu `challenge` objeto NO tiene `challenge.id_usuario_creador`,
-        // necesitarás modificar la consulta SQL en el backend para incluirlo.
-        // Por ejemplo, un JOIN con la tabla `emprendedor` para obtener `id_usuario`.
-        return this.challenge && this.challenge.id_usuario_creador === this.currentUserId;
-    },
-    // Determina si el botón "Participar" y el modal deben mostrarse
+    // La lógica simplificada: el botón "Participar" solo se muestra si el desafío está cargado y su estado es "Activo".
+    // Asumimos que la autorización de rol (Diseñador/Marketing) se maneja en el router de Vue o en el backend.
     canPropose() {
-        return this.isDesignerOrMarketing && // Es un tipo de usuario que puede proponer
-               !this.isChallengeCreator && // NO es el creador del desafío
-               this.challenge && this.challenge.estado === 'Activo'; // El desafío existe y está activo
+      return this.challenge && this.challenge.estado === 'Activo';
     }
   },
   methods: {
@@ -166,7 +145,7 @@ export default {
         const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
         if (!token) {
           this.errorMessage = 'No hay token de autenticación. Por favor, inicia sesión.';
-          this.$router.push({ name: 'Principal' });
+          this.$router.push({ name: 'Principal' }); // Redirige a la página principal si no hay token
           return;
         }
 
@@ -208,7 +187,7 @@ export default {
       this.imagenPropuestaPreview = null; // Limpiar la vista previa
     },
 
-    // --- NUEVO MÉTODO: Manejar la selección de imagen ---
+    // Manejar la selección de imagen
     handleImageChange(event) {
       const file = event.target.files[0];
       if (file) {
@@ -220,7 +199,7 @@ export default {
       }
     },
 
-    // --- MÉTODO MODIFICADO: Enviar la propuesta con imagen ---
+    // Enviar la propuesta con imagen
     async submitProposal() {
       // Validar que al menos haya texto o imagen
       if (!this.proposalText.trim() && !this.imagenPropuesta) {
@@ -231,7 +210,7 @@ export default {
       const formData = new FormData(); // Usamos FormData para enviar archivos
       formData.append('texto_propuesta', this.proposalText);
       if (this.imagenPropuesta) {
-        formData.append('imagenPropuesta', this.imagenPropuesta); // 'imagenPropuesta' debe coincidir con el nombre del campo en Multer
+        formData.append('imagenPropuesta', this.imagenPropuesta); // 'imagenPropuesta' debe coincidir con el nombre del campo en Multer del backend
       }
 
       const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
@@ -243,7 +222,7 @@ export default {
 
       try {
         const response = await axios.post(
-          `http://localhost:4000/api/desafios/${this.challenge.id_desafio}/proponer`,
+          `http://localhost:4000/api/desafios/${this.challenge.id_desafio}/propuestas`, // ¡Revisa esta URL! En tu código Express era /propuestas, no /proponer
           formData, // Enviamos el FormData
           {
             headers: {
@@ -267,9 +246,9 @@ export default {
         console.error('Error al enviar propuesta:', error);
         if (error.response) {
           this.showErrorMessage('Error al Enviar Propuesta', error.response.data.message || 'Error en el servidor al enviar propuesta.');
-          // Si es un 403 (por ejemplo, por intentar proponer a tu propio desafío), podrías redirigir o dar un mensaje específico.
+          // Si tu backend devuelve 403 (Forbidden) por alguna razón, podrías manejarlo aquí
           if (error.response.status === 403) {
-            // this.$router.push({ name: 'AlgunLugar' }); // Puedes redirigir si es necesario
+            // Ejemplo: this.showErrorMessage('Acceso Denegado', 'No tienes permiso para enviar propuestas a este desafío.');
           }
         } else {
           this.showErrorMessage('Error de Conexión', 'No se pudo conectar con el servidor. Inténtalo de nuevo.');
@@ -301,7 +280,7 @@ export default {
 </script>
 
 <style scoped>
-/* Estilos existentes */
+/* Estilos existentes (mantener igual, no se modifican en esta actualización) */
 .challenge-detail-container {
   padding: 20px;
   max-width: 800px;
