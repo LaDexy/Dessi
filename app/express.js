@@ -67,6 +67,37 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
+// --- PROPUESTA DE DESAFIOS
+
+// Configuración de Multer ESPECÍFICA para Propuestas de Desafío
+const storagePropuestas = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadDirPropuestas = path.join(__dirname, "uploads", "propuestas"); // Carpeta específica para propuestas
+        if (!fs.existsSync(uploadDirPropuestas)) {
+            fs.mkdirSync(uploadDirPropuestas, { recursive: true });
+        }
+        cb(null, uploadDirPropuestas);
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);
+    },
+});
+
+const uploadPropuesta = multer({
+    storage: storagePropuestas,
+    limits: { fileSize: 5 * 1024 * 1024 }, // Limitar a 5MB (puedes ajustar este límite)
+    fileFilter: (req, file, cb) => {
+        const filetypes = /jpeg|jpg|png|gif/;
+        const mimetype = filetypes.test(file.mimetype);
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+
+        if (mimetype && extname) {
+            return cb(null, true);
+        }
+        cb(new Error('Solo se permiten imágenes (jpeg, jpg, png, gif) para las propuestas.'));
+    },
+});
+
 // --- MIDDLEWARES DE AUTENTICACIÓN Y AUTORIZACIÓN ---
 
 // Middleware para verificar el token JWT (ya lo tenías)
@@ -1352,6 +1383,63 @@ app.get('/api/desafios/:id', authenticateToken, async (req, res) => {
     }
 });
 
+// MODIFICADO: Ruta para enviar una propuesta a un desafío (ahora con imagen)
+// El nombre del campo en el formulario para la imagen debe ser 'imagenPropuesta'
+app.post('/api/desafios/:id/proponer', authenticateToken, uploadPropuesta.single('imagenPropuesta'), async (req, res) => {
+    const { id } = req.params; // id_desafio
+    const { texto_propuesta } = req.body;
+    const id_usuario_proponente = req.user.id_usuario; // Obtenido del token
+
+    // req.file contiene la información del archivo subido por multer
+    const imagen_url = req.file ? `/uploads/propuestas/${req.file.filename}` : null; // Ruta relativa de la imagen
+
+    if (!texto_propuesta && !imagen_url) {
+        return res.status(400).json({ message: 'Se requiere el texto de la propuesta o una imagen.' });
+    }
+
+    let connection;
+    try {
+        connection = await pool.getConnection();
+
+        // Verificar que el desafío existe y está activo
+        const [desafioRows] = await connection.execute('SELECT id_desafio, estado FROM desafios WHERE id_desafio = ?', [id]);
+        if (desafioRows.length === 0) {
+            return res.status(404).json({ message: 'Desafío no encontrado.' });
+        }
+        if (desafioRows[0].estado !== 'Activo') {
+            return res.status(400).json({ message: 'No se pueden enviar propuestas a un desafío que no está activo.' });
+        }
+
+        // Verificar que el proponente no sea el creador del desafío (OPCIONAL, pero lógico)
+        const [creatorRows] = await connection.execute('SELECT e.id_usuario FROM desafios d JOIN emprendedor e ON d.id_emprendedor = e.id_emprendedor WHERE d.id_desafio = ?', [id]);
+        if (creatorRows.length > 0 && creatorRows[0].id_usuario === id_usuario_proponente) {
+            return res.status(403).json({ message: 'No puedes enviar una propuesta a tu propio desafío.' });
+        }
+
+        // Insertar la propuesta en la base de datos
+        const [result] = await connection.execute(
+            'INSERT INTO propuestas_desafio (id_desafio, id_usuario_proponente, texto_propuesta, imagen_url, estado, fecha_envio) VALUES (?, ?, ?, ?, ?, NOW())',
+            [id, id_usuario_proponente, texto_propuesta, imagen_url, 'Pendiente']
+        );
+        connection.release();
+
+        console.log(`Propuesta enviada para desafío ${id} por usuario ${id_usuario_proponente}.`);
+        res.status(201).json({ message: 'Propuesta enviada con éxito.', propuestaId: result.insertId });
+
+    } catch (error) {
+        console.error('Error al enviar propuesta:', error);
+        // Si hay un error al subir el archivo, Multer lo maneja con un error.
+        if (error instanceof multer.MulterError) {
+            if (error.code === 'LIMIT_FILE_SIZE') {
+                return res.status(400).json({ message: 'El archivo es demasiado grande (máximo 5MB).' });
+            }
+        }
+        res.status(500).json({ message: 'Error al enviar la propuesta.', error: error.message });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
 // NUEVA RUTA: Para que un Diseñador/Marketing envíe una propuesta a un desafío
 app.post('/api/desafios/:id/propuestas', authenticateToken, authorizeDesignerMarketing, async (req, res) => {
     const { id: id_desafio } = req.params;
@@ -1412,6 +1500,8 @@ app.post('/api/desafios/:id/propuestas', authenticateToken, authorizeDesignerMar
         if (connection) connection.release();
     }
 });
+
+
 
 // --- NUEVA RUTA: OBTENER TODOS LOS PERFILES (EXCEPTO EL DEL USUARIO LOGUEADO) ---
 app.get("/api/profiles", authenticateToken, async (req, res) => {

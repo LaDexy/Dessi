@@ -42,10 +42,10 @@
         <h3 class="section-title">Contacto del Emprendedor:</h3>
         <div class="contact-info">
           <p v-if="challenge.email_emprendedor"><strong>Email:</strong> {{ challenge.email_emprendedor }}</p>
-          </div>
+        </div>
       </div>
 
-      <button @click="openParticipateModal" class="participate-button">
+      <button v-if="canPropose" @click="openParticipateModal" class="participate-button">
         <i class="fas fa-paper-plane mr-2"></i> Participar en este Desafío
       </button>
     </div>
@@ -53,19 +53,40 @@
       No se pudo cargar la información del desafío.
     </div>
 
-    <div v-if="showParticipateModal" class="modal-overlay">
+    <div v-if="showParticipateModal && canPropose" class="modal-overlay">
       <div class="modal-content">
         <button @click="closeParticipateModal" class="modal-close-button">&times;</button>
         <h3 class="modal-title">Enviar Propuesta para "{{ challenge.nombre_desafio }}"</h3>
         <p class="modal-description">Describe tu propuesta detallada:</p>
-        <textarea
-          v-model="proposalText"
-          class="proposal-textarea"
-          placeholder="Tu propuesta..."
-        ></textarea>
-        <button @click="submitProposal" :disabled="!proposalText.trim()" class="submit-proposal-button">
-          Enviar Propuesta
-        </button>
+        <form @submit.prevent="submitProposal" class="proposal-form">
+          <div class="form-group">
+            <label for="proposalTextarea">Texto de tu propuesta:</label>
+            <textarea
+              id="proposalTextarea"
+              v-model="proposalText"
+              class="proposal-textarea"
+              placeholder="Tu propuesta..."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="imagenPropuesta">Sube una imagen (opcional):</label>
+            <input
+              type="file"
+              id="imagenPropuesta"
+              accept="image/*"
+              @change="handleImageChange"
+              class="file-input"
+            />
+            <div v-if="imagenPropuestaPreview" class="image-preview-container">
+              <img :src="imagenPropuestaPreview" alt="Vista previa de la propuesta" class="image-preview"/>
+            </div>
+          </div>
+
+          <button type="submit" :disabled="!proposalText.trim() && !imagenPropuesta" class="submit-proposal-button">
+            Enviar Propuesta
+          </button>
+        </form>
       </div>
     </div>
 
@@ -96,6 +117,10 @@ export default {
       errorMessage: '',
       showParticipateModal: false,
       proposalText: '',
+      // --- NUEVAS VARIABLES PARA LA IMAGEN ---
+      imagenPropuesta: null, // Para el archivo de imagen seleccionado
+      imagenPropuestaPreview: null, // Para la URL de la vista previa de la imagen
+      // --- FIN NUEVAS VARIABLES ---
       showMessageModal: false,
       messageModalTitle: '',
       messageModalMessage: '',
@@ -103,6 +128,32 @@ export default {
   },
   async created() {
     await this.fetchChallengeDetails();
+  },
+  computed: {
+    // Determina si el usuario logeado es Diseñador o Marketing
+    isDesignerOrMarketing() {
+      const userType = localStorage.getItem('userType'); // Asume que 'userType' se guarda aquí
+      return userType === 'Diseñador' || userType === 'Marketing';
+    },
+    // Obtiene el ID del usuario logeado
+    currentUserId() {
+        // Asume que 'userId' se guarda en localStorage
+        return parseInt(localStorage.getItem('userId'));
+    },
+    // Determina si el usuario logeado es el creador de este desafío
+    isChallengeCreator() {
+        // IMPORTANTE: Tu backend (GET /api/desafios/:id) debe retornar el id_usuario del creador
+        // Si tu `challenge` objeto NO tiene `challenge.id_usuario_creador`,
+        // necesitarás modificar la consulta SQL en el backend para incluirlo.
+        // Por ejemplo, un JOIN con la tabla `emprendedor` para obtener `id_usuario`.
+        return this.challenge && this.challenge.id_usuario_creador === this.currentUserId;
+    },
+    // Determina si el botón "Participar" y el modal deben mostrarse
+    canPropose() {
+        return this.isDesignerOrMarketing && // Es un tipo de usuario que puede proponer
+               !this.isChallengeCreator && // NO es el creador del desafío
+               this.challenge && this.challenge.estado === 'Activo'; // El desafío existe y está activo
+    }
   },
   methods: {
     goBack() {
@@ -119,7 +170,6 @@ export default {
           return;
         }
 
-        // Llama al nuevo endpoint del backend para obtener los detalles del desafío
         const response = await axios.get(`http://localhost:4000/api/desafios/${this.id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -148,33 +198,83 @@ export default {
     openParticipateModal() {
       this.showParticipateModal = true;
       this.proposalText = ''; // Limpiar el texto de la propuesta al abrir
+      this.imagenPropuesta = null; // Limpiar la imagen seleccionada
+      this.imagenPropuestaPreview = null; // Limpiar la vista previa
     },
     closeParticipateModal() {
       this.showParticipateModal = false;
+      this.proposalText = ''; // Limpiar el texto de la propuesta al cerrar
+      this.imagenPropuesta = null; // Limpiar la imagen seleccionada
+      this.imagenPropuestaPreview = null; // Limpiar la vista previa
     },
-    async submitProposal() {
-      // Aquí iría la lógica para enviar la propuesta al backend
-      // Por ahora, es una simulación
-      console.log('Enviando propuesta:', this.proposalText, 'para desafío ID:', this.id);
-      this.closeParticipateModal(); // Cerrar el modal de propuesta
-      this.showMessage('Propuesta Enviada', '¡Tu propuesta ha sido enviada con éxito! El emprendedor será notificado.');
 
-      // En un escenario real, harías una llamada a la API:
-      /*
+    // --- NUEVO MÉTODO: Manejar la selección de imagen ---
+    handleImageChange(event) {
+      const file = event.target.files[0];
+      if (file) {
+        this.imagenPropuesta = file;
+        this.imagenPropuestaPreview = URL.createObjectURL(file); // Crea una URL para la vista previa
+      } else {
+        this.imagenPropuesta = null;
+        this.imagenPropuestaPreview = null;
+      }
+    },
+
+    // --- MÉTODO MODIFICADO: Enviar la propuesta con imagen ---
+    async submitProposal() {
+      // Validar que al menos haya texto o imagen
+      if (!this.proposalText.trim() && !this.imagenPropuesta) {
+        this.showErrorMessage('Error de Propuesta', 'Por favor, ingresa texto para tu propuesta o sube una imagen.');
+        return;
+      }
+
+      const formData = new FormData(); // Usamos FormData para enviar archivos
+      formData.append('texto_propuesta', this.proposalText);
+      if (this.imagenPropuesta) {
+        formData.append('imagenPropuesta', this.imagenPropuesta); // 'imagenPropuesta' debe coincidir con el nombre del campo en Multer
+      }
+
+      const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+      if (!token) {
+        this.showErrorMessage('Autenticación Requerida', 'No estás autenticado. Por favor, inicia sesión.');
+        this.$router.push({ name: 'Principal' });
+        return;
+      }
+
       try {
-        const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
-        await axios.post(`http://localhost:4000/api/desafios/${this.id}/proposals`, {
-          proposalText: this.proposalText,
-          // otros datos de la propuesta
-        }, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        this.showMessage('Propuesta Enviada', '¡Tu propuesta ha sido enviada con éxito! El emprendedor será notificado.');
+        const response = await axios.post(
+          `http://localhost:4000/api/desafios/${this.challenge.id_desafio}/proponer`,
+          formData, // Enviamos el FormData
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data', // MUY IMPORTANTE para enviar archivos
+              'Authorization': `Bearer ${token}`
+            }
+          }
+        );
+
+        if (response.status === 201) {
+          this.showMessage('Propuesta Enviada', '¡Tu propuesta ha sido enviada con éxito! El emprendedor será notificado.');
+          this.closeParticipateModal(); // Cierra el modal de propuesta
+          // Limpiar el formulario después de un envío exitoso
+          this.proposalText = '';
+          this.imagenPropuesta = null;
+          this.imagenPropuestaPreview = null;
+        } else {
+          this.showErrorMessage('Error al Enviar Propuesta', response.data.message || 'Error desconocido al enviar propuesta.');
+        }
       } catch (error) {
         console.error('Error al enviar propuesta:', error);
-        this.showErrorMessage('Error al Enviar Propuesta', 'No se pudo enviar tu propuesta. Inténtalo de nuevo.');
+        if (error.response) {
+          this.showErrorMessage('Error al Enviar Propuesta', error.response.data.message || 'Error en el servidor al enviar propuesta.');
+          // Si es un 403 (por ejemplo, por intentar proponer a tu propio desafío), podrías redirigir o dar un mensaje específico.
+          if (error.response.status === 403) {
+            // this.$router.push({ name: 'AlgunLugar' }); // Puedes redirigir si es necesario
+          }
+        } else {
+          this.showErrorMessage('Error de Conexión', 'No se pudo conectar con el servidor. Inténtalo de nuevo.');
+        }
       }
-      */
     },
     formatDate(dateString) {
       if (!dateString) return 'N/A';
@@ -201,6 +301,7 @@ export default {
 </script>
 
 <style scoped>
+/* Estilos existentes */
 .challenge-detail-container {
   padding: 20px;
   max-width: 800px;
@@ -383,6 +484,24 @@ export default {
   margin-bottom: 20px;
 }
 
+/* Estilos para el formulario dentro del modal */
+.proposal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px; /* Espacio entre los grupos de formulario */
+}
+
+.form-group {
+  text-align: left; /* Alinea etiquetas y campos a la izquierda */
+}
+
+.form-group label {
+  display: block; /* Asegura que la etiqueta esté en su propia línea */
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #333;
+}
+
 .proposal-textarea {
   width: 100%;
   min-height: 150px;
@@ -391,7 +510,32 @@ export default {
   border-radius: 8px;
   font-size: 1em;
   resize: vertical;
-  margin-bottom: 20px;
+}
+
+.file-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  cursor: pointer;
+}
+
+.image-preview-container {
+  margin-top: 15px;
+  text-align: center;
+  border: 1px dashed #cccccc; /* Un borde punteado para el área de preview */
+  padding: 10px;
+  border-radius: 8px;
+  background-color: #f0f0f0;
+}
+
+.image-preview {
+  max-width: 100%; /* Asegura que la imagen no se desborde */
+  max-height: 200px; /* Limita la altura de la vista previa */
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .submit-proposal-button {
@@ -404,6 +548,7 @@ export default {
   cursor: pointer;
   border: none;
   width: 100%;
+  margin-top: 20px; /* Espacio adicional antes del botón */
 }
 
 .submit-proposal-button:hover:not(:disabled) {
