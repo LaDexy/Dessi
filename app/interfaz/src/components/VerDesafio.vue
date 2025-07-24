@@ -1,63 +1,70 @@
 <template>
     <div class="VerDesafios">
-  <div class="modal-overlay" @click.self="cerrarModal">
-    <div class="modal-content">
-      <span class="close-button" @click="cerrarModal">&times;</span>
-      <h2>Mis Desafíos Creados</h2>
-      
-      <div v-if="challenges.length === 0 && !isLoadingChallenges" class="no-challenges-message">
-        <p>¡Aún no has creado ningún desafío!</p>
-        <p>Presiona "Crear desafío" para empezar.</p>
-      </div>
+        <div class="modal-overlay" @click.self="cerrarModal">
+            <div class="modal-content">
+                <span class="close-button" @click="cerrarModal">&times;</span>
+                <h2>Mis Desafíos Creados</h2>
 
-      <div v-else-if="isLoadingChallenges" class="loading-message">
-        <p>Cargando desafíos...</p>
-      </div>
+                <div v-if="challenges.length === 0 && !isLoadingChallenges" class="no-challenges-message">
+                    <p>¡Aún no has creado ningún desafío!</p>
+                    <p>Presiona "Crear desafío" para empezar.</p>
+                </div>
 
-      <div v-else class="challenges-list">
-        <div v-for="challenge in challenges" :key="challenge.id_desafio" class="challenge-card">
-          <h3>{{ challenge.nombre_desafio }}</h3>
-          <p><strong>Descripción:</strong> {{ challenge.descripcion_desafio }}</p>
-          <p v-if="challenge.beneficios"><strong>Beneficios:</strong> {{ challenge.beneficios }}</p>
-          <p><strong>Duración:</strong> {{ challenge.dias_duracion }} días</p>
-          <p><strong>Creado el:</strong> {{ formatDate(challenge.fecha_creacion) }}</p>
-          <p><strong>Fecha Fin:</strong> {{ formatDate(challenge.fecha_fin) }}</p>
-          <!-- Si quisieras asociar imágenes a desafíos en el futuro, necesitarías una nueva tabla
-               de unión (desafio_imagen) o una FK de imagen a desafio. Por ahora, no hay imágenes aquí. -->
+                <div v-else-if="isLoadingChallenges" class="loading-message">
+                    <p>Cargando desafíos...</p>
+                </div>
+
+                <div v-else class="challenges-list">
+                    <div v-for="challenge in challenges" :key="challenge.id_desafio" 
+                         class="challenge-card"
+                         @click="emitirVerDetalle(challenge.id_desafio)"> <h3>{{ challenge.nombre_desafio }}</h3>
+                        <p><strong>Descripción:</strong> {{ challenge.descripcion_desafio }}</p>
+                        <p v-if="challenge.beneficios"><strong>Beneficios:</strong> {{ challenge.beneficios }}</p>
+                        <p><strong>Duración:</strong> {{ challenge.dias_duracion }} días</p>
+                        <p><strong>Creado el:</strong> {{ formatDate(challenge.fecha_creacion) }}</p>
+                        <p><strong>Fecha Fin:</strong> {{ formatDate(challenge.fecha_fin) }}</p>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-    </div>
-  </div>
+        </div>
 </template>
 
 <script>
 import axios from 'axios';
 
 export default {
-  name: "VerDesafio",
+  name: "VerDesafios",
+  // Elimina 'DetalleDesafioEmprendedor' de components si estaba aquí
+  // components: { DetalleDesafioEmprendedor }, 
   props: {
-    userId: { // Aunque se obtiene el userId del token, es buena práctica pasarlo si es necesario para depuración o futuras validaciones.
-      type: [Number, String], // Puede ser string si viene de localStorage
+    userId: {
+      type: [Number, String],
       required: true
     }
   },
   data() {
     return {
       challenges: [],
-      isLoadingChallenges: false, // Nuevo estado para indicar si se están cargando los desafíos
+      isLoadingChallenges: false,
+      // Elimina estas propiedades si estaban aquí:
+      // showDetalleDesafioModal: false, 
+      // selectedChallengeId: null,      
     };
   },
   mounted() {
-    // Cuando el componente se monta, carga los desafíos
     this.loadChallenges();
   },
   methods: {
     cerrarModal() {
       this.$emit('cerrar');
     },
+    // NUEVO MÉTODO: Emite el evento 'verDetalle'
+    emitirVerDetalle(id) {
+      this.$emit('verDetalle', id); // Emitir el ID del desafío al padre (PaginaPerfil)
+    },
     async loadChallenges() {
-      this.isLoadingChallenges = true; // Inicia el estado de carga
+      this.isLoadingChallenges = true;
       try {
         const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
         if (!token) {
@@ -87,13 +94,11 @@ export default {
           this.$router.push({ name: "Principal" });
         }
       } finally {
-        this.isLoadingChallenges = false; // Finaliza el estado de carga
+        this.isLoadingChallenges = false;
       }
     },
     formatDate(dateString) {
       if (!dateString) return 'N/A';
-      // Asegúrate de que el formato de fecha sea compatible con Date
-      // Si viene de MySQL como DATETIME, debería funcionar directamente.
       const options = { year: 'numeric', month: 'long', day: 'numeric' };
       return new Date(dateString).toLocaleDateString(undefined, options);
     }
@@ -101,8 +106,9 @@ export default {
 }
 </script>
 
-<style>
-
+<style scoped>
+/* Mantener los estilos existentes para VerDesafios, asegurando que el z-index sea menor
+   que el del nuevo modal de detalle (DetalleDesafioEmprendedor) */
 .VerDesafios {
   position: absolute;
   left: 530px;
@@ -110,31 +116,108 @@ export default {
   padding: 40px;
   font-family: "Times New Roman", serif;
   width: 450px;
-  height: 160px;
+  height: 100%; 
   background: white;
   border: 5px solid rgba(0, 0, 0, 0.5);
-  border-radius: 100px;
+  border-radius: 20px; 
   backdrop-filter: blur(20px);
   box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow: hidden;
+  overflow: hidden; 
   opacity: 0.9;
+  z-index: 1000; /* Asegura que este modal esté por encima del contenido principal */
 }
 
-.CerrarDesafio {
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100%;
-  height: 30px;
-  background: #440857;
-  border: none;
-  outline: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1em;
-  color: #fff;
-  font-weight: 500;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999; 
 }
 
+.modal-content {
+  background-color: white;
+  padding: 30px;
+  border-radius: 15px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  position: relative;
+  text-align: center;
+}
 
+.close-button {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #333;
+}
+
+.close-button:hover {
+  color: #ff4d4f;
+}
+
+h2 {
+  font-size: 1.8em;
+  color: #007bff;
+  margin-bottom: 20px;
+}
+
+.no-challenges-message, .loading-message {
+  text-align: center;
+  padding: 20px;
+  font-style: italic;
+  color: #777;
+}
+
+.challenges-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.challenge-card {
+  background-color: #f8f8f8;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 15px 20px;
+  text-align: left;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.challenge-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+}
+
+.challenge-card h3 {
+  font-size: 1.4em;
+  color: #0056b3;
+  margin-bottom: 10px;
+}
+
+.challenge-card p {
+  font-size: 0.95em;
+  color: #555;
+  margin-bottom: 5px;
+}
+
+.challenge-card strong {
+  color: #333;
+}
 </style>
