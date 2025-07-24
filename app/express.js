@@ -993,7 +993,7 @@ app.delete(
 
 // --- RUTAS DE DESAFÍOS ---
 
-// --- RUTA: CREAR UN NUEVO DESAFÍO (Ahora usa authorizeEntrepreneur) ---
+// --- RUTA: CREAR UN NUEVO DESAFÍO (Ahora usa authorizeEntrepreneur y envía notificaciones) ---
 app.post(
   "/api/challenges",
   authenticateToken,
@@ -1004,12 +1004,8 @@ app.post(
       req.user.id_usuario
     );
     const userId = req.user.id_usuario; // ID del usuario autenticado
-    // Ya no necesitas userProfileType aquí porque authorizeEntrepreneur ya lo verificó.
-    // const userProfileType = req.user.tipo_perfil; // Removido, ahora lo maneja el middleware
 
-    // 1. (Verificación de Emprendedor ya manejada por authorizeEntrepreneur)
-
-    // 2. Validación de campos del desafío
+    // 1. Validación de campos del desafío
     const { nombre_desafio, descripcion_desafio, beneficios, duracion_dias } =
       req.body;
 
@@ -1031,17 +1027,17 @@ app.post(
       });
     }
 
-    const connection = await pool.getConnection(); // Obtener conexión aquí para la transacción
-    await connection.beginTransaction(); // Iniciar transacción
-
+    let connection; // Declarar connection fuera del try para que esté disponible en finally
     try {
-      // 3. Obtener el id_emprendedor y el contador de desafíos creados
+      connection = await pool.getConnection(); // Obtener conexión aquí para la transacción
+      await connection.beginTransaction(); // Iniciar transacción
+
+      // 2. Obtener el id_emprendedor y el contador de desafíos creados
       console.log(
         "Buscando id_emprendedor y contador de desafíos para id_usuario:",
         userId
       );
       const [emprendedorResult] = await connection.query(
-        // Usar 'connection' para la transacción
         "SELECT id_emprendedor, desafios_cuenta FROM emprendedor WHERE id_usuario = ?",
         [userId]
       );
@@ -1084,7 +1080,6 @@ app.post(
         id_emprendedor
       );
       const [activeChallenges] = await connection.query(
-        // Usar 'connection' para la transacción
         "SELECT id_desafio FROM desafios WHERE id_emprendedor = ? AND fecha_fin >= CURDATE()",
         [id_emprendedor]
       );
@@ -1104,15 +1099,13 @@ app.post(
       );
       // --- FIN LÓGICA EXISTENTE ---
 
-      // 4. Calcular fecha_fin
+      // 3. Calcular fecha_fin
       const fechaCreacion = new Date();
       const fechaFin = new Date(fechaCreacion);
       fechaFin.setDate(fechaCreacion.getDate() + duracion_dias);
 
-      // 5. Insertar el desafío en la tabla 'desafios'
-      // NOTA: Asumo que la tabla 'desafios' tiene una columna 'estado' y que por defecto es 'Activo'.
+      // 4. Insertar el desafío en la tabla 'desafios'
       const [result] = await connection.query(
-        // Usar 'connection' para la transacción
         "INSERT INTO desafios (id_emprendedor, nombre_desafio, descripcion_desafio, beneficios, dias_duracion, fecha_creacion, fecha_fin, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
         [
           id_emprendedor,
@@ -1122,39 +1115,63 @@ app.post(
           duracion_dias,
           fechaCreacion,
           fechaFin,
-          "Activo",
-        ] // 'Activo' como estado inicial
+          "Activo", // 'Activo' como estado inicial
+        ]
       );
+      const idDesafioRecienCreado = result.insertId;
+      console.log(`Desafío creado con ID: ${idDesafioRecienCreado}`);
 
-      // 6. Incrementar el contador de desafíos creados para el emprendedor
+
+      // 5. Incrementar el contador de desafíos creados para el emprendedor
       await connection.query(
-        // Usar 'connection' para la transacción
         "UPDATE emprendedor SET desafios_cuenta = desafios_cuenta + 1 WHERE id_emprendedor = ?",
         [id_emprendedor]
       );
       console.log("Contador de desafíos creados incrementado.");
 
+      // NUEVO: 6. Insertar notificación de nuevo desafío para Diseñadores y Marketing
+      const [receptors] = await connection.query(`
+          SELECT id_usuario FROM usuarios WHERE tipo_perfil IN ('Diseñador', 'Marketing')
+      `);
+
+      const tituloNotificacion = '¡Nuevo Desafío Publicado!';
+      const mensajeNotificacion = `Se ha publicado un nuevo desafío: "${nombre_desafio}". ¡Échale un vistazo!`;
+      const urlRedireccion = `/desafios/${idDesafioRecienCreado}`; // URL para el frontend (PaginaDetalleDesafio)
+
+      for (const receptor of receptors) {
+          await connection.query(`
+              INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida, creado_fecha)
+              VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP())
+          `, [receptor.id_usuario, 'nuevo_desafio', tituloNotificacion, mensajeNotificacion, urlRedireccion, idDesafioRecienCreado, false]);
+          console.log(`Notificación de nuevo desafío enviada a usuario ${receptor.id_usuario}.`);
+      }
+      // FIN NUEVO
+
       await connection.commit(); // Confirmar transacción
       console.log(
-        `Desafío creado exitosamente para id_emprendedor ${id_emprendedor}. ID: ${result.insertId}`
+        `Desafío creado exitosamente para id_emprendedor ${id_emprendedor}. ID: ${idDesafioRecienCreado}`
       );
 
       // Devolver el nuevo contador para que el frontend lo use
       res.status(201).json({
         message: "Desafío creado exitosamente!",
-        id_desafio: result.insertId,
+        id_desafio: idDesafioRecienCreado,
         desafios_restantes_gratuitos:
           MAX_FREE_CHALLENGES - (desafios_cuenta + 1),
       });
     } catch (error) {
-      await connection.rollback(); // Revertir transacción en caso de error
+      if (connection) {
+        await connection.rollback(); // Revertir transacción en caso de error
+      }
       console.error("Error al crear el desafío en la DB:", error);
       res.status(500).json({
         message: "Error interno del servidor al crear el desafío.",
         error: error.message,
       });
     } finally {
-      connection.release(); // Liberar conexión
+      if (connection) {
+        connection.release(); // Liberar conexión
+      }
     }
   }
 );
@@ -1170,13 +1187,9 @@ app.get(
       req.user.id_usuario
     );
     const userId = req.user.id_usuario; // ID del usuario autenticado
-    // Ya no necesitas userProfileType aquí porque authorizeEntrepreneur ya lo verificó.
-    // const userProfileType = req.user.tipo_perfil; // Removido, ahora lo maneja el middleware
-
-    // 1. (Verificación de Emprendedor ya manejada por authorizeEntrepreneur)
 
     try {
-      // 2. Obtener el id_emprendedor a partir del id_usuario
+      // 1. Obtener el id_emprendedor a partir del id_usuario
       console.log("Buscando id_emprendedor para id_usuario:", userId);
       const [emprendedorResult] = await pool.query(
         "SELECT id_emprendedor FROM emprendedor WHERE id_usuario = ?",
@@ -1199,7 +1212,7 @@ app.get(
         id_emprendedor
       );
 
-      // 3. Obtener los desafíos asociados a ese id_emprendedor
+      // 2. Obtener los desafíos asociados a ese id_emprendedor
       // FILTRO: SOLO LOS DESAFÍOS CUYA FECHA DE FIN ES HOY O EN EL FUTURO
       const [challenges] = await pool.query(
         "SELECT id_desafio, id_emprendedor, nombre_desafio, descripcion_desafio, beneficios, dias_duracion, fecha_creacion, fecha_fin, estado FROM desafios WHERE id_emprendedor = ? AND fecha_fin >= CURDATE() ORDER BY fecha_creacion DESC",
@@ -1220,8 +1233,7 @@ app.get(
   }
 );
 
-// --- NUEVA RUTA: OBTENER TODOS LOS DESAFÍOS ACTIVOS CREADOS POR CUALQUIER EMPRENDEDOR ---
-// Esta ruta es para los roles de Diseñador y Marketing
+// MODIFICADO: RUTA PARA OBTENER TODOS LOS DESAFÍOS ACTIVOS CREADOS POR CUALQUIER EMPRENDEDOR
 app.get(
   "/api/desafios_activos_emprendedores",
   authenticateToken,
@@ -1231,11 +1243,66 @@ app.get(
       "Solicitud GET /api/desafios_activos_emprendedores recibida para usuario:",
       req.user.id_usuario
     );
-
+    let connection;
     try {
-      // Consulta SQL para obtener desafíos activos (fecha_fin >= CURDATE())
-      // y unir con la tabla 'usuarios' para obtener el nombre del emprendedor.
-      const [rows] = await pool.query(`
+      connection = await pool.getConnection();
+      const [rows] = await connection.query(`
+                SELECT
+                    d.id_desafio,
+                    d.nombre_desafio,
+                    d.descripcion_desafio,
+                    d.beneficios,
+                    d.dias_duracion,
+                    d.fecha_creacion,
+                    d.fecha_fin,
+                    d.estado,
+                    u.nombre_usuario AS nombre_usuario_emprendedor,
+                    u.foto_perfil_url AS foto_perfil_emprendedor
+                FROM
+                    desafios d
+                JOIN
+                    emprendedor e ON d.id_emprendedor = e.id_emprendedor  <-- PRIMER JOIN
+                JOIN
+                    usuarios u ON e.id_usuario = u.id_usuario          <-- SEGUNDO JOIN
+                WHERE
+                    d.fecha_fin >= CURDATE()
+                ORDER BY
+                    d.fecha_creacion DESC;
+            `);
+      connection.release();
+
+      const desafiosConUrlCompleta = rows.map((desafio) => {
+        if (desafio.foto_perfil_emprendedor) {
+          desafio.foto_perfil_emprendedor = `${req.protocol}://${req.get(
+            "host"
+          )}${desafio.foto_perfil_emprendedor}`;
+        }
+        return desafio;
+      });
+
+      console.log(
+        `Desafíos activos de emprendedores obtenidos: ${desafiosConUrlCompleta.length}`
+      );
+      res.status(200).json(desafiosConUrlCompleta);
+    } catch (err) {
+      console.error("Error al obtener desafíos activos de emprendedores:", err);
+      res.status(500).json({
+        message: "Error interno del servidor al obtener desafíos activos.",
+        error: err.message,
+      });
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+);
+
+// MODIFICADO: Obtener detalles de un desafío específico por ID (para PaginaDetalleDesafio.vue)
+app.get('/api/desafios/:id', authenticateToken, async (req, res) => {
+    const { id } = req.params;
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const [rows] = await connection.execute(`
             SELECT
                 d.id_desafio,
                 d.nombre_desafio,
@@ -1245,32 +1312,100 @@ app.get(
                 d.fecha_creacion,
                 d.fecha_fin,
                 d.estado,
-                u.nombre_usuario AS nombre_usuario_emprendedor
+                u.nombre_usuario AS nombre_usuario_emprendedor,
+                u.correo_electronico AS email_emprendedor,
+                u.foto_perfil_url AS foto_perfil_emprendedor
             FROM
                 desafios d
             JOIN
-                emprendedor e ON d.id_emprendedor = e.id_emprendedor
+                emprendedor e ON d.id_emprendedor = e.id_emprendedor  <-- PRIMER JOIN (desafios a emprendedor)
             JOIN
-                usuarios u ON e.id_usuario = u.id_usuario
+                usuarios u ON e.id_usuario = u.id_usuario          <-- SEGUNDO JOIN (emprendedor a usuarios)
             WHERE
-                d.fecha_fin >= CURDATE()
-            ORDER BY
-                d.fecha_creacion DESC;
-        `);
+                d.id_desafio = ?
+        `, [id]);
+        connection.release();
 
-      console.log(
-        `Desafíos activos de emprendedores obtenidos: ${rows.length}`
-      );
-      res.status(200).json(rows);
-    } catch (err) {
-      console.error("Error al obtener desafíos activos de emprendedores:", err);
-      res.status(500).json({
-        message: "Error interno del servidor al obtener desafíos activos.",
-        error: err.message,
-      });
+        if (rows.length === 0) {
+            console.warn(`Desafío con ID ${id} no encontrado o datos de emprendedor no coincidentes.`);
+            return res.status(404).json({ message: 'Desafío no encontrado o datos de emprendedor no válidos.' });
+        }
+
+        const desafio = rows[0];
+        // Construir URL completa para la foto de perfil del emprendedor
+        if (desafio.foto_perfil_emprendedor) {
+            desafio.foto_perfil_emprendedor = `${req.protocol}://${req.get('host')}${desafio.foto_perfil_emprendedor}`;
+        }
+        console.log(`Detalles del desafío ${id} obtenidos.`);
+        res.json(desafio);
+    } catch (error) {
+        console.error('Error al obtener detalles del desafío:', error);
+        res.status(500).json({ message: 'Error al obtener detalles del desafío.', error: error.message });
+    } finally {
+        if (connection) connection.release();
     }
-  }
-);
+});
+
+// NUEVA RUTA: Para que un Diseñador/Marketing envíe una propuesta a un desafío
+app.post('/api/desafios/:id/propuestas', authenticateToken, authorizeDesignerMarketing, async (req, res) => {
+    const { id: id_desafio } = req.params;
+    const { proposalText } = req.body; // Asegúrate de que este campo se envíe desde el frontend
+    const id_usuario_proponente = req.user.id_usuario; // El ID del usuario que envía la propuesta
+
+    if (!proposalText || proposalText.trim() === '') {
+        console.warn("Error 400: El texto de la propuesta está vacío.");
+        return res.status(400).json({ message: 'El texto de la propuesta no puede estar vacío.' });
+    }
+
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        // Verificar que el desafío exista y obtener su id_emprendedor y nombre
+        const [desafioInfo] = await connection.query('SELECT id_emprendedor, nombre_desafio FROM desafios WHERE id_desafio = ?', [id_desafio]);
+        if (desafioInfo.length === 0) {
+            console.warn(`Desafío con ID ${id_desafio} no encontrado para la propuesta.`);
+            await connection.rollback();
+            return res.status(404).json({ message: 'Desafío no encontrado.' });
+        }
+        const idEmprendedor = desafioInfo[0].id_emprendedor;
+        const nombreDesafio = desafioInfo[0].nombre_desafio;
+
+        // 1. Insertar la propuesta (asume que tienes una tabla 'propuestas_desafio')
+        // Si no tienes esta tabla, deberías crearla: id_propuesta, id_desafio, id_usuario_proponente, texto_propuesta, fecha_envio, estado
+        const [resultPropuesta] = await connection.query(`
+            INSERT INTO propuestas_desafio (id_desafio, id_usuario_proponente, texto_propuesta, fecha_envio, estado)
+            VALUES (?, ?, ?, NOW(), 'Pendiente')
+        `, [id_desafio, id_usuario_proponente, proposalText]);
+        const idPropuestaCreada = resultPropuesta.insertId;
+        console.log(`Propuesta ${idPropuestaCreada} creada para desafío ${id_desafio}.`);
+
+        // 2. Insertar notificación para el emprendedor sobre la nueva propuesta
+        const tituloNotificacion = '¡Nueva Propuesta Recibida!';
+        const mensajeNotificacion = `Has recibido una nueva propuesta para tu desafío "${nombreDesafio}" de ${req.user.nombre_usuario}.`;
+        // Define una URL a donde el emprendedor podría ir a ver las propuestas de sus desafíos
+        const urlRedireccion = `/mis-desafios/${id_desafio}/propuestas`;
+
+        await connection.query(`
+            INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida, creado_fecha)
+            VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP())
+        `, [idEmprendedor, 'nueva_propuesta_desafio', tituloNotificacion, mensajeNotificacion, urlRedireccion, idPropuestaCreada, false]); // id_referencia es el ID de la propuesta
+        console.log(`Notificación de nueva propuesta enviada al emprendedor ${idEmprendedor}.`);
+
+        await connection.commit();
+        res.status(201).json({ message: 'Propuesta enviada exitosamente.', id_propuesta: idPropuestaCreada });
+
+    } catch (error) {
+        if (connection) {
+            await connection.rollback();
+        }
+        console.error('Error al enviar propuesta para desafío:', error);
+        res.status(500).json({ message: 'Error interno del servidor al enviar la propuesta.', error: error.message });
+    } finally {
+        if (connection) connection.release();
+    }
+});
 
 // --- NUEVA RUTA: OBTENER TODOS LOS PERFILES (EXCEPTO EL DEL USUARIO LOGUEADO) ---
 app.get("/api/profiles", authenticateToken, async (req, res) => {
