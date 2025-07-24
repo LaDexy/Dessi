@@ -20,25 +20,17 @@
           id="offcanvasRight"
           aria-labelledby="offcanvasRightLabel"
         >
-          <div class="Solicitudes">
+          <div class="InicioVolver">
             <p>
               <a
                 class="btn btn-primary"
-                data-bs-toggle="collapse"
-                href="#collapseExample"
                 role="button"
                 aria-expanded="false"
                 aria-controls="collapseExample"
               >
-                Mis solicitudes
+                Inicio
               </a>
             </p>
-
-            <div class="collapse" id="collapseExample">
-              <div class="card card-body">
-                Aca saldran las solicitudes para convenio
-              </div>
-            </div>
           </div>
 
           <div class="Foro">
