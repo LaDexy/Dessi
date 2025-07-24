@@ -10,7 +10,7 @@ import { fileURLToPath } from "url"; // Para obtener __dirname en ES Modules
 import fs from "fs"; // Para crear directorios si no existen
 
 // Obtener __filename y __dirname para entornos ES Modules
-const __filename = fileURLToPath(import.meta.url);
+const __filename = fileURLToPath(import.meta.url); // CORREGIDO: fileURLToPath
 const __dirname = path.dirname(__filename);
 
 // Creación de servidor
@@ -30,7 +30,8 @@ app.use(
 app.use(express.json()); // Permite a Express parsear cuerpos de solicitud JSON
 app.use(express.urlencoded({ extended: true })); // Para formularios URL-encoded
 
-// Sirve archivos estáticos desde la carpeta 'uploads' (donde guardaremos las imágenes de perfil/proyectos)
+// Sirve archivos estáticos desde la carpeta 'uploads'
+// Esto es VITAL para que las imágenes subidas sean accesibles desde el frontend
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Configuración de la conexión a la base de datos MySQL
@@ -48,14 +49,16 @@ const dbConfig = {
 const pool = mysql.createPool(dbConfig);
 
 // Clave secreta para firmar los JWT
-// ¡IMPORTANTE! Asegúrate de que esta clave sea la misma que usas al generar tokens
-// y que sea un valor seguro y largo en un entorno de producción (ej. desde variables de entorno).
 const JWT_SECRET = "tu_super_secreto_jwt_muy_seguro_y_largo_1234567890"; // Asegúrate de haberla cambiado
 
-// Configuración de Multer para la carga de archivos
+// --- CONFIGURACIÓN DE MULTER ---
+
+// 1. Configuración de Multer para la carga de archivos GENERALES (ej. perfil, portafolio)
+//    Variable 'upload'
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(__dirname, "uploads");
+    // Asegúrate de que la carpeta 'uploads' exista
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -65,45 +68,54 @@ const storage = multer.diskStorage({
     cb(null, `${Date.now()}-${file.originalname}`);
   },
 });
-const upload = multer({ storage: storage });
+const upload = multer({ storage: storage }); // Exporta o usa 'upload' para rutas generales
 
-// --- PROPUESTA DE DESAFIOS
-
-// Configuración de Multer ESPECÍFICA para Propuestas de Desafío
-const storagePropuestas = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const uploadDirPropuestas = path.join(__dirname, "uploads", "propuestas"); // Carpeta específica para propuestas
-        if (!fs.existsSync(uploadDirPropuestas)) {
-            fs.mkdirSync(uploadDirPropuestas, { recursive: true });
-        }
-        cb(null, uploadDirPropuestas);
-    },
-    filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname}`);
-    },
+// 2. Configuración de Multer ESPECÍFICA PARA PROPUESTAS de desafíos
+//    Variable 'uploadPropuesta' - Esta es la que se usa en la ruta POST /api/desafios/:id/proponer
+const proposalsStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadPath = path.join(__dirname, "uploads", "proposals");
+    // Asegúrate de que la subcarpeta 'uploads/proposals' exista
+    if (!fs.existsSync(uploadPath)) {
+      fs.mkdirSync(uploadPath, { recursive: true });
+    }
+    cb(null, uploadPath);
+  },
+  filename: (req, file, cb) => {
+    // Genera un nombre de archivo único para evitar colisiones
+    cb(
+      null,
+      `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`
+    );
+  },
 });
 
 const uploadPropuesta = multer({
-    storage: storagePropuestas,
-    limits: { fileSize: 5 * 1024 * 1024 }, // Limitar a 5MB (puedes ajustar este límite)
-    fileFilter: (req, file, cb) => {
-        const filetypes = /jpeg|jpg|png|gif/;
-        const mimetype = filetypes.test(file.mimetype);
-        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+  storage: proposalsStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // Límite de 5MB para imágenes de propuesta
+  fileFilter: (req, file, cb) => {
+    const filetypes = /jpeg|jpg|png|gif/;
+    const mimetype = filetypes.test(file.mimetype);
+    const extname = filetypes.test(
+      path.extname(file.originalname).toLowerCase()
+    );
 
-        if (mimetype && extname) {
-            return cb(null, true);
-        }
-        cb(new Error('Solo se permiten imágenes (jpeg, jpg, png, gif) para las propuestas.'));
-    },
+    if (mimetype && extname) {
+      return cb(null, true);
+    }
+    cb(new Error("Solo se permiten imágenes (jpeg, jpg, png, gif)!"));
+  },
 });
 
-// --- MIDDLEWARES DE AUTENTICACIÓN Y AUTORIZACIÓN ---
+// --- FIN DE LA CONFIGURACIÓN DE MULTER ---
 
-// Middleware para verificar el token JWT (ya lo tenías)
+// --- MIDDLEWARES DE AUTENTICACIÓN Y AUTORIZACIÓN ---
+// (Si los tienes definidos aquí, como en tu código original, MANTENLOS.
+// Si los importas de otro archivo, ELIMINA este bloque y asegúrate de que la importación de arriba esté activa.)
+
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers["authorization"];
-  const token = authHeader && authHeader.split(" ")[1]; // Formato: Bearer TOKEN
+  const token = authHeader && authHeader.split(" ")[1];
 
   if (token == null) {
     console.log("Autenticación fallida: Token no proporcionado.");
@@ -118,7 +130,7 @@ const authenticateToken = (req, res, next) => {
       );
       return res.status(403).json({ message: "Token inválido o expirado." });
     }
-    req.user = user; // 'user' contendrá el payload del token (id_usuario, tipo_perfil, nombre_usuario)
+    req.user = user;
     console.log(
       "Token autenticado para usuario:",
       user.id_usuario,
@@ -129,10 +141,10 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// NUEVO MIDDLEWARE: Para autorizar solo a usuarios Emprendedores
 const authorizeEntrepreneur = (req, res, next) => {
+  // Renombra a authorizeEmprendedor para consistencia si lo usas
   if (req.user && req.user.tipo_perfil === "Emprendedor") {
-    next(); // El usuario es un emprendedor, continuar
+    next();
   } else {
     console.warn(
       "Error 403: Acceso denegado. Solo los emprendedores pueden realizar esta acción. Tipo de perfil:",
@@ -145,14 +157,13 @@ const authorizeEntrepreneur = (req, res, next) => {
   }
 };
 
-// NUEVO MIDDLEWARE: Para autorizar solo a usuarios Diseñador o Marketing
 const authorizeDesignerMarketing = (req, res, next) => {
   if (
     req.user &&
     (req.user.tipo_perfil === "Diseñador" ||
       req.user.tipo_perfil === "Marketing")
   ) {
-    next(); // El usuario es Diseñador o Marketing, continuar
+    next();
   } else {
     console.warn(
       "Error 403: Acceso denegado. Solo Diseñadores y Marketing pueden ver esta lista de desafíos. Tipo de perfil:",
@@ -160,7 +171,7 @@ const authorizeDesignerMarketing = (req, res, next) => {
     );
     res.status(403).json({
       message:
-        "Acceso denegado. Solo Diseñadores y Marketing pueden ver esta lista de desafíos.",
+        "Acceso denegado. Solo Diseñadores y Marketing pueden realizar esta acción.", // Mensaje más genérico
     });
   }
 };
@@ -477,40 +488,53 @@ app.get("/api/profile/me", authenticateToken, async (req, res) => {
 // =======================================================
 
 // 1. Ruta para ENVIAR una solicitud de contacto
-app.post('/api/solicitudes-contacto', authenticateToken, async (req, res) => {
-    console.log("Solicitud de contacto recibida. Datos:", req.body);
-    const { id_receptor, email, whatsapp, instagram, tiktok, facebook } = req.body;
-    const id_emisor = req.user.id_usuario; // El usuario que envía la solicitud
+app.post("/api/solicitudes-contacto", authenticateToken, async (req, res) => {
+  console.log("Solicitud de contacto recibida. Datos:", req.body);
+  const { id_receptor, email, whatsapp, instagram, tiktok, facebook } =
+    req.body;
+  const id_emisor = req.user.id_usuario; // El usuario que envía la solicitud
 
-    if (!id_emisor || !id_receptor) {
-        return res.status(400).json({ message: 'ID del emisor y receptor son requeridos.' });
+  if (!id_emisor || !id_receptor) {
+    return res
+      .status(400)
+      .json({ message: "ID del emisor y receptor son requeridos." });
+  }
+  if (id_emisor === id_receptor) {
+    return res.status(400).json({
+      message: "No puedes enviarte una solicitud de contacto a ti mismo.",
+    });
+  }
+
+  let connection; // Usamos una conexión para la transacción
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction(); // Iniciar transacción
+
+    // Verificar si ya existe una solicitud pendiente
+    const [existingRequests] = await connection.query(
+      "SELECT * FROM solicitudes_contacto WHERE id_emisor = ? AND id_receptor = ? AND estatus = ?",
+      [id_emisor, id_receptor, "Pendiente"]
+    );
+
+    if (existingRequests.length > 0) {
+      await connection.rollback(); // Rollback si ya existe
+      return res.status(409).json({
+        message: "Ya existe una solicitud pendiente para este usuario.",
+      });
     }
-    if (id_emisor === id_receptor) {
-        return res.status(400).json({ message: 'No puedes enviarte una solicitud de contacto a ti mismo.' });
-    }
 
-    let connection; // Usamos una conexión para la transacción
-    try {
-        connection = await pool.getConnection();
-        await connection.beginTransaction(); // Iniciar transacción
+    // Obtener el nombre del emisor para la notificación
+    const [emisorProfile] = await connection.query(
+      "SELECT nombre_usuario FROM usuarios WHERE id_usuario = ?",
+      [id_emisor]
+    );
+    const emisor_nombre =
+      emisorProfile.length > 0
+        ? emisorProfile[0].nombre_usuario
+        : "Usuario Desconocido";
 
-        // Verificar si ya existe una solicitud pendiente
-        const [existingRequests] = await connection.query(
-            'SELECT * FROM solicitudes_contacto WHERE id_emisor = ? AND id_receptor = ? AND estatus = ?',
-            [id_emisor, id_receptor, 'Pendiente']
-        );
-
-        if (existingRequests.length > 0) {
-            await connection.rollback(); // Rollback si ya existe
-            return res.status(409).json({ message: 'Ya existe una solicitud pendiente para este usuario.' });
-        }
-
-        // Obtener el nombre del emisor para la notificación
-        const [emisorProfile] = await connection.query('SELECT nombre_usuario FROM usuarios WHERE id_usuario = ?', [id_emisor]);
-        const emisor_nombre = emisorProfile.length > 0 ? emisorProfile[0].nombre_usuario : 'Usuario Desconocido';
-
-        // Insertar la solicitud de contacto
-        const query = `
+    // Insertar la solicitud de contacto
+    const query = `
             INSERT INTO solicitudes_contacto (
                 id_emisor,
                 id_receptor,
@@ -524,50 +548,67 @@ app.post('/api/solicitudes-contacto', authenticateToken, async (req, res) => {
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP())
         `;
-        const values = [
-            id_emisor,
-            id_receptor,
-            email || null,
-            whatsapp || null,
-            instagram || null,
-            tiktok || null,
-            facebook || null,
-            'Pendiente'
-        ];
+    const values = [
+      id_emisor,
+      id_receptor,
+      email || null,
+      whatsapp || null,
+      instagram || null,
+      tiktok || null,
+      facebook || null,
+      "Pendiente",
+    ];
 
-        const [result] = await connection.query(query, values);
-        const id_solicitud_generada = result.insertId; // ID de la solicitud de contacto generada
+    const [result] = await connection.query(query, values);
+    const id_solicitud_generada = result.insertId; // ID de la solicitud de contacto generada
 
-        // Insertar una notificación para el RECEPTOR
-        const notificationTitle = 'Nueva Solicitud de Contacto';
-        const notificationMessage = `¡${emisor_nombre} te ha enviado una solicitud de contacto!`;
-        const notificationUrl = `/notificaciones?solicitud=${id_solicitud_generada}`; // Redireccionar a la página de notificaciones
+    // Insertar una notificación para el RECEPTOR
+    const notificationTitle = "Nueva Solicitud de Contacto";
+    const notificationMessage = `¡${emisor_nombre} te ha enviado una solicitud de contacto!`;
+    const notificationUrl = `/notificaciones?solicitud=${id_solicitud_generada}`; // Redireccionar a la página de notificaciones
 
-        await connection.query(
-            'INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [id_receptor, 'solicitud_contacto', notificationTitle, notificationMessage, notificationUrl, id_solicitud_generada, false]
-        );
+    await connection.query(
+      "INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      [
+        id_receptor,
+        "solicitud_contacto",
+        notificationTitle,
+        notificationMessage,
+        notificationUrl,
+        id_solicitud_generada,
+        false,
+      ]
+    );
 
-        await connection.commit(); // Confirmar transacción
-        res.status(201).json({ message: 'Solicitud de contacto enviada con éxito.', id_solicitud: id_solicitud_generada });
-
-    } catch (error) {
-        if (connection) await connection.rollback(); // Deshacer si hay error
-        console.error('Error al enviar solicitud de contacto:', error);
-        res.status(500).json({ message: 'Error interno del servidor al procesar la solicitud de contacto.', error: error.message });
-    } finally {
-        if (connection) connection.release(); // Liberar conexión
-    }
+    await connection.commit(); // Confirmar transacción
+    res.status(201).json({
+      message: "Solicitud de contacto enviada con éxito.",
+      id_solicitud: id_solicitud_generada,
+    });
+  } catch (error) {
+    if (connection) await connection.rollback(); // Deshacer si hay error
+    console.error("Error al enviar solicitud de contacto:", error);
+    res.status(500).json({
+      message:
+        "Error interno del servidor al procesar la solicitud de contacto.",
+      error: error.message,
+    });
+  } finally {
+    if (connection) connection.release(); // Liberar conexión
+  }
 });
 
 // 2. Ruta para OBTENER solicitudes de contacto recibidas (filtrar por estatus)
-app.get('/api/solicitudes-recibidas', authenticateToken, async (req, res) => {
-    console.log("Solicitud GET /api/solicitudes-recibidas para usuario:", req.user.id_usuario);
-    const id_receptor = req.user.id_usuario;
-    const estatus = req.query.estatus || 'Pendiente'; // Por defecto, obtener solicitudes pendientes
+app.get("/api/solicitudes-recibidas", authenticateToken, async (req, res) => {
+  console.log(
+    "Solicitud GET /api/solicitudes-recibidas para usuario:",
+    req.user.id_usuario
+  );
+  const id_receptor = req.user.id_usuario;
+  const estatus = req.query.estatus || "Pendiente"; // Por defecto, obtener solicitudes pendientes
 
-    try {
-        const query = `
+  try {
+    const query = `
             SELECT
                 s.id_solicitud,
                 s.creado_fecha,
@@ -589,146 +630,204 @@ app.get('/api/solicitudes-recibidas', authenticateToken, async (req, res) => {
             ORDER BY
                 s.creado_fecha DESC;
         `;
-        const [rows] = await pool.query(query, [id_receptor, estatus]);
+    const [rows] = await pool.query(query, [id_receptor, estatus]);
 
-        rows.forEach(solicitud => {
-            if (solicitud.emisor_foto_perfil) {
-                solicitud.emisor_foto_perfil = `${req.protocol}://${req.get('host')}${solicitud.emisor_foto_perfil}`;
-            }
-        });
+    rows.forEach((solicitud) => {
+      if (solicitud.emisor_foto_perfil) {
+        solicitud.emisor_foto_perfil = `${req.protocol}://${req.get("host")}${
+          solicitud.emisor_foto_perfil
+        }`;
+      }
+    });
 
-        res.json(rows);
-
-    } catch (error) {
-        console.error('Error al obtener solicitudes de contacto recibidas:', error);
-        res.status(500).json({ message: 'Error interno del servidor al obtener solicitudes recibidas.' });
-    }
+    res.json(rows);
+  } catch (error) {
+    console.error("Error al obtener solicitudes de contacto recibidas:", error);
+    res.status(500).json({
+      message: "Error interno del servidor al obtener solicitudes recibidas.",
+    });
+  }
 });
 
 // 3. Ruta para ACEPTAR una solicitud de contacto
-app.patch('/api/solicitudes/:id_solicitud/aceptar', authenticateToken, async (req, res) => {
-    console.log("Solicitud PATCH /api/solicitudes/:id_solicitud/aceptar para solicitud:", req.params.id_solicitud, "por usuario:", req.user.id_usuario);
+app.patch(
+  "/api/solicitudes/:id_solicitud/aceptar",
+  authenticateToken,
+  async (req, res) => {
+    console.log(
+      "Solicitud PATCH /api/solicitudes/:id_solicitud/aceptar para solicitud:",
+      req.params.id_solicitud,
+      "por usuario:",
+      req.user.id_usuario
+    );
     const { id_solicitud } = req.params;
     const id_receptor = req.user.id_usuario; // El usuario logueado es el receptor que está aceptando
 
     let connection; // Usamos una conexión para la transacción
     try {
-        connection = await pool.getConnection();
-        await connection.beginTransaction();
+      connection = await pool.getConnection();
+      await connection.beginTransaction();
 
-        // 1. Obtener la solicitud para verificar y obtener el id_emisor y el nombre del receptor
-        const [requests] = await connection.query(
-            'SELECT sc.id_emisor, u.nombre_usuario AS receptor_nombre FROM solicitudes_contacto sc JOIN usuarios u ON sc.id_receptor = u.id_usuario WHERE sc.id_solicitud = ? AND sc.id_receptor = ? AND sc.estatus = ?',
-            [id_solicitud, id_receptor, 'Pendiente']
-        );
+      // 1. Obtener la solicitud para verificar y obtener el id_emisor y el nombre del receptor
+      const [requests] = await connection.query(
+        "SELECT sc.id_emisor, u.nombre_usuario AS receptor_nombre FROM solicitudes_contacto sc JOIN usuarios u ON sc.id_receptor = u.id_usuario WHERE sc.id_solicitud = ? AND sc.id_receptor = ? AND sc.estatus = ?",
+        [id_solicitud, id_receptor, "Pendiente"]
+      );
 
-        if (requests.length === 0) {
-            await connection.rollback();
-            return res.status(404).json({ message: 'Solicitud no encontrada o no pendiente para este usuario.' });
-        }
+      if (requests.length === 0) {
+        await connection.rollback();
+        return res.status(404).json({
+          message: "Solicitud no encontrada o no pendiente para este usuario.",
+        });
+      }
 
-        const id_emisor = requests[0].id_emisor; // ID del emisor de la solicitud
-        const receptor_nombre = requests[0].receptor_nombre; // Nombre del usuario que acepta (el receptor)
+      const id_emisor = requests[0].id_emisor; // ID del emisor de la solicitud
+      const receptor_nombre = requests[0].receptor_nombre; // Nombre del usuario que acepta (el receptor)
 
-        // 2. Actualizar el estatus de la solicitud a 'Aceptada'
-        const [result] = await connection.query(
-            'UPDATE solicitudes_contacto SET estatus = ?, fecha_respuesta = CURRENT_TIMESTAMP() WHERE id_solicitud = ? AND id_receptor = ? AND estatus = ?',
-            ['Aceptada', id_solicitud, id_receptor, 'Pendiente']
-        );
+      // 2. Actualizar el estatus de la solicitud a 'Aceptada'
+      const [result] = await connection.query(
+        "UPDATE solicitudes_contacto SET estatus = ?, fecha_respuesta = CURRENT_TIMESTAMP() WHERE id_solicitud = ? AND id_receptor = ? AND estatus = ?",
+        ["Aceptada", id_solicitud, id_receptor, "Pendiente"]
+      );
 
-        if (result.affectedRows === 0) {
-            await connection.rollback();
-            return res.status(404).json({ message: 'Solicitud no encontrada o no pendiente para este usuario.' });
-        }
+      if (result.affectedRows === 0) {
+        await connection.rollback();
+        return res.status(404).json({
+          message: "Solicitud no encontrada o no pendiente para este usuario.",
+        });
+      }
 
-        // 3. Crear una notificación para el EMISOR de la solicitud
-        const notificationTitleEmisorAccepted = 'Solicitud de Contacto Aceptada';
-        const mensajeNotificacionAccepted = `¡Tu solicitud de contacto ha sido ACEPTADA por ${receptor_nombre}!`;
-        const urlRedireccionAccepted = `/notificaciones?solicitud=${id_solicitud}`; // O a una vista de detalles de la solicitud
+      // 3. Crear una notificación para el EMISOR de la solicitud
+      const notificationTitleEmisorAccepted = "Solicitud de Contacto Aceptada";
+      const mensajeNotificacionAccepted = `¡Tu solicitud de contacto ha sido ACEPTADA por ${receptor_nombre}!`;
+      const urlRedireccionAccepted = `/notificaciones?solicitud=${id_solicitud}`; // O a una vista de detalles de la solicitud
 
-        await connection.query(
-            'INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [id_emisor, 'solicitud_aceptada', notificationTitleEmisorAccepted, mensajeNotificacionAccepted, urlRedireccionAccepted, id_solicitud, false]
-        );
+      await connection.query(
+        "INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        [
+          id_emisor,
+          "solicitud_aceptada",
+          notificationTitleEmisorAccepted,
+          mensajeNotificacionAccepted,
+          urlRedireccionAccepted,
+          id_solicitud,
+          false,
+        ]
+      );
 
-        await connection.commit();
-        res.json({ message: 'Solicitud de contacto aceptada con éxito y emisor notificado.' });
-
+      await connection.commit();
+      res.json({
+        message:
+          "Solicitud de contacto aceptada con éxito y emisor notificado.",
+      });
     } catch (error) {
-        if (connection) await connection.rollback();
-        console.error('Error al aceptar solicitud de contacto:', error);
-        res.status(500).json({ message: 'Error interno del servidor al aceptar la solicitud.', error: error.message });
+      if (connection) await connection.rollback();
+      console.error("Error al aceptar solicitud de contacto:", error);
+      res.status(500).json({
+        message: "Error interno del servidor al aceptar la solicitud.",
+        error: error.message,
+      });
     } finally {
-        if (connection) connection.release();
+      if (connection) connection.release();
     }
-});
+  }
+);
 
 // 4. Ruta para RECHAZAR una solicitud de contacto
-app.patch('/api/solicitudes/:id_solicitud/rechazar', authenticateToken, async (req, res) => {
-    console.log("Solicitud PATCH /api/solicitudes/:id_solicitud/rechazar para solicitud:", req.params.id_solicitud, "por usuario:", req.user.id_usuario);
+app.patch(
+  "/api/solicitudes/:id_solicitud/rechazar",
+  authenticateToken,
+  async (req, res) => {
+    console.log(
+      "Solicitud PATCH /api/solicitudes/:id_solicitud/rechazar para solicitud:",
+      req.params.id_solicitud,
+      "por usuario:",
+      req.user.id_usuario
+    );
     const { id_solicitud } = req.params;
     const id_receptor = req.user.id_usuario; // El usuario logueado es el receptor que está rechazando
 
     let connection; // Usamos una conexión para la transacción
     try {
-        connection = await pool.getConnection();
-        await connection.beginTransaction();
+      connection = await pool.getConnection();
+      await connection.beginTransaction();
 
-        // 1. Obtener la solicitud para verificar y obtener el id_emisor y el nombre del receptor
-        const [requests] = await connection.query(
-            'SELECT sc.id_emisor, u.nombre_usuario AS receptor_nombre FROM solicitudes_contacto sc JOIN usuarios u ON sc.id_receptor = u.id_usuario WHERE sc.id_solicitud = ? AND sc.id_receptor = ? AND sc.estatus = ?',
-            [id_solicitud, id_receptor, 'Pendiente']
-        );
+      // 1. Obtener la solicitud para verificar y obtener el id_emisor y el nombre del receptor
+      const [requests] = await connection.query(
+        "SELECT sc.id_emisor, u.nombre_usuario AS receptor_nombre FROM solicitudes_contacto sc JOIN usuarios u ON sc.id_receptor = u.id_usuario WHERE sc.id_solicitud = ? AND sc.id_receptor = ? AND sc.estatus = ?",
+        [id_solicitud, id_receptor, "Pendiente"]
+      );
 
-        if (requests.length === 0) {
-            await connection.rollback();
-            return res.status(404).json({ message: 'Solicitud no encontrada o no pendiente para este usuario.' });
-        }
+      if (requests.length === 0) {
+        await connection.rollback();
+        return res.status(404).json({
+          message: "Solicitud no encontrada o no pendiente para este usuario.",
+        });
+      }
 
-        const id_emisor = requests[0].id_emisor; // ID del emisor de la solicitud
-        const receptor_nombre = requests[0].receptor_nombre; // Nombre del usuario que rechaza (el receptor)
+      const id_emisor = requests[0].id_emisor; // ID del emisor de la solicitud
+      const receptor_nombre = requests[0].receptor_nombre; // Nombre del usuario que rechaza (el receptor)
 
-        // 2. Actualizar el estatus de la solicitud a 'Rechazada'
-        const [result] = await connection.query(
-            'UPDATE solicitudes_contacto SET estatus = ?, fecha_respuesta = CURRENT_TIMESTAMP() WHERE id_solicitud = ? AND id_receptor = ? AND estatus = ?',
-            ['Rechazada', id_solicitud, id_receptor, 'Pendiente']
-        );
+      // 2. Actualizar el estatus de la solicitud a 'Rechazada'
+      const [result] = await connection.query(
+        "UPDATE solicitudes_contacto SET estatus = ?, fecha_respuesta = CURRENT_TIMESTAMP() WHERE id_solicitud = ? AND id_receptor = ? AND estatus = ?",
+        ["Rechazada", id_solicitud, id_receptor, "Pendiente"]
+      );
 
-        if (result.affectedRows === 0) {
-            await connection.rollback();
-            return res.status(404).json({ message: 'Solicitud no encontrada o no pendiente para este usuario.' });
-        }
+      if (result.affectedRows === 0) {
+        await connection.rollback();
+        return res.status(404).json({
+          message: "Solicitud no encontrada o no pendiente para este usuario.",
+        });
+      }
 
-        // 3. Crear una notificación para el EMISOR de la solicitud
-        const notificationTitleEmisorRejected = 'Solicitud de Contacto Rechazada';
-        const mensajeNotificacionRejected = `Tu solicitud de contacto ha sido RECHAZADA por ${receptor_nombre}.`;
-        const urlRedireccionRejected = `/notificaciones?solicitud=${id_solicitud}`; // O a una vista de detalles de la solicitud
+      // 3. Crear una notificación para el EMISOR de la solicitud
+      const notificationTitleEmisorRejected = "Solicitud de Contacto Rechazada";
+      const mensajeNotificacionRejected = `Tu solicitud de contacto ha sido RECHAZADA por ${receptor_nombre}.`;
+      const urlRedireccionRejected = `/notificaciones?solicitud=${id_solicitud}`; // O a una vista de detalles de la solicitud
 
-        await connection.query(
-            'INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [id_emisor, 'solicitud_rechazada', notificationTitleEmisorRejected, mensajeNotificacionRejected, urlRedireccionRejected, id_solicitud, false]
-        );
+      await connection.query(
+        "INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        [
+          id_emisor,
+          "solicitud_rechazada",
+          notificationTitleEmisorRejected,
+          mensajeNotificacionRejected,
+          urlRedireccionRejected,
+          id_solicitud,
+          false,
+        ]
+      );
 
-        await connection.commit();
-        res.json({ message: 'Solicitud de contacto rechazada con éxito y emisor notificado.' });
-
+      await connection.commit();
+      res.json({
+        message:
+          "Solicitud de contacto rechazada con éxito y emisor notificado.",
+      });
     } catch (error) {
-        if (connection) await connection.rollback();
-        console.error('Error al rechazar solicitud de contacto:', error);
-        res.status(500).json({ message: 'Error interno del servidor al rechazar la solicitud.', error: error.message });
+      if (connection) await connection.rollback();
+      console.error("Error al rechazar solicitud de contacto:", error);
+      res.status(500).json({
+        message: "Error interno del servidor al rechazar la solicitud.",
+        error: error.message,
+      });
     } finally {
-        if (connection) connection.release();
+      if (connection) connection.release();
     }
-});
+  }
+);
 
 // 5. Ruta para OBTENER las notificaciones del usuario logueado
-app.get('/api/notificaciones', authenticateToken, async (req, res) => {
-    console.log("Solicitud GET /api/notificaciones para usuario:", req.user.id_usuario);
-    const id_usuario_receptor = req.user.id_usuario;
-    const soloNoLeidas = req.query.leida === 'false'; // Parámetro de consulta para filtrar por no leídas
+app.get("/api/notificaciones", authenticateToken, async (req, res) => {
+  console.log(
+    "Solicitud GET /api/notificaciones para usuario:",
+    req.user.id_usuario
+  );
+  const id_usuario_receptor = req.user.id_usuario;
+  const soloNoLeidas = req.query.leida === "false"; // Parámetro de consulta para filtrar por no leídas
 
-    try {
-        let query = `
+  try {
+    let query = `
             SELECT
                 n.id_notificacion,
                 n.tipo_notificacion,
@@ -756,54 +855,72 @@ app.get('/api/notificaciones', authenticateToken, async (req, res) => {
             WHERE
                 n.id_usuario_receptor = ?
         `;
-        const values = [id_usuario_receptor];
+    const values = [id_usuario_receptor];
 
-        if (soloNoLeidas) {
-            query += ` AND n.leida = FALSE`;
-        }
-
-        query += ` ORDER BY n.creado_fecha DESC`; // Ordenar por fecha de creación descendente
-
-        const [rows] = await pool.query(query, values);
-
-        rows.forEach(notification => {
-            if (notification.emisor_foto_perfil) {
-                notification.emisor_foto_perfil = `${req.protocol}://${req.get('host')}${notification.emisor_foto_perfil}`;
-            }
-        });
-
-        res.json(rows);
-
-    } catch (error) {
-        console.error('Error al obtener notificaciones:', error);
-        res.status(500).json({ message: 'Error interno del servidor al obtener notificaciones.', error: error.message });
+    if (soloNoLeidas) {
+      query += ` AND n.leida = FALSE`;
     }
+
+    query += ` ORDER BY n.creado_fecha DESC`; // Ordenar por fecha de creación descendente
+
+    const [rows] = await pool.query(query, values);
+
+    rows.forEach((notification) => {
+      if (notification.emisor_foto_perfil) {
+        notification.emisor_foto_perfil = `${req.protocol}://${req.get(
+          "host"
+        )}${notification.emisor_foto_perfil}`;
+      }
+    });
+
+    res.json(rows);
+  } catch (error) {
+    console.error("Error al obtener notificaciones:", error);
+    res.status(500).json({
+      message: "Error interno del servidor al obtener notificaciones.",
+      error: error.message,
+    });
+  }
 });
 
 // 6. Ruta para MARCAR una notificación como leída
-app.patch('/api/notificaciones/:id_notificacion/marcar-leida', authenticateToken, async (req, res) => {
-    console.log("Solicitud PATCH /api/notificaciones/:id_notificacion/marcar-leida para notificación:", req.params.id_notificacion, "por usuario:", req.user.id_usuario);
+app.patch(
+  "/api/notificaciones/:id_notificacion/marcar-leida",
+  authenticateToken,
+  async (req, res) => {
+    console.log(
+      "Solicitud PATCH /api/notificaciones/:id_notificacion/marcar-leida para notificación:",
+      req.params.id_notificacion,
+      "por usuario:",
+      req.user.id_usuario
+    );
     const { id_notificacion } = req.params;
     const id_usuario_receptor = req.user.id_usuario; // El usuario logueado debe ser el receptor de la notificación
 
     try {
-        const [result] = await pool.query(
-            'UPDATE notificaciones SET leida = TRUE WHERE id_notificacion = ? AND id_usuario_receptor = ? AND leida = FALSE',
-            [id_notificacion, id_usuario_receptor]
-        );
+      const [result] = await pool.query(
+        "UPDATE notificaciones SET leida = TRUE WHERE id_notificacion = ? AND id_usuario_receptor = ? AND leida = FALSE",
+        [id_notificacion, id_usuario_receptor]
+      );
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Notificación no encontrada o ya marcada como leída para este usuario.' });
-        }
+      if (result.affectedRows === 0) {
+        return res.status(404).json({
+          message:
+            "Notificación no encontrada o ya marcada como leída para este usuario.",
+        });
+      }
 
-        res.json({ message: 'Notificación marcada como leída con éxito.' });
-
+      res.json({ message: "Notificación marcada como leída con éxito." });
     } catch (error) {
-        console.error('Error al marcar notificación como leída:', error);
-        res.status(500).json({ message: 'Error interno del servidor al marcar la notificación como leída.', error: error.message });
+      console.error("Error al marcar notificación como leída:", error);
+      res.status(500).json({
+        message:
+          "Error interno del servidor al marcar la notificación como leída.",
+        error: error.message,
+      });
     }
-});
-
+  }
+);
 
 // --- RUTA: PARA ACTUALIZAR LA DESCRIPCIÓN DEL PERFIL ---
 app.patch("/api/profile/description", authenticateToken, async (req, res) => {
@@ -1152,7 +1269,6 @@ app.post(
       const idDesafioRecienCreado = result.insertId;
       console.log(`Desafío creado con ID: ${idDesafioRecienCreado}`);
 
-
       // 5. Incrementar el contador de desafíos creados para el emprendedor
       await connection.query(
         "UPDATE emprendedor SET desafios_cuenta = desafios_cuenta + 1 WHERE id_emprendedor = ?",
@@ -1165,16 +1281,29 @@ app.post(
           SELECT id_usuario FROM usuarios WHERE tipo_perfil IN ('Diseñador', 'Marketing')
       `);
 
-      const tituloNotificacion = '¡Nuevo Desafío Publicado!';
+      const tituloNotificacion = "¡Nuevo Desafío Publicado!";
       const mensajeNotificacion = `Se ha publicado un nuevo desafío: "${nombre_desafio}". ¡Échale un vistazo!`;
       const urlRedireccion = `/desafios/${idDesafioRecienCreado}`; // URL para el frontend (PaginaDetalleDesafio)
 
       for (const receptor of receptors) {
-          await connection.query(`
+        await connection.query(
+          `
               INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida, creado_fecha)
               VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP())
-          `, [receptor.id_usuario, 'nuevo_desafio', tituloNotificacion, mensajeNotificacion, urlRedireccion, idDesafioRecienCreado, false]);
-          console.log(`Notificación de nuevo desafío enviada a usuario ${receptor.id_usuario}.`);
+          `,
+          [
+            receptor.id_usuario,
+            "nuevo_desafio",
+            tituloNotificacion,
+            mensajeNotificacion,
+            urlRedireccion,
+            idDesafioRecienCreado,
+            false,
+          ]
+        );
+        console.log(
+          `Notificación de nuevo desafío enviada a usuario ${receptor.id_usuario}.`
+        );
       }
       // FIN NUEVO
 
@@ -1334,12 +1463,13 @@ app.get(
 
 // MODIFICADO: Obtener detalles de un desafío específico por ID (para PaginaDetalleDesafio.vue)
 // SE HAN ELIMINADO LAS COLUMNAS DE REDES SOCIALES (whatsapp, instagram, etc.) de la tabla usuarios.
-app.get('/api/desafios/:id', authenticateToken, async (req, res) => {
-    const { id } = req.params;
-    let connection;
-    try {
-        connection = await pool.getConnection();
-        const [rows] = await connection.execute(`
+app.get("/api/desafios/:id", authenticateToken, async (req, res) => {
+  const { id } = req.params;
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const [rows] = await connection.execute(
+      `
             SELECT
                 d.id_desafio,
                 d.nombre_desafio,
@@ -1360,148 +1490,258 @@ app.get('/api/desafios/:id', authenticateToken, async (req, res) => {
                 usuarios u ON e.id_usuario = u.id_usuario       
             WHERE
                 d.id_desafio = ?
-        `, [id]);
-        connection.release();
+        `,
+      [id]
+    );
+    connection.release();
 
-        if (rows.length === 0) {
-            console.warn(`Desafío con ID ${id} no encontrado o datos de emprendedor no coincidentes.`);
-            return res.status(404).json({ message: 'Desafío no encontrado o datos de emprendedor no válidos.' });
-        }
-
-        const desafio = rows[0];
-        // Construir URL completa para la foto de perfil del emprendedor
-        if (desafio.foto_perfil_emprendedor) {
-            desafio.foto_perfil_emprendedor = `${req.protocol}://${req.get('host')}${desafio.foto_perfil_emprendedor}`;
-        }
-        console.log(`Detalles del desafío ${id} obtenidos.`);
-        res.json(desafio);
-    } catch (error) {
-        console.error('Error al obtener detalles del desafío:', error);
-        res.status(500).json({ message: 'Error al obtener detalles del desafío.', error: error.message });
-    } finally {
-        if (connection) connection.release();
+    if (rows.length === 0) {
+      console.warn(
+        `Desafío con ID ${id} no encontrado o datos de emprendedor no coincidentes.`
+      );
+      return res.status(404).json({
+        message: "Desafío no encontrado o datos de emprendedor no válidos.",
+      });
     }
+
+    const desafio = rows[0];
+    // Construir URL completa para la foto de perfil del emprendedor
+    if (desafio.foto_perfil_emprendedor) {
+      desafio.foto_perfil_emprendedor = `${req.protocol}://${req.get("host")}${
+        desafio.foto_perfil_emprendedor
+      }`;
+    }
+    console.log(`Detalles del desafío ${id} obtenidos.`);
+    res.json(desafio);
+  } catch (error) {
+    console.error("Error al obtener detalles del desafío:", error);
+    res.status(500).json({
+      message: "Error al obtener detalles del desafío.",
+      error: error.message,
+    });
+  } finally {
+    if (connection) connection.release();
+  }
 });
 
-// MODIFICADO: Ruta para enviar una propuesta a un desafío (ahora con imagen)
-// El nombre del campo en el formulario para la imagen debe ser 'imagenPropuesta'
-app.post('/api/desafios/:id/proponer', authenticateToken, uploadPropuesta.single('imagenPropuesta'), async (req, res) => {
-    const { id } = req.params; // id_desafio
-    const { texto_propuesta } = req.body;
-    const id_usuario_proponente = req.user.id_usuario; // Obtenido del token
+// RUTA PARA OBTENER PROPUESTAS DE UN DESAFIO POR SU ID
+// Ruta para obtener propuestas de un desafío por su ID
+app.get("/api/desafios/:id/propuestas", authenticateToken, async (req, res) => {
+  const { id: id_desafio } = req.params;
 
-    // req.file contiene la información del archivo subido por multer
-    const imagen_url = req.file ? `/uploads/propuestas/${req.file.filename}` : null; // Ruta relativa de la imagen
+  // PRIMER CONSOLE.LOG CLAVE: ¿Qué ID está recibiendo el backend?
+  console.log(`Backend: Solicitud de propuestas para idDesafio: ${id_desafio}`);
+
+  let connection; // Asegúrate de declarar la conexión
+  try {
+    connection = await pool.getConnection(); // Obtener una conexión
+    const [propuestas] = await connection.execute(
+      `SELECT pd.*, u.nombre_usuario
+             FROM propuestas_desafio pd
+             JOIN usuarios u ON pd.id_usuario_proponente = u.id_usuario
+             WHERE pd.id_desafio = ?`,
+      [id_desafio]
+    );
+
+    // SEGUNDO CONSOLE.LOG CLAVE: ¿Qué resultados obtuvo de la base de datos?
+    console.log(
+      "Backend: Resultados de la base de datos para propuestas:",
+      propuestas
+    );
+
+    res.status(200).json(propuestas);
+  } catch (error) {
+    console.error("Backend: Error al obtener propuestas del desafío:", error);
+    res
+      .status(500)
+      .json({ message: "Error interno del servidor al obtener propuestas." });
+  } finally {
+    if (connection) connection.release(); // Liberar la conexión
+  }
+});
+
+// --- RUTA COMPLETA Y MEJORADA para enviar una propuesta (con imagen, notificación y transacciones) ---
+// Nota: authorizeDesignerMarketing debe ser un middleware que verifique el rol
+app.post(
+  "/api/desafios/:id/proponer",
+  authenticateToken,
+  authorizeDesignerMarketing,
+  uploadPropuesta.single("imagenPropuesta"),
+  async (req, res) => {
+    const { id: id_desafio } = req.params; // id_desafio
+    const { texto_propuesta } = req.body;
+    const id_usuario_proponente = req.user.id_usuario; // Obtenido del token // req.file contiene la información del archivo subido por multer
+
+    const imagen_url = req.file
+      ? `/uploads/proposals/${req.file.filename}`
+      : null; // Ruta relativa de la imagen // Validación inicial: Si no hay texto ni imagen, es un error
 
     if (!texto_propuesta && !imagen_url) {
-        return res.status(400).json({ message: 'Se requiere el texto de la propuesta o una imagen.' });
+      // Si hay un archivo subido, elimínalo si la propuesta es inválida
+      if (req.file && req.file.path) {
+        fs.unlink(req.file.path, (unlinkErr) => {
+          if (unlinkErr)
+            console.error(
+              "Error al eliminar archivo temporal por validación:",
+              unlinkErr
+            );
+        });
+      }
+      return res.status(400).json({
+        message: "Se requiere el texto de la propuesta o una imagen.",
+      });
     }
 
     let connection;
     try {
-        connection = await pool.getConnection();
+      connection = await pool.getConnection();
+      await connection.beginTransaction(); // INICIA LA TRANSACCIÓN // 1. Verificar que el desafío existe y está activo
 
-        // Verificar que el desafío existe y está activo
-        const [desafioRows] = await connection.execute('SELECT id_desafio, estado FROM desafios WHERE id_desafio = ?', [id]);
-        if (desafioRows.length === 0) {
-            return res.status(404).json({ message: 'Desafío no encontrado.' });
+      const [desafioRows] = await connection.execute(
+        "SELECT id_desafio, estado, id_emprendedor, nombre_desafio FROM desafios WHERE id_desafio = ?",
+        [id_desafio]
+      );
+      if (desafioRows.length === 0) {
+        await connection.rollback(); // Rollback si el desafío no existe
+        if (req.file && req.file.path) {
+          fs.unlink(req.file.path, (unlinkErr) => {
+            if (unlinkErr)
+              console.error("Error al eliminar archivo:", unlinkErr);
+          });
         }
-        if (desafioRows[0].estado !== 'Activo') {
-            return res.status(400).json({ message: 'No se pueden enviar propuestas a un desafío que no está activo.' });
+        return res.status(404).json({ message: "Desafío no encontrado." });
+      }
+      if (desafioRows[0].estado !== "Activo") {
+        await connection.rollback(); // Rollback si el desafío no está activo
+        if (req.file && req.file.path) {
+          fs.unlink(req.file.path, (unlinkErr) => {
+            if (unlinkErr)
+              console.error("Error al eliminar archivo:", unlinkErr);
+          });
         }
+        return res.status(400).json({
+          message:
+            "No se pueden enviar propuestas a un desafío que no está activo.",
+        });
+      } // --- INICIO DE LOS CAMBIOS ---
 
-        // Verificar que el proponente no sea el creador del desafío (OPCIONAL, pero lógico)
-        const [creatorRows] = await connection.execute('SELECT e.id_usuario FROM desafios d JOIN emprendedor e ON d.id_emprendedor = e.id_emprendedor WHERE d.id_desafio = ?', [id]);
-        if (creatorRows.length > 0 && creatorRows[0].id_usuario === id_usuario_proponente) {
-            return res.status(403).json({ message: 'No puedes enviar una propuesta a tu propio desafío.' });
+      const idEmprendedorDeTablaDesafios = desafioRows[0].id_emprendedor; // Renombramos para claridad
+      const nombreDesafio = desafioRows[0].nombre_desafio;
+
+      // NUEVO PASO: Obtener el id_usuario REAL del emprendedor a partir de su id_emprendedor (de la tabla 'emprendedor')
+      const [emprendedorUserRows] = await connection.execute(
+        "SELECT id_usuario FROM emprendedor WHERE id_emprendedor = ?",
+        [idEmprendedorDeTablaDesafios]
+      );
+
+      if (emprendedorUserRows.length === 0) {
+        await connection.rollback();
+        if (req.file && req.file.path) {
+          fs.unlink(req.file.path, (unlinkErr) => {
+            if (unlinkErr)
+              console.error("Error al eliminar archivo:", unlinkErr);
+          });
         }
+        return res.status(404).json({
+          message:
+            "Emprendedor asociado al desafío no encontrado en la tabla de emprendedores.",
+        });
+      }
+      const idUsuarioEmprendedor = emprendedorUserRows[0].id_usuario; // ¡Este es el id_usuario que necesitamos para notificar! // 2. Verificar que el proponente no sea el creador del desafío (OPCIONAL, pero lógico) // Ahora comparamos con el id_usuario REAL del emprendedor
 
-        // Insertar la propuesta en la base de datos
-        const [result] = await connection.execute(
-            'INSERT INTO propuestas_desafio (id_desafio, id_usuario_proponente, texto_propuesta, imagen_url, estado, fecha_envio) VALUES (?, ?, ?, ?, ?, NOW())',
-            [id, id_usuario_proponente, texto_propuesta, imagen_url, 'Pendiente']
-        );
-        connection.release();
+      if (idUsuarioEmprendedor === id_usuario_proponente) {
+        // CAMBIO: Usamos idUsuarioEmprendedor
+        await connection.rollback(); // Rollback si es el propio creador
+        if (req.file && req.file.path) {
+          fs.unlink(req.file.path, (unlinkErr) => {
+            if (unlinkErr)
+              console.error("Error al eliminar archivo:", unlinkErr);
+          });
+        }
+        return res.status(403).json({
+          message: "No puedes enviar una propuesta a tu propio desafío.",
+        });
+      } // 3. Insertar la propuesta en la base de datos
 
-        console.log(`Propuesta enviada para desafío ${id} por usuario ${id_usuario_proponente}.`);
-        res.status(201).json({ message: 'Propuesta enviada con éxito.', propuestaId: result.insertId });
+      const [result] = await connection.execute(
+        "INSERT INTO propuestas_desafio (id_desafio, id_usuario_proponente, texto_propuesta, imagen_url, estado, fecha_envio) VALUES (?, ?, ?, ?, ?, NOW())",
+        [
+          id_desafio,
+          id_usuario_proponente,
+          texto_propuesta,
+          imagen_url,
+          "Pendiente",
+        ]
+      );
+      const idPropuestaCreada = result.insertId;
+      console.log(
+        `Propuesta ${idPropuestaCreada} creada para desafío ${id_desafio} por usuario ${id_usuario_proponente}. Imagen: ${
+          imagen_url || "N/A"
+        }`
+      );
+      // 4. Insertar notificación para el emprendedor sobre la nueva propuesta
+      const tituloNotificacion = "¡Nueva Propuesta Recibida!";
+      const mensajeNotificacion = `Has recibido una nueva propuesta para tu desafío "${nombreDesafio}" de ${req.user.nombre_usuario}.`;
+      const urlRedireccion = `/mis-desafios/${id_desafio}/propuestas`; // Ajusta esta URL si tu frontend tiene una ruta específica para ver propuestas
 
+      // --- CAMBIO AQUÍ: Asegúrate de que la cadena SQL no tenga saltos de línea ni espacios iniciales/finales innecesarios ---
+      // Puedes ponerla en una sola línea o asegurarte de que los saltos de línea estén bien controlados
+      await connection.execute(
+        `INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida, creado_fecha) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP())`, // <-- Así, en una sola línea o con cuidado al formatear
+        [
+          idUsuarioEmprendedor,
+          "nueva_propuesta_desafio",
+          tituloNotificacion,
+          mensajeNotificacion,
+          urlRedireccion,
+          idPropuestaCreada,
+          false,
+        ]
+      );
+      console.log(
+        `Notificación de nueva propuesta enviada al emprendedor ${idUsuarioEmprendedor}.`
+      );
+
+      // CAMBIO: y aquí también
+      // --- FIN DE LOS CAMBIOS ---
+
+      await connection.commit(); // CONFIRMA LA TRANSACCIÓN
+      res.status(201).json({
+        message: "Propuesta enviada con éxito.",
+        propuestaId: idPropuestaCreada,
+        imagenUrl: imagen_url,
+      });
     } catch (error) {
-        console.error('Error al enviar propuesta:', error);
-        // Si hay un error al subir el archivo, Multer lo maneja con un error.
-        if (error instanceof multer.MulterError) {
-            if (error.code === 'LIMIT_FILE_SIZE') {
-                return res.status(400).json({ message: 'El archivo es demasiado grande (máximo 5MB).' });
-            }
+      // Si hay un error en cualquier punto del try, se ejecuta el rollback
+      if (connection) {
+        await connection.rollback(); // DESHACE LA TRANSACCIÓN
+      }
+      console.error("Error al enviar propuesta:", error); // Si hubo un error y se subió un archivo, elimínalo para evitar archivos huérfanos
+      if (req.file && req.file.path) {
+        fs.unlink(req.file.path, (unlinkErr) => {
+          if (unlinkErr)
+            console.error("Error al eliminar archivo tras error:", unlinkErr);
+        });
+      } // Manejo específico de errores de Multer
+      if (error instanceof multer.MulterError) {
+        if (error.code === "LIMIT_FILE_SIZE") {
+          return res
+            .status(400)
+            .json({ message: "El archivo es demasiado grande (máximo 5MB)." });
         }
-        res.status(500).json({ message: 'Error al enviar la propuesta.', error: error.message });
+        return res
+          .status(400)
+          .json({ message: `Error al subir archivo: ${error.message}` });
+      }
+      res.status(500).json({
+        message: "Error interno del servidor al enviar la propuesta.",
+        error: error.message,
+      });
     } finally {
-        if (connection) connection.release();
+      if (connection) connection.release(); // Siempre libera la conexión
     }
-});
-
-// NUEVA RUTA: Para que un Diseñador/Marketing envíe una propuesta a un desafío
-app.post('/api/desafios/:id/propuestas', authenticateToken, authorizeDesignerMarketing, async (req, res) => {
-    const { id: id_desafio } = req.params;
-    const { proposalText } = req.body; // Asegúrate de que este campo se envíe desde el frontend
-    const id_usuario_proponente = req.user.id_usuario; // El ID del usuario que envía la propuesta
-
-    if (!proposalText || proposalText.trim() === '') {
-        console.warn("Error 400: El texto de la propuesta está vacío.");
-        return res.status(400).json({ message: 'El texto de la propuesta no puede estar vacío.' });
-    }
-
-    let connection;
-    try {
-        connection = await pool.getConnection();
-        await connection.beginTransaction();
-
-        // Verificar que el desafío exista y obtener su id_emprendedor y nombre
-        const [desafioInfo] = await connection.query('SELECT id_emprendedor, nombre_desafio FROM desafios WHERE id_desafio = ?', [id_desafio]);
-        if (desafioInfo.length === 0) {
-            console.warn(`Desafío con ID ${id_desafio} no encontrado para la propuesta.`);
-            await connection.rollback();
-            return res.status(404).json({ message: 'Desafío no encontrado.' });
-        }
-        const idEmprendedor = desafioInfo[0].id_emprendedor;
-        const nombreDesafio = desafioInfo[0].nombre_desafio;
-
-        // 1. Insertar la propuesta (asume que tienes una tabla 'propuestas_desafio')
-        // Si no tienes esta tabla, deberías crearla: id_propuesta, id_desafio, id_usuario_proponente, texto_propuesta, fecha_envio, estado
-        const [resultPropuesta] = await connection.query(`
-            INSERT INTO propuestas_desafio (id_desafio, id_usuario_proponente, texto_propuesta, fecha_envio, estado)
-            VALUES (?, ?, ?, NOW(), 'Pendiente')
-        `, [id_desafio, id_usuario_proponente, proposalText]);
-        const idPropuestaCreada = resultPropuesta.insertId;
-        console.log(`Propuesta ${idPropuestaCreada} creada para desafío ${id_desafio}.`);
-
-        // 2. Insertar notificación para el emprendedor sobre la nueva propuesta
-        const tituloNotificacion = '¡Nueva Propuesta Recibida!';
-        const mensajeNotificacion = `Has recibido una nueva propuesta para tu desafío "${nombreDesafio}" de ${req.user.nombre_usuario}.`;
-        // Define una URL a donde el emprendedor podría ir a ver las propuestas de sus desafíos
-        const urlRedireccion = `/mis-desafios/${id_desafio}/propuestas`;
-
-        await connection.query(`
-            INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida, creado_fecha)
-            VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP())
-        `, [idEmprendedor, 'nueva_propuesta_desafio', tituloNotificacion, mensajeNotificacion, urlRedireccion, idPropuestaCreada, false]); // id_referencia es el ID de la propuesta
-        console.log(`Notificación de nueva propuesta enviada al emprendedor ${idEmprendedor}.`);
-
-        await connection.commit();
-        res.status(201).json({ message: 'Propuesta enviada exitosamente.', id_propuesta: idPropuestaCreada });
-
-    } catch (error) {
-        if (connection) {
-            await connection.rollback();
-        }
-        console.error('Error al enviar propuesta para desafío:', error);
-        res.status(500).json({ message: 'Error interno del servidor al enviar la propuesta.', error: error.message });
-    } finally {
-        if (connection) connection.release();
-    }
-});
-
-
+  }
+);
 
 // --- NUEVA RUTA: OBTENER TODOS LOS PERFILES (EXCEPTO EL DEL USUARIO LOGUEADO) ---
 app.get("/api/profiles", authenticateToken, async (req, res) => {
@@ -1690,24 +1930,20 @@ app.post("/api/replies/:replyId/like", authenticateToken, async (req, res) => {
     console.log(
       `Transacción de like/dislike completada para respuesta ${replyId}. Nuevo conteo: ${newLikesCount}`
     );
-    res
-      .status(200)
-      .json({
-        newLikesCount,
-        likedByCurrentUser,
-        message: "Reacción procesada con éxito.",
-      });
+    res.status(200).json({
+      newLikesCount,
+      likedByCurrentUser,
+      message: "Reacción procesada con éxito.",
+    });
   } catch (error) {
     if (connection) {
       await connection.rollback();
     }
     console.error('Error al procesar el "me gusta" en la respuesta:', error);
-    res
-      .status(500)
-      .json({
-        message: "Error interno del servidor al procesar la reacción.",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Error interno del servidor al procesar la reacción.",
+      error: error.message,
+    });
   } finally {
     if (connection) {
       connection.release();

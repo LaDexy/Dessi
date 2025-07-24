@@ -19,15 +19,14 @@
         <hr>
 
         <h3 class="section-subtitle">Propuestas de los Participantes:</h3>
-        <div v-if="proposals.length === 0" class="no-proposals-message">
+        <div v-if="isLoadingProposals">Cargando propuestas...</div>
+        <div v-else-if="proposals.length === 0" class="no-proposals-message">
           <p>Aún no hay propuestas de participantes para este desafío.</p>
         </div>
         <div v-else class="proposals-list">
           <div v-for="proposal in proposals" :key="proposal.id_propuesta" class="proposal-card">
-            <p><strong>De:</strong> {{ proposal.nombre_usuario_proponente }} ({{ proposal.tipo_usuario_proponente }})</p>
-            <p>{{ proposal.texto_propuesta }}</p>
-            <div v-if="proposal.ruta_imagen_propuesta" class="proposal-image-container">
-              <img :src="`http://localhost:4000/${proposal.ruta_imagen_propuesta}`" alt="Propuesta del participante" class="proposal-image"/>
+            <p><strong>De:</strong> {{ proposal.nombre_usuario }}</p> <p>{{ proposal.texto_propuesta }}</p>
+            <div v-if="proposal.imagen_url" class="proposal-image-container"> <img :src="`http://localhost:4000${proposal.imagen_url}`" alt="Propuesta del participante" class="proposal-image"/>
             </div>
             <p class="proposal-date">Enviado el: {{ formatDate(proposal.fecha_envio) }}</p>
             </div>
@@ -47,9 +46,9 @@
 import axios from 'axios';
 
 export default {
-  name: "ParticipantesDesafios", // NOMBRE DEL COMPONENTE ACTUALIZADO AQUÍ
+  name: "ParticipantesDesafios",
   props: {
-    idDesafio: { // Prop que recibe el ID del desafío a mostrar
+    idDesafio: {
       type: [Number, String],
       required: true
     }
@@ -57,25 +56,31 @@ export default {
   data() {
     return {
       challengeDetail: null,
-      proposals: [], // Para almacenar las propuestas de este desafío (los "participantes")
+      proposals: [], // Para almacenar las propuestas de este desafío
       isLoadingDetail: false,
+      isLoadingProposals: false, // NUEVA PROPIEDAD: para el estado de carga de las propuestas
       detailErrorMessage: '',
     };
   },
   watch: {
     idDesafio: {
-      immediate: true, 
+      immediate: true,
       handler(newId) {
         if (newId) {
           this.fetchChallengeDetails(newId);
           this.fetchProposals(newId); // Cargar las propuestas también
+        } else {
+          // Limpiar datos si el idDesafio es nulo o indefinido
+          this.challengeDetail = null;
+          this.proposals = [];
+          this.detailErrorMessage = '';
         }
       }
     }
   },
   methods: {
     cerrarModalDetalle() {
-      this.$emit('cerrarDetalle'); // Emite un evento para que el padre cierre este modal
+      this.$emit('cerrarDetalle');
     },
     async fetchChallengeDetails(id) {
       this.isLoadingDetail = true;
@@ -107,14 +112,15 @@ export default {
       }
     },
     async fetchProposals(id) {
+      this.isLoadingProposals = true; // Establecer estado de carga al inicio
       try {
         const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
         if (!token) {
           throw new Error('No hay token de autenticación.');
         }
 
-        // RUTA EN BACKEND NECESARIA: /api/desafios/:id/propuestas_recibidas
-        const response = await axios.get(`http://localhost:4000/api/desafios/${id}/propuestas_recibidas`, {
+        // ¡¡¡CAMBIO CLAVE AQUÍ: La URL debe ser /api/desafios/:id/propuestas !!!
+        const response = await axios.get(`http://localhost:4000/api/desafios/${id}/propuestas`, {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -126,8 +132,9 @@ export default {
         }
       } catch (error) {
         console.error('Error al cargar las propuestas:', error);
-        // this.detailErrorMessage = 'Error al cargar las propuestas: ' + (error.message || 'Error de conexión.');
         // Puedes agregar un mensaje de error específico para las propuestas si lo deseas
+      } finally {
+        this.isLoadingProposals = false; // Restablecer estado de carga al final
       }
     },
     formatDate(dateString) {
@@ -352,5 +359,4 @@ hr {
   background-color: #c82333;
   transform: translateY(-2px);
 }
-
 </style>

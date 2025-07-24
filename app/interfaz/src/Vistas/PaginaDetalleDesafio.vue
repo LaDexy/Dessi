@@ -222,7 +222,7 @@ export default {
 
       try {
         const response = await axios.post(
-          `http://localhost:4000/api/desafios/${this.challenge.id_desafio}/propuestas`, // ¡Revisa esta URL! En tu código Express era /propuestas, no /proponer
+          `http://localhost:4000/api/desafios/${this.challenge.id_desafio}/proponer`, // ¡Revisa esta URL! En tu código Express era /propuestas, no /proponer
           formData, // Enviamos el FormData
           {
             headers: {
