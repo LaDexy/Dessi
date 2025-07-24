@@ -116,7 +116,7 @@ export default {
     },
     // NUEVO MÉTODO: Para navegar a la nueva página de desafíos
     goToPaginaDesafios() {
-      this.$router.push({ name: "PaginaDesafios" }).catch((err) => {
+      this.$router.push({ name: "desafiosActivos" }).catch((err) => {
         if (err.name !== "NavigationDuplicated") {
           console.error("Error de navegación a PaginaDesafios:", err);
         }
