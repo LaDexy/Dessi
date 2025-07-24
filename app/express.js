@@ -1234,6 +1234,7 @@ app.get(
 );
 
 // MODIFICADO: RUTA PARA OBTENER TODOS LOS DESAFÍOS ACTIVOS CREADOS POR CUALQUIER EMPRENDEDOR
+// Esta ruta es para los roles de Diseñador y Marketing (para PaginaDesafios.vue)
 app.get(
   "/api/desafios_activos_emprendedores",
   authenticateToken,
@@ -1246,6 +1247,9 @@ app.get(
     let connection;
     try {
       connection = await pool.getConnection();
+      // Consulta SQL para obtener desafíos activos (fecha_fin >= CURDATE())
+      // y unir con la tabla 'usuarios' para obtener el nombre y la foto de perfil del emprendedor.
+      // SE HAN ELIMINADO LAS COLUMNAS DE REDES SOCIALES (whatsapp, instagram, etc.) de la tabla usuarios.
       const [rows] = await connection.query(`
                 SELECT
                     d.id_desafio,
@@ -1261,9 +1265,9 @@ app.get(
                 FROM
                     desafios d
                 JOIN
-                    emprendedor e ON d.id_emprendedor = e.id_emprendedor  <-- PRIMER JOIN
+                    emprendedor e ON d.id_emprendedor = e.id_emprendedor
                 JOIN
-                    usuarios u ON e.id_usuario = u.id_usuario          <-- SEGUNDO JOIN
+                    usuarios u ON e.id_usuario = u.id_usuario
                 WHERE
                     d.fecha_fin >= CURDATE()
                 ORDER BY
@@ -1271,6 +1275,7 @@ app.get(
             `);
       connection.release();
 
+      // Construir URLs completas para las fotos de perfil
       const desafiosConUrlCompleta = rows.map((desafio) => {
         if (desafio.foto_perfil_emprendedor) {
           desafio.foto_perfil_emprendedor = `${req.protocol}://${req.get(
@@ -1297,6 +1302,7 @@ app.get(
 );
 
 // MODIFICADO: Obtener detalles de un desafío específico por ID (para PaginaDetalleDesafio.vue)
+// SE HAN ELIMINADO LAS COLUMNAS DE REDES SOCIALES (whatsapp, instagram, etc.) de la tabla usuarios.
 app.get('/api/desafios/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     let connection;
@@ -1318,9 +1324,9 @@ app.get('/api/desafios/:id', authenticateToken, async (req, res) => {
             FROM
                 desafios d
             JOIN
-                emprendedor e ON d.id_emprendedor = e.id_emprendedor  <-- PRIMER JOIN (desafios a emprendedor)
+                emprendedor e ON d.id_emprendedor = e.id_emprendedor  
             JOIN
-                usuarios u ON e.id_usuario = u.id_usuario          <-- SEGUNDO JOIN (emprendedor a usuarios)
+                usuarios u ON e.id_usuario = u.id_usuario       
             WHERE
                 d.id_desafio = ?
         `, [id]);
