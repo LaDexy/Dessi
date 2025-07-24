@@ -114,19 +114,18 @@ export default {
 
 /* Estilos específicos para este componente */
 .MiPerfil {
-  position: relative; /* Necesario para posicionar el menú desplegable */
-  display: inline-block;
+  left: 75%;
+position: relative;
+display: inline-block;
+
 }
 
-.MiPerfil button {
-  /* Estilos para el botón "Mi Perfil" */
-  /* Ya aplicados con Tailwind en el template */
-}
+
 
 .content {
   display: none; /* Por defecto oculto */
   min-width: 160px;
-  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  box-shadow: 0px 8px 16px 0px #D8BFD8;
   /* Ya aplicados con Tailwind en el template (absolute, right-0, mt-2, etc.) */
 }
 
@@ -144,13 +143,5 @@ export default {
   cursor: pointer; /* Indica que es clickeable */
 }
 
-/* Estilos para el mensaje personalizado (modal) */
-.custom-message-box {
-  /* Ya aplicados con Tailwind en el template (fixed, inset-0, bg-black, etc.) */
-}
-
-.message-content {
-  /* Ya aplicados con Tailwind en el template (bg-white, p-6, rounded-lg, etc.) */
-}
 
 </style>

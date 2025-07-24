@@ -29,7 +29,7 @@
         class="buttons-filter-margin-bottom"
       />
 
-      <h2 class="section-title">Perfiles de Usuarios</h2>
+      <h2 class="TituloPerfiles">Perfiles de Usuarios</h2>
 
       <TarjetasPerfiles
         :profiles="filteredProfiles"
@@ -404,7 +404,41 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
+
+/* Estilos para el título "Perfiles de Usuarios" */
+.TituloPerfiles {
+  font-family: "Times New Roman", serif; /* Mantener la fuente consistente con otros elementos */
+  font-size: 2.5em; /* Un tamaño de fuente considerable para el título */
+  color: #333; /* Un color oscuro suave para la legibilidad */
+  text-align: center; /* Centrar el texto horizontalmente */
+  margin-top: 40px; /* Un buen espacio superior para separarlo de los botones de filtro */
+  margin-bottom: 30px; /* Espacio inferior para separarlo del contenido siguiente */
+  font-weight: bold; /* Hacer el texto en negrita */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.08); /* Una sombra muy sutil para darle profundidad */
+  padding: 0 15px; /* Pequeño padding horizontal para evitar que el texto se pegue a los bordes en pantallas pequeñas */
+}
+
+/* Media Queries para Responsividad */
+
+/* Para pantallas medianas (ej. tablets, 768px y abajo) */
+@media (max-width: 768px) {
+  .TituloPerfiles {
+    font-size: 2em; /* Reduce el tamaño del título */
+    margin-top: 30px;
+    margin-bottom: 25px;
+  }
+}
+
+/* Para pantallas pequeñas (ej. móviles, 480px y abajo) */
+@media (max-width: 480px) {
+  .TituloPerfiles {
+    font-size: 1.6em; /* Más reducción para móviles */
+    margin-top: 25px;
+    margin-bottom: 20px;
+    padding: 0 10px;
+  }
+}
 
 /* Estilos para el contenedor del nombre de usuario y tipo de perfil */
 .user-name-display-wrapper {

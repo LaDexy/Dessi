@@ -71,8 +71,8 @@ name: "OpcionesBarra"
 
 /* Estilos del botón que activa el offcanvas */
 .Menu .btn { /* Apuntamos a la clase .btn de Bootstrap */
-  background-color: #007bff; /* Un azul de Bootstrap más estándar, o tu color preferido */
-  background-color: #3f51b5; /* Un azul más profundo o el color de tu marca */
+  background-color: hsl(300, 29%, 78%) !important; /* Tu color principal */
+  border-color: hsl(300, 29%, 78%) !important; /* Un azul más profundo o el color de tu marca */
   border: none;
   border-radius: 50%; /* Hace el botón completamente circular */
   width: 60px; /* Ancho fijo para un botón circular */
@@ -86,7 +86,7 @@ name: "OpcionesBarra"
 }
 
 .Menu .btn:hover {
-  background-color: #303f9f; /* Un tono más oscuro al pasar el ratón */
+  background-color: #d18cc4; /* Un tono más oscuro al pasar el ratón */
   transform: translateY(-3px); /* Pequeño efecto de levantamiento */
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); /* Sombra más pronunciada al hover */
 }
