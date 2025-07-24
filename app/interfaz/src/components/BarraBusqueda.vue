@@ -1,5 +1,6 @@
 <template>
   <div>
+    <div class="IconoBuscar">
     <div class="buscar">
       <input
         type="text"
@@ -10,6 +11,7 @@
       <div class="Busqueda" @click="emitSearch"> <i class="fa-solid fa-magnifying-glass icon"></i>
       </div>
     </div>
+     </div>
   </div>
 </template>
 
@@ -38,13 +40,20 @@ export default {
 
 /*Barra de busqueda*/
 
+
 .buscar{
 
-position: absolute;
-padding: 5px;
-top: 246px;
-left: 47px;
+  position: fixed; /* ¡Cambiado de 'relative' a 'fixed' para que no se mueva con el scroll! */
 
+  z-index: 1040; /* Asegura que esté por encima del contenido y debajo del menú */
+  
+  display: flex; /* Para alinear el input y el botón visualmente */
+  align-items: center; /* Centrar verticalmente el input y el botón */
+  padding: 5px; /* Pequeño padding alrededor del input y el botón */
+  
+  /* Eliminamos los márgenes que eran para posicionamiento relativo */
+  margin-left: 0; 
+  margin-top: 0; 
 }
 
 .buscar input{

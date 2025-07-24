@@ -131,10 +131,9 @@ export default {
 <style scoped>
 /* Estilos generales para el contenedor del botón de la barra lateral */
 .Lateral {
-  position: absolute; /* Mantenemos el posicionamiento absoluto si es lo que deseas para el botón */
-  top: 50px; /* Ajusta este valor para la posición vertical del botón de menú */
-  left: 20px; /* Ajusta este valor para la posición horizontal del botón de menú */
-  z-index: 30; /* Asegura que el botón esté por encima de otros elementos */
+  position: fixed; /* Mantenemos el posicionamiento absoluto si es lo que deseas para el botón */
+
+  z-index: 1050; /* Asegura que el botón esté por encima de otros elementos */
  
 }
 

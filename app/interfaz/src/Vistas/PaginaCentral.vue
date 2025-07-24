@@ -1,15 +1,23 @@
 <template>
   <div class="main-wrapper">
-    <div class="content-card">
-      <BarraPerfil :userName="userName" />
+    <ContenidoMenu :userRole="userProfileType" class="fixed-menu-button" />
 
-      <div class="profile-image-section">
-        <ImagenPerfil
-          ref="imagenPerfilComponent"
-          :profileImageSrc="profileImageSrc"
-          @imageSelected="handleImageSelected"
-        />
-      </div>
+    <BarraBusqueda @search="handleSearch" class="fixed-search-bar" />
+
+    <div class="fixed-profile-image-wrapper">
+      <ImagenPerfil
+        ref="imagenPerfilComponent"
+        :profileImageSrc="profileImageSrc"
+        @imageSelected="handleImageSelected"
+      />
+    </div>
+
+    <div class="fixed-notifications-icon-wrapper">
+      <IconoNotificaciones @click="goToNotificationsPage" />
+    </div>
+
+    <div class="content-area-scrollable">
+      <BarraPerfil :userName="userName" />
 
       <div class="user-name-display-wrapper">
         <h1 class="user-name-display">{{ userName }}</h1>
@@ -17,12 +25,6 @@
       </div>
 
       <OpcionPerfil class="component-margin-bottom" />
-      <ContenidoMenu
-        :userRole="userProfileType"
-        class="component-margin-bottom"
-      />
-
-      <BarraBusqueda @search="handleSearch" class="component-margin-bottom" />
 
       <BotonesFiltro
         @filter="handleFilter"
@@ -40,10 +42,6 @@
       <p v-if="filteredProfiles.length === 0" class="no-profiles-message">
         No se encontraron perfiles que coincidan con su búsqueda o filtro.
       </p>
-    </div>
-
-    <div class="notifications-icon-wrapper-fixed">
-      <IconoNotificaciones @click="goToNotificationsPage" />
     </div>
 
     <div v-if="showMessageModal" class="message-modal-overlay">
@@ -405,78 +403,187 @@ export default {
 </script>
 
 <style scoped>
-
-/* Estilos para el título "Perfiles de Usuarios" */
-.TituloPerfiles {
-  font-family: "Times New Roman", serif; /* Mantener la fuente consistente con otros elementos */
-  font-size: 2.5em; /* Un tamaño de fuente considerable para el título */
-  color: #333; /* Un color oscuro suave para la legibilidad */
-  text-align: center; /* Centrar el texto horizontalmente */
-  margin-top: 40px; /* Un buen espacio superior para separarlo de los botones de filtro */
-  margin-bottom: 30px; /* Espacio inferior para separarlo del contenido siguiente */
-  font-weight: bold; /* Hacer el texto en negrita */
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.08); /* Una sombra muy sutil para darle profundidad */
-  padding: 0 15px; /* Pequeño padding horizontal para evitar que el texto se pegue a los bordes en pantallas pequeñas */
+/* Contenedor principal de la página, sin transformaciones que afecten a 'fixed' */
+.main-wrapper {
+  position: relative; /* Opcional: si necesitas un contexto para algunos absolutos, pero no para los fixed */
+  min-height: 100vh; /* Asegura que el main-wrapper tenga al menos la altura de la ventana */
+  display: flex; /* Usar flexbox para organizar el contenido */
+  flex-direction: column; /* Apilar los elementos verticalmente */
+  align-items: center; /* Centrar el contenido de la página horizontalmente */
+  /* NO DEBE TENER 'overflow: hidden', 'transform', 'filter', etc. */
 }
 
-/* Media Queries para Responsividad */
+/* Un nuevo contenedor para el contenido que SÍ se desplaza */
+.content-area-scrollable {
+  width: 100%;
+  max-width: 1400px; /* O el ancho máximo que desees para tu contenido principal */
+  padding: 100px 20px 40px 20px; /* Relleno superior para dejar espacio a los elementos fijos */
+  box-sizing: border-box; /* Incluye padding en el ancho */
+  /* Si tu página tiene una barra superior, ajusta este padding-top para que el contenido no quede debajo */
+  margin-top: 0; /* Elimina el margin-top anterior si lo tenías */
+}
 
-/* Para pantallas medianas (ej. tablets, 768px y abajo) */
+/* Estilos para los elementos FIJOS */
+
+/* Contenedor para el botón de menú */
+.fixed-menu-button {
+  position: fixed;
+  top: 20px; /* Ajusta según tu diseño */
+  left: 20px; /* Ajusta según tu diseño */
+  z-index: 1050; /* Muy alto */
+}
+
+/* Contenedor para la barra de búsqueda */
+.fixed-search-bar {
+  position: fixed;
+  top: 100px; /* Ajusta para que esté debajo del menú */
+  left: 20px; /* Ajusta para alineación */
+  z-index: 1040; /* Ligeramente menor que el menú */
+}
+
+/* Contenedor para la imagen de perfil */
+.fixed-profile-image-wrapper {
+  position: fixed;
+  top: 20px; /* Ajusta para que esté arriba a la derecha */
+  right: 20px; /* Ajusta para que esté a la derecha */
+  z-index: 1030; /* Menor que los anteriores */
+  width: 80px; /* Tamaño del contenedor */
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden; /* Para que la imagen se recorte en círculo */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.fixed-profile-image-wrapper > .imagen-perfil { /* Si ImagenPerfil es la raíz, apuntamos a ella */
+  width: 100%;
+  height: 100%;
+}
+/* Estilo para la imagen dentro de ImagenPerfil si no la gestiona ya */
+.fixed-profile-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+
+/* Contenedor para el icono de notificaciones */
+.fixed-notifications-icon-wrapper {
+  position: fixed;
+  top: 20px; /* Ajusta para que esté cerca de la imagen de perfil o donde desees */
+  right: 120px; /* Ajusta su posición. Puedes alinearlo con la imagen de perfil o la barra de perfil */
+  z-index: 1035; /* Entre la imagen de perfil y la barra de búsqueda */
+  /* Añade estilos si quieres un fondo o forma específica para el icono de notificación */
+}
+
+
+/* Aquí puedes mantener los estilos que ya tenías para el resto del contenido
+   como TituloPerfiles, user-name-display-wrapper, etc.
+   Solo asegúrate de que no haya un `.content-card` que tenga `transform` o similar.
+*/
+.TituloPerfiles {
+  font-family: "Times New Roman", serif;
+  font-size: 2.5em;
+  color: #333;
+  text-align: center;
+  margin-top: 40px;
+  margin-bottom: 30px;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.08);
+  padding: 0 15px;
+}
+
 @media (max-width: 768px) {
   .TituloPerfiles {
-    font-size: 2em; /* Reduce el tamaño del título */
+    font-size: 2em;
     margin-top: 30px;
     margin-bottom: 25px;
   }
+  .fixed-menu-button {
+    top: 15px;
+    left: 15px;
+  }
+  .fixed-search-bar {
+    top: 80px; /* Ajusta para móvil */
+    left: 15px;
+  }
+  .fixed-profile-image-wrapper {
+    top: 15px;
+    right: 15px;
+    width: 60px;
+    height: 60px;
+  }
+  .fixed-notifications-icon-wrapper {
+    top: 15px;
+    right: 90px; /* Ajusta para móvil */
+  }
+  .content-area-scrollable {
+    padding-top: 120px; /* Ajusta el padding para móvil */
+  }
 }
 
-/* Para pantallas pequeñas (ej. móviles, 480px y abajo) */
 @media (max-width: 480px) {
   .TituloPerfiles {
-    font-size: 1.6em; /* Más reducción para móviles */
+    font-size: 1.6em;
     margin-top: 25px;
     margin-bottom: 20px;
     padding: 0 10px;
   }
+  .fixed-menu-button {
+    top: 10px;
+    left: 10px;
+  }
+  .fixed-search-bar {
+    top: 70px; /* Ajusta para móvil */
+    left: 10px;
+  }
+  .fixed-profile-image-wrapper {
+    top: 10px;
+    right: 10px;
+    width: 50px;
+    height: 50px;
+  }
+  .fixed-notifications-icon-wrapper {
+    top: 10px;
+    right: 70px; /* Ajusta para móvil */
+  }
+  .content-area-scrollable {
+    padding-top: 100px; /* Ajusta el padding para móvil muy pequeño */
+  }
 }
 
-/* Estilos para el contenedor del nombre de usuario y tipo de perfil */
 .user-name-display-wrapper {
-  text-align: center; /* Centra el texto horizontalmente */
-  margin-top: 20px; /* Espacio superior para separarlo de elementos anteriores, ajusta según necesites */
-  margin-bottom: 30px; /* Espacio inferior para separarlo de elementos siguientes */
-  padding: 0 20px; /* Padding horizontal para que no se pegue a los bordes en móviles */
+  text-align: center;
+  margin-top: 20px;
+  margin-bottom: 30px;
+  padding: 0 20px;
 }
 
-/* Estilos para el nombre de usuario (h1) */
 .user-name-display {
-  font-family: "Times New Roman", serif; /* Mantener la fuente consistente */
-  font-size: 2.8em; /* Un tamaño de fuente grande para el nombre */
-  color: #333; /* Un color oscuro pero no negro puro */
-  margin-bottom: 5px; /* Espacio pequeño entre el nombre y el tipo de perfil */
-  font-weight: bold; /* Nombre en negrita */
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1); /* Sombra suave para un poco de profundidad */
+  font-family: "Times New Roman", serif;
+  font-size: 2.8em;
+  color: #333;
+  margin-bottom: 5px;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
 }
 
-/* Estilos para el tipo de perfil (p) */
 .user-profile-type {
-  font-family: "Times New Roman", serif; /* Mantener la fuente consistente */
-  font-size: 1.3em; /* Tamaño de fuente para el tipo de perfil */
-  color: #6a1b9a; /* Un tono morado/rosado más oscuro para el tipo de perfil */
-  font-weight: 500; /* Un poco más de peso */
-  text-transform: capitalize; /* Capitaliza la primera letra (ej. "emprendedor" -> "Emprendedor") */
+  font-family: "Times New Roman", serif;
+  font-size: 1.3em;
+  color: #6a1b9a;
+  font-weight: 500;
+  text-transform: capitalize;
 }
 
-/* Media Queries para Responsividad */
-
-/* Para pantallas medianas (ej. tablets, 768px y abajo) */
 @media (max-width: 768px) {
   .user-name-display {
-    font-size: 2.2em; /* Reduce el tamaño del nombre */
+    font-size: 2.2em;
   }
-
   .user-profile-type {
-    font-size: 1.1em; /* Reduce el tamaño del tipo de perfil */
+    font-size: 1.1em;
   }
   .user-name-display-wrapper {
     margin-top: 15px;
@@ -484,14 +591,12 @@ export default {
   }
 }
 
-/* Para pantallas pequeñas (ej. móviles, 480px y abajo) */
 @media (max-width: 480px) {
   .user-name-display {
-    font-size: 1.8em; /* Más reducción para móviles */
+    font-size: 1.8em;
   }
-
   .user-profile-type {
-    font-size: 1em; /* Más reducción para móviles */
+    font-size: 1em;
   }
   .user-name-display-wrapper {
     margin-top: 10px;
@@ -499,5 +604,76 @@ export default {
   }
 }
 
+/* Estilos para el mensaje "No se encontraron perfiles" */
+.no-profiles-message {
+  text-align: center;
+  font-style: italic;
+  color: #666;
+  margin-top: 30px;
+  font-size: 1.1em;
+}
 
+/* Estilos para los modales */
+.message-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000; /* Asegura que esté por encima de todo */
+}
+
+.message-modal-content {
+  background-color: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  max-width: 400px;
+  width: 90%;
+  box-sizing: border-box;
+}
+
+.message-modal-title {
+  font-size: 1.8em;
+  color: #333;
+  margin-bottom: 15px;
+  font-family: "Times New Roman", serif;
+}
+
+.message-modal-message {
+  font-size: 1.1em;
+  color: #555;
+  margin-bottom: 25px;
+  font-family: "Times New Roman", serif;
+}
+
+.message-modal-button-close {
+  background-color: #6a1b9a;
+  color: white;
+  border: none;
+  padding: 10px 25px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: background-color 0.3s ease;
+  font-family: "Times New Roman", serif;
+}
+
+.message-modal-button-close:hover {
+  background-color: #4a106e;
+}
+
+/* Margenes para componentes específicos (mantener si son necesarios para el layout de PaginaCentral) */
+.component-margin-bottom {
+  margin-bottom: 20px; /* Margen común para varios componentes */
+}
+
+.buttons-filter-margin-bottom {
+  margin-bottom: 30px; /* Margen específico para BotonesFiltro */
+}
 </style>
