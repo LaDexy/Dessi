@@ -570,7 +570,7 @@ app.get("/api/profile/me", authenticateToken, async (req, res) => {
   }
 });
 
-/// NUEVAS RUTAS PARA NOTIFICACIONES Y SOLICITUDES DE CONTACTO
+// NUEVAS RUTAS PARA NOTIFICACIONES Y SOLICITUDES DE CONTACTO
 // =======================================================
 
 // 1. Ruta para ENVIAR una solicitud de contacto
@@ -752,9 +752,10 @@ app.patch(
         let connection; // Usamos una conexión para la transacción
         try {
             connection = await pool.getConnection();
-            await connection.beginTransaction();
+            await connection.beginTransaction(); // Iniciar transacción
 
             // 1. Obtener la solicitud para verificar y obtener el id_emisor y el nombre del receptor
+            // Se asegura que la solicitud exista, sea para el receptor correcto y esté pendiente
             const [requests] = await connection.query(
                 "SELECT sc.id_emisor, u.nombre_usuario AS receptor_nombre FROM solicitudes_contacto sc JOIN usuarios u ON sc.id_receptor = u.id_usuario WHERE sc.id_solicitud = ? AND sc.id_receptor = ? AND sc.estatus = ?",
                 [id_solicitud, id_receptor, "Pendiente"]
@@ -777,6 +778,7 @@ app.patch(
             );
 
             if (result.affectedRows === 0) {
+                // Esto podría ocurrir si el estatus ya cambió entre la consulta y la actualización
                 await connection.rollback();
                 return res.status(404).json({
                     message: "Solicitud no encontrada o no pendiente para este usuario.",
@@ -786,35 +788,35 @@ app.patch(
             // 3. Crear una notificación para el EMISOR de la solicitud
             const notificationTitleEmisorAccepted = "Solicitud de Contacto Aceptada";
             const mensajeNotificacionAccepted = `¡Tu solicitud de contacto ha sido ACEPTADA por ${receptor_nombre}!`;
-            const urlRedireccionAccepted = `/notificaciones?solicitud=${id_solicitud}`; // O a una vista de detalles de la solicitud
+            const urlRedireccionAccepted = `/notificaciones?solicitud=${id_solicitud}`; // URL de redirección para el emisor
 
             await connection.query(
                 "INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida, creado_fecha) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
                 [
-                    id_emisor,
+                    id_emisor, // El emisor de la solicitud original es el receptor de esta nueva notificación
                     "solicitud_aceptada",
                     notificationTitleEmisorAccepted,
                     mensajeNotificacionAccepted,
                     urlRedireccionAccepted,
-                    id_solicitud,
-                    false,
+                    id_solicitud, // Referencia a la solicitud de contacto
+                    false, // Notificación no leída
                 ]
             );
 
-            await connection.commit();
+            await connection.commit(); // Confirma la transacción
             res.json({
                 message:
                     "Solicitud de contacto aceptada con éxito y emisor notificado.",
             });
         } catch (error) {
-            if (connection) await connection.rollback();
+            if (connection) await connection.rollback(); // Deshace la transacción en caso de error
             console.error("Error al aceptar solicitud de contacto:", error);
             res.status(500).json({
                 message: "Error interno del servidor al aceptar la solicitud.",
                 error: error.message,
             });
         } finally {
-            if (connection) connection.release();
+            if (connection) connection.release(); // Libera la conexión
         }
     }
 );
@@ -836,9 +838,10 @@ app.patch(
         let connection; // Usamos una conexión para la transacción
         try {
             connection = await pool.getConnection();
-            await connection.beginTransaction();
+            await connection.beginTransaction(); // Iniciar transacción
 
             // 1. Obtener la solicitud para verificar y obtener el id_emisor y el nombre del receptor
+            // Se asegura que la solicitud exista, sea para el receptor correcto y esté pendiente
             const [requests] = await connection.query(
                 "SELECT sc.id_emisor, u.nombre_usuario AS receptor_nombre FROM solicitudes_contacto sc JOIN usuarios u ON sc.id_receptor = u.id_usuario WHERE sc.id_solicitud = ? AND sc.id_receptor = ? AND sc.estatus = ?",
                 [id_solicitud, id_receptor, "Pendiente"]
@@ -861,6 +864,7 @@ app.patch(
             );
 
             if (result.affectedRows === 0) {
+                // Esto podría ocurrir si el estatus ya cambió entre la consulta y la actualización
                 await connection.rollback();
                 return res.status(404).json({
                     message: "Solicitud no encontrada o no pendiente para este usuario.",
@@ -870,41 +874,61 @@ app.patch(
             // 3. Crear una notificación para el EMISOR de la solicitud
             const notificationTitleEmisorRejected = "Solicitud de Contacto Rechazada";
             const mensajeNotificacionRejected = `Tu solicitud de contacto ha sido RECHAZADA por ${receptor_nombre}.`;
-            const urlRedireccionRejected = `/notificaciones?solicitud=${id_solicitud}`; // O a una vista de detalles de la solicitud
+            const urlRedireccionRejected = `/notificaciones?solicitud=${id_solicitud}`; // URL de redirección para el emisor
 
             await connection.query(
                 "INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida, creado_fecha) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
                 [
-                    id_emisor,
+                    id_emisor, // El emisor de la solicitud original es el receptor de esta nueva notificación
                     "solicitud_rechazada",
                     notificationTitleEmisorRejected,
                     mensajeNotificacionRejected,
                     urlRedireccionRejected,
-                    id_solicitud,
-                    false,
+                    id_solicitud, // Referencia a la solicitud de contacto
+                    false, // Notificación no leída
                 ]
             );
 
-            await connection.commit();
+            await connection.commit(); // Confirma la transacción
             res.json({
                 message:
                     "Solicitud de contacto rechazada con éxito y emisor notificado.",
             });
         } catch (error) {
-            if (connection) await connection.rollback();
+            if (connection) await connection.rollback(); // Deshace la transacción en caso de error
             console.error("Error al rechazar solicitud de contacto:", error);
             res.status(500).json({
                 message: "Error interno del servidor al rechazar la solicitud.",
                 error: error.message,
             });
         } finally {
-            if (connection) connection.release();
+            if (connection) connection.release(); // Libera la conexión
         }
     }
 );
 
 // RUTAS DE NOTIFICACIONES (CORREGIDAS Y ESTANDARIZADAS)
 // =======================================================
+
+// NUEVA RUTA: Para obtener el recuento de notificaciones no leídas
+app.get('/api/notificaciones/unread-count', authenticateToken, async (req, res) => {
+    const userId = req.user.id_usuario;
+
+    if (!userId) {
+        return res.status(400).json({ message: 'ID de usuario no disponible en el token.' });
+    }
+
+    try {
+        const [rows] = await pool.query(
+            "SELECT COUNT(*) as count FROM notificaciones WHERE id_usuario_receptor = ? AND leida = FALSE",
+            [userId]
+        );
+        res.json({ count: rows[0].count });
+    } catch (error) {
+        console.error('Error al obtener el recuento de notificaciones no leídas:', error);
+        res.status(500).json({ message: 'Error interno del servidor al obtener el recuento de notificaciones.' });
+    }
+});
 
 // Ruta para obtener las notificaciones de un usuario
 // Esta ruta devolverá todas las notificaciones, incluyendo su estado 'leida'.
@@ -917,20 +941,32 @@ app.get("/api/notificaciones", authenticateToken, async (req, res) => {
     try {
         const [notifications] = await pool.query(
             `SELECT
-                id_notificacion,
-                tipo_notificacion,
-                mensaje,
-                titulo,           
-                url_redireccion,  
-                creado_fecha AS fecha_creacion, 
-                leida AS leido,   
-                id_referencia
+                n.id_notificacion,
+                n.tipo_notificacion,
+                n.mensaje,
+                n.titulo,           
+                n.url_redireccion,  
+                n.creado_fecha AS fecha_creacion, 
+                n.leida AS leido,   
+                n.id_referencia,
+                -- Datos de la solicitud de contacto si aplica
+                sc.email AS email_emisor,
+                sc.whatsapp AS emisor_whatsapp,
+                sc.instagram AS emisor_instagram,
+                sc.tiktok AS emisor_tiktok,
+                sc.facebook AS emisor_facebook,
+                sc.estatus AS estatus_solicitud, -- Estado de la solicitud de contacto
+                u.nombre_usuario AS nombre_usuario_emisor -- Nombre del emisor de la solicitud
             FROM
-                notificaciones
+                notificaciones n
+            LEFT JOIN
+                solicitudes_contacto sc ON n.id_referencia = sc.id_solicitud AND n.tipo_notificacion = 'solicitud_contacto'
+            LEFT JOIN
+                usuarios u ON sc.id_emisor = u.id_usuario
             WHERE
-                id_usuario_receptor = ? 
+                n.id_usuario_receptor = ? 
             ORDER BY
-                creado_fecha DESC`,
+                n.creado_fecha DESC`,
             [userId]
         );
         res.status(200).json(notifications);
@@ -984,6 +1020,8 @@ app.patch(
         }
     }
 );
+
+
 
 // --- RUTA: PARA ACTUALIZAR LA DESCRIPCIÓN DEL PERFIL ---
 app.patch("/api/profile/description", authenticateToken, async (req, res) => {

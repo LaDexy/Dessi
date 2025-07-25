@@ -23,23 +23,26 @@
 
         <div v-if="notification.tipo_notificacion === 'solicitud_contacto'" class="solicitud-acciones">
           <p class="solicitud-estado">Estado: {{ notification.estatus_solicitud || 'Pendiente' }}</p>
-          <div v-if="notification.estatus_solicitud === 'Pendiente'" class="action-buttons">
-            <button @click.stop="acceptContactRequest(notification)" class="btn-accept">Aceptar</button>
-            <button @click.stop="rejectContactRequest(notification)" class="btn-reject">Rechazar</button>
-          </div>
-          <div v-if="notification.estatus_solicitud === 'Aceptada' && notification.email_emisor" class="contact-details">
-            <p><strong>Contacto:</strong></p>
-            <p>Email: {{ notification.email_emisor }}</p>
-            <p v-if="notification.emisor_whatsapp">WhatsApp: {{ notification.emisor_whatsapp }}</p>
-            <p v-if="notification.emisor_instagram">Instagram: {{ notification.emisor_instagram }}</p>
-            <p v-if="notification.emisor_tiktok">TikTok: {{ notification.emisor_tiktok }}</p>
-            <p v-if="notification.emisor_facebook">Facebook: {{ notification.emisor_facebook }}</p>
+          <div class="action-buttons">
+            <button @click.stop="openNewContactRequestModal(notification)" class="btn-view-status">Ver Solicitud</button>
           </div>
         </div>
         <div v-else-if="notification.tipo_notificacion === 'solicitud_aceptada' || notification.tipo_notificacion === 'solicitud_rechazada'">
           <button @click.stop="openAcceptedRejectedModal(notification)" class="btn-view-status">Ver Estado</button>
         </div>
         
+        <div class="notification-actions">
+            <button
+                v-if="!notification.leida && 
+                     notification.tipo_notificacion !== 'solicitud_contacto' &&
+                     notification.tipo_notificacion !== 'solicitud_aceptada' &&
+                     notification.tipo_notificacion !== 'solicitud_rechazada'"
+                @click.stop="markNotificationAsRead(notification.id_notificacion)"
+                class="action-button mark-read-button"
+            >
+                Marcar como leído
+            </button>
+        </div>
       </div>
     </div>
     <div v-else class="no-notifications-message">
@@ -93,6 +96,29 @@
         </div>
       </div>
     </div>
+
+    <div v-if="showNewContactRequestModal" class="message-modal-overlay">
+      <div class="message-modal-content">
+        <button @click="closeNewContactRequestModal" class="modal-close-button">&times;</button>
+        <h3 class="message-modal-title">Nueva Solicitud de Contacto</h3>
+        <p class="message-modal-message">
+          Has recibido una solicitud de contacto de **{{ selectedNewRequest.nombre_usuario_emisor || 'un usuario' }}**.
+          ¿Deseas aceptar o rechazar esta solicitud?
+        </p>
+        <div class="contact-details-modal-info">
+            <p><strong>Mensaje:</strong> {{ selectedNewRequest.mensaje_solicitud || 'N/A' }}</p>
+            <p><strong>Email de contacto:</strong> {{ selectedNewRequest.email_emisor || 'N/A' }}</p>
+            <p v-if="selectedNewRequest.emisor_whatsapp"><strong>WhatsApp:</strong> {{ selectedNewRequest.emisor_whatsapp }}</p>
+            <p v-if="selectedNewRequest.emisor_instagram"><strong>Instagram:</strong> {{ selectedNewRequest.emisor_instagram }}</p>
+            <p v-if="selectedNewRequest.emisor_tiktok"><strong>TikTok:</strong> {{ selectedNewRequest.emisor_tiktok }}</p>
+            <p v-if="selectedNewRequest.emisor_facebook"><strong>Facebook:</strong> {{ selectedNewRequest.emisor_facebook }}</p>
+        </div>
+        <div class="message-modal-actions">
+          <button @click="acceptContactRequestFromModal(selectedNewRequest)" class="btn-accept">Aceptar</button>
+          <button @click="rejectContactRequestFromModal(selectedNewRequest)" class="btn-reject">Rechazar</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -112,7 +138,9 @@ export default {
       showContactDetailsModal: false,
       selectedContactDetails: {},
       showAcceptedRejectedModal: false,
-      acceptedRejectedNotification: {}, // Para la notificación de solicitud aceptada/rechazada
+      acceptedRejectedNotification: {}, 
+      showNewContactRequestModal: false,
+      selectedNewRequest: {}, 
     };
   },
   async created() {
@@ -129,7 +157,7 @@ export default {
         const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
         if (!token) {
           this.errorMessage = 'No hay token de autenticación. Por favor, inicia sesión.';
-          this.$router.push({ name: 'Principal' });
+          this.$router.push({ name: 'Principal' }); 
           return;
         }
 
@@ -150,7 +178,7 @@ export default {
           this.errorMessage = 'Tu sesión ha expirado o no tienes permisos. Por favor, inicia sesión.';
           localStorage.removeItem('userToken');
           sessionStorage.removeItem('userToken');
-          this.$router.push({ name: 'Principal' });
+          this.$router.push({ name: 'Principal' }); // <<< CAMBIADO AQUÍ: Asumiendo que 'Principal' es tu ruta de login/inicio
         } else {
           this.errorMessage = 'Error de conexión con el servidor o al obtener notificaciones.';
         }
@@ -166,9 +194,8 @@ export default {
           return 'fas fa-check-circle text-success';
         case 'solicitud_rechazada':
           return 'fas fa-times-circle text-danger';
-        case 'nuevo_desafio': // Icono para nuevos desafíos
+        case 'nuevo_desafio':
           return 'fas fa-bullhorn';
-        // Agrega más tipos de notificación e iconos aquí
         default:
           return 'fas fa-bell';
       }
@@ -180,36 +207,31 @@ export default {
           console.warn('No hay token de autenticación para marcar notificación como leída.');
           return;
         }
-        await axios.patch(`http://localhost:4000/api/notificaciones/${id_notificacion}/leida`, {}, {
+        await axios.patch(`http://localhost:4000/api/notificaciones/${id_notificacion}/marcar-leida`, {}, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        // Actualizar el estado en el frontend
         const index = this.notifications.findIndex(n => n.id_notificacion === id_notificacion);
         if (index !== -1) {
-          this.$set(this.notifications[index], 'leida', 1);
+          this.notifications[index].leida = 1; 
         }
+        if (this.selectedNotification && this.selectedNotification.id_notificacion === id_notificacion) {
+            this.selectedNotification.leida = 1;
+        }
+        await this.fetchNotifications(); 
       } catch (error) {
         console.error('Error al marcar notificación como leída:', error);
       }
     },
     handleNotificationClick(notification) {
-      // Marcar la notificación como leída si no lo está
-      if (!notification.leida) {
-        this.markNotificationAsRead(notification.id_notificacion);
+      if (notification.tipo_notificacion === 'solicitud_contacto' ||
+          notification.tipo_notificacion === 'solicitud_aceptada' ||
+          notification.tipo_notificacion === 'solicitud_rechazada') {
+        console.log("Notificación de solicitud clickeada. Las acciones están en los botones específicos.");
+        return;
       }
 
-      // Lógica de redirección o apertura de modal según el tipo de notificación
-      if (notification.tipo_notificacion === 'solicitud_contacto') {
-        // Si es una solicitud de contacto, se maneja con los botones Aceptar/Rechazar
-        // o con la visualización de detalles de contacto si ya fue aceptada.
-        // No hay una acción de clic global que haga algo si ya está aceptada/rechazada.
-        // Puedes implementar aquí abrir un modal con la información si lo deseas.
-        console.log("Notificación de solicitud de contacto clickeada. Las acciones están en los botones.");
-      } else if (notification.tipo_notificacion === 'solicitud_aceptada' || notification.tipo_notificacion === 'solicitud_rechazada') {
-        this.openAcceptedRejectedModal(notification);
-      } else if (notification.tipo_notificacion === 'nuevo_desafio') {
-        // NUEVA LÓGICA: Redirigir a la página de detalles del desafío
-        if (notification.id_referencia) { // id_referencia debe ser el id_desafio
+      if (notification.tipo_notificacion === 'nuevo_desafio') {
+        if (notification.id_referencia) {
           this.$router.push({ name: 'PaginaDetalleDesafio', params: { id: notification.id_referencia } });
           console.log('Redirigiendo a detalles del desafío:', notification.id_referencia);
         } else {
@@ -217,10 +239,17 @@ export default {
           this.showMessage('Error de Notificación', 'Esta notificación de desafío no tiene un ID válido para redirigir.');
         }
       }
-      // Puedes añadir más casos para otros tipos de notificación aquí
     },
-    async acceptContactRequest(notification) {
-      console.log('Aceptando solicitud:', notification.id_referencia);
+    openNewContactRequestModal(notification) {
+      this.selectedNewRequest = { ...notification };
+      this.showNewContactRequestModal = true;
+    },
+    closeNewContactRequestModal() {
+      this.showNewContactRequestModal = false;
+      this.selectedNewRequest = {};
+    },
+    async acceptContactRequestFromModal(notification) {
+      console.log('Aceptando solicitud desde modal:', notification.id_referencia);
       try {
         const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
         const response = await axios.patch(`http://localhost:4000/api/solicitudes/${notification.id_referencia}/aceptar`, {}, {
@@ -229,17 +258,17 @@ export default {
         if (response.status === 200) {
           this.showMessage('Solicitud Aceptada', '¡Has aceptado la solicitud de contacto!');
           await this.markNotificationAsRead(notification.id_notificacion);
-          await this.fetchNotifications(); // Recargar notificaciones para actualizar el estado
+          this.closeNewContactRequestModal();
         } else {
           this.showErrorMessage('Error al Aceptar Solicitud', 'No se pudo aceptar la solicitud. Inténtalo de nuevo.');
         }
       } catch (error) {
-        console.error('Error al aceptar solicitud:', error);
+        console.error('Error al aceptar solicitud desde modal:', error);
         this.showErrorMessage('Error al Aceptar Solicitud', 'Error de conexión o problema al procesar la solicitud.');
       }
     },
-    async rejectContactRequest(notification) {
-      console.log('Rechazando solicitud:', notification.id_referencia);
+    async rejectContactRequestFromModal(notification) {
+      console.log('Rechazando solicitud desde modal:', notification.id_referencia);
       try {
         const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
         const response = await axios.patch(`http://localhost:4000/api/solicitudes/${notification.id_referencia}/rechazar`, {}, {
@@ -248,16 +277,15 @@ export default {
         if (response.status === 200) {
           this.showMessage('Solicitud Rechazada', 'Has rechazado la solicitud de contacto.');
           await this.markNotificationAsRead(notification.id_notificacion);
-          await this.fetchNotifications(); // Recargar notificaciones
+          this.closeNewContactRequestModal();
         } else {
           this.showErrorMessage('Error al Rechazar Solicitud', 'No se pudo rechazar la solicitud. Inténtalo de nuevo.');
         }
       } catch (error) {
-        console.error('Error al rechazar solicitud:', error);
+        console.error('Error al rechazar solicitud desde modal:', error);
         this.showErrorMessage('Error al Rechazar Solicitud', 'Error de conexión o problema al procesar la solicitud.');
       }
     },
-    // Métodos para mostrar/ocultar modales
     showMessage(title, message) {
       this.messageModalTitle = title;
       this.messageModalMessage = message;
@@ -274,7 +302,7 @@ export default {
       this.messageModalMessage = '';
     },
     openAcceptedRejectedModal(notification) {
-      this.acceptedRejectedNotification = { ...notification }; // Copiar para evitar mutar el original
+      this.acceptedRejectedNotification = { ...notification };
       this.showAcceptedRejectedModal = true;
     },
     closeAcceptedRejectedModal() {
@@ -284,9 +312,7 @@ export default {
     markAsReadAndCloseAcceptedRejectedModal(id_notificacion) {
       this.markNotificationAsRead(id_notificacion);
       this.closeAcceptedRejectedModal();
-      this.fetchNotifications(); // Recargar para que la notificación se actualice como leída
     },
-    // Este método es para mostrar los detalles de contacto de una solicitud ACEPTADA
     async openContactDetailsModal(notification) {
       try {
         const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
@@ -294,9 +320,8 @@ export default {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (response.status === 200) {
-          this.selectedContactDetails = response.data; // Aquí debes recibir los datos de contacto y el nombre del usuario emisor
+          this.selectedContactDetails = response.data;
           this.showContactDetailsModal = true;
-          // Marcar como leída después de abrir el modal si no lo está
           if (!notification.leida) {
             this.markNotificationAsRead(notification.id_notificacion);
           }
@@ -315,7 +340,6 @@ export default {
     markAsReadAndCloseContactModal(id_notificacion) {
       this.markNotificationAsRead(id_notificacion);
       this.closeContactDetailsModal();
-      this.fetchNotifications(); // Recargar para que la notificación se actualice como leída
     },
     formatDate(dateString) {
       if (!dateString) return 'N/A';
@@ -328,8 +352,11 @@ export default {
 
 <style scoped>
 /* Colores de referencia:
-   - hsl(300, 29%, 78%) = #d9bad9 (Rosa-morado pastel)
-   - #5e1c7d (Morado oscuro)
+    - hsl(300, 29%, 78%) = #d9bad9 (Rosa-morado pastel)
+    - #5e1c7d (Morado oscuro)
+    - Un verde para aceptar: #8bc34a (Light Green 500 de Material Design)
+    - Un rojo para rechazar: #ef5350 (Red 400 de Material Design)
+    - Blanco muy suave: #fcfcfc
 */
 
 .pagina-notificaciones-container {
@@ -340,13 +367,15 @@ export default {
   border-radius: 12px; /* Bordes más redondeados */
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); /* Sombra más pronunciada pero suave */
   color: #333;
+  font-family: 'Arial', sans-serif; /* Puedes ajustar la fuente si tienes una específica */
 }
 
 h2 {
   text-align: center;
   color: #5e1c7d; /* Título principal en morado oscuro */
   margin-bottom: 30px;
-  font-size: 2em; /* Título un poco más grande */
+  font-size: 2.2em; /* Título un poco más grande */
+  font-weight: 700; /* Más negrita para los títulos */
 }
 
 .back-button {
@@ -358,9 +387,9 @@ h2 {
   border: 1px solid #c0a8c0; /* Borde sutil del mismo tono */
   border-radius: 25px; /* Bordes muy redondeados (pastilla) */
   cursor: pointer;
-  font-size: 1em; /* Un poco más grande */
+  font-size: 1.05em; /* Un poco más grande */
   font-weight: 600; /* Texto seminegrita */
-  transition: background-color 0.2s ease, transform 0.2s ease;
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
   margin-bottom: 25px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Sombra ligera */
 }
@@ -368,6 +397,7 @@ h2 {
 .back-button:hover {
   background-color: #c0a8c0; /* Tono ligeramente más oscuro al pasar el ratón */
   transform: translateY(-2px); /* Pequeño levantamiento */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .loading-message, .error-message, .no-notifications-message {
@@ -378,6 +408,7 @@ h2 {
   background-color: #f2e6f2; /* Fondo muy suave para mensajes */
   border-radius: 8px;
   margin-top: 20px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .error-message {
@@ -396,20 +427,23 @@ h2 {
   background-color: #ffffff; /* Fondo blanco para las tarjetas */
   border: 1px solid #eee; /* Borde muy sutil */
   border-radius: 10px; /* Bordes ligeramente más redondeados */
-  padding: 15px 20px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); /* Sombra suave */
+  padding: 18px 22px; /* Más padding para que respire */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); /* Sombra suave */
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease;
   cursor: pointer;
+  position: relative; /* Para el indicador de no leído */
+  overflow: hidden; /* Asegura que la barra izquierda no se salga */
 }
 
 .notification-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12); /* Sombra más pronunciada al pasar el ratón */
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12); /* Sombra más pronunciada al pasar el ratón */
 }
 
 .notification-card.unread {
-  background-color: #f2e6f2; /* Rosa-morado pastel muy suave para no leídas */
-  border-left: 5px solid #5e1c7d; /* Barra lateral en morado oscuro */
+  background-color: #f7eff7; /* Rosa-morado pastel muy suave para no leídas */
+  border-left: 6px solid #5e1c7d; /* Barra lateral en morado oscuro, un poco más ancha */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 0 0 1px #5e1c7d; /* Añade un borde sutil para destacar más */
 }
 
 .notification-header {
@@ -419,58 +453,67 @@ h2 {
 }
 
 .notification-header i {
-  font-size: 1.6em; /* Icono un poco más grande */
-  margin-right: 12px;
+  font-size: 1.7em; /* Icono un poco más grande */
+  margin-right: 15px;
   color: #5e1c7d; /* Color del icono en morado oscuro */
+  min-width: 30px; /* Evita que el texto se superponga si el icono es muy pequeño */
+  text-align: center;
 }
 
 .notification-header h3 {
   margin: 0;
-  font-size: 1.25em; /* Título de notificación ligeramente más grande */
+  font-size: 1.3em; /* Título de notificación ligeramente más grande */
   color: #5e1c7d; /* Título de notificación en morado oscuro */
   flex-grow: 1;
+  font-weight: 600;
 }
 
 .notification-message {
-  font-size: 1em; /* Mensaje ligeramente más grande */
+  font-size: 1.05em; /* Mensaje ligeramente más grande */
   color: #444; /* Color de texto más estándar */
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  line-height: 1.5; /* Mejor legibilidad */
 }
 
 .notification-date {
-  font-size: 0.85em; /* Fecha un poco más grande */
+  font-size: 0.88em; /* Fecha un poco más grande */
   color: #777;
   text-align: right;
+  margin-top: 10px;
 }
 
 /* Estilos específicos para solicitudes de contacto */
 .solicitud-acciones {
   margin-top: 15px;
-  padding-top: 10px;
+  padding-top: 15px;
   border-top: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end; /* Alinea los elementos a la derecha */
 }
 
 .solicitud-estado {
   font-weight: bold;
   color: #5e1c7d; /* Estado en morado oscuro */
   margin-bottom: 10px;
+  align-self: flex-start; /* Alinea el estado a la izquierda */
 }
 
 .action-buttons {
   display: flex;
   gap: 10px;
-  justify-content: flex-end;
 }
 
 .btn-accept, .btn-reject, .btn-view-status {
-  padding: 8px 18px; /* Más padding */
+  padding: 9px 20px; /* Más padding */
   border: none;
-  border-radius: 20px; /* Bordes muy redondeados */
+  border-radius: 22px; /* Bordes muy redondeados */
   cursor: pointer;
-  font-size: 0.95em; /* Un poco más grande */
+  font-size: 0.98em; /* Un poco más grande */
   font-weight: 600;
-  transition: background-color 0.2s ease, transform 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  white-space: nowrap; /* Evita que el texto del botón se rompa */
 }
 
 .btn-accept {
@@ -481,6 +524,7 @@ h2 {
 .btn-accept:hover {
   background-color: #7cb342; /* Verde más oscuro al pasar el ratón */
   transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .btn-reject {
@@ -491,6 +535,7 @@ h2 {
 .btn-reject:hover {
   background-color: #e53935; /* Rojo más oscuro al pasar el ratón */
   transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .btn-view-status {
@@ -501,6 +546,7 @@ h2 {
 .btn-view-status:hover {
   background-color: #4a148c; /* Morado más oscuro al pasar el ratón */
   transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .contact-details {
@@ -524,22 +570,29 @@ h2 {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5); /* Opacidad media */
+  background-color: rgba(0, 0, 0, 0.6); /* Opacidad media-alta para el fondo */
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  backdrop-filter: blur(4px); /* Efecto de desenfoque en el fondo */
 }
 
 .message-modal-content {
   background-color: #ffffff;
-  padding: 30px; /* Más padding */
-  border-radius: 15px; /* Bordes más redondeados */
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); /* Sombra más profunda */
-  max-width: 450px;
+  padding: 35px 30px; /* Más padding en general */
+  border-radius: 18px; /* Bordes más redondeados */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); /* Sombra más profunda y notable */
+  max-width: 500px; /* Un poco más de ancho máximo */
   width: 90%;
   text-align: center;
   position: relative;
+  animation: fadeIn 0.3s ease-out; /* Animación de entrada */
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .modal-close-button {
@@ -548,62 +601,81 @@ h2 {
   right: 18px;
   background: none;
   border: none;
-  font-size: 28px; /* Icono de cierre más grande */
+  font-size: 30px; /* Icono de cierre más grande */
   cursor: pointer;
-  color: #a30000; /* Un rojo más oscuro */
-  transition: transform 0.2s ease;
+  color: #b71c1c; /* Un rojo más oscuro y distintivo */
+  transition: transform 0.2s ease, color 0.2s ease;
 }
 .modal-close-button:hover {
-  color: #7a0000;
-  transform: rotate(90deg); /* Gira al pasar el ratón */
+  color: #8c0000;
+  transform: rotate(90deg) scale(1.1); /* Gira y se agranda ligeramente */
 }
 
 
 .message-modal-title {
-  font-size: 1.8rem; /* Título de modal más grande */
+  font-size: 2rem; /* Título de modal más grande */
   font-weight: bold;
   color: #5e1c7d; /* Título de modal en morado oscuro */
-  margin-bottom: 15px;
+  margin-bottom: 20px;
+  line-height: 1.2;
 }
 
 .message-modal-message {
-  font-size: 1.1rem; /* Mensaje de modal más grande */
+  font-size: 1.15rem; /* Mensaje de modal más grande */
   color: #444;
-  margin-bottom: 25px; /* Más espacio */
+  margin-bottom: 30px; /* Más espacio */
+  line-height: 1.6;
 }
 
 .message-modal-actions {
   display: flex;
   justify-content: center;
   gap: 15px; /* Espacio entre botones en acciones del modal */
+  margin-top: 20px; /* Espacio superior para separar del texto */
 }
 
 .message-modal-button-close {
   background-color: #d9bad9; /* Rosa-morado pastel para el botón de cerrar modal */
   color: #5e1c7d; /* Texto en morado oscuro */
-  padding: 12px 25px; /* Más padding */
+  padding: 12px 28px; /* Más padding */
   border-radius: 25px; /* Bordes redondeados */
   font-weight: 600;
-  transition: background-color 0.2s ease-in-out, transform 0.2s ease;
+  transition: background-color 0.2s ease-in-out, transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
   border: none;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .message-modal-button-close:hover {
   background-color: #c0a8c0; /* Tono ligeramente más oscuro */
   transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
 
+.contact-details-modal-info {
+  text-align: left; /* Alinea el texto de los detalles a la izquierda */
+  margin-bottom: 25px;
+  background-color: #fcf6fc; /* Fondo muy suave para la info de contacto */
+  border-radius: 10px;
+  padding: 15px 20px;
+  border: 1px solid #eee;
+}
 .contact-details-modal-info p {
   margin: 8px 0;
   font-size: 1.05em;
   color: #333;
+  line-height: 1.4;
+}
+.contact-details-modal-info strong {
+  color: #5e1c7d; /* Resalta las etiquetas fuertes */
 }
 
+
 .icon-container {
-  font-size: 3.5em; /* Iconos más grandes en el modal */
+  font-size: 4em; /* Iconos más grandes en el modal */
   margin-bottom: 20px;
+  display: flex; /* Para centrar el icono */
+  justify-content: center;
 }
 
 .success-icon {
@@ -623,8 +695,108 @@ h2 {
 }
 
 .received-date {
-  font-size: 0.9em;
+  font-size: 0.95em;
   color: #888;
-  margin-top: 15px;
+  margin-top: 20px; /* Más espacio superior */
 }
+
+/* Nuevos estilos para el botón "Marcar como leído" */
+.action-button.mark-read-button {
+    background-color: #793096; /* Morado oscuro para el botón de leído */
+    color: white;
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    border: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.action-button.mark-read-button:hover {
+    background-color: #61257a; /* Un morado más oscuro al pasar el ratón */
+    transform: translateY(-1px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .pagina-notificaciones-container {
+        padding: 15px;
+        margin: 10px auto;
+        border-radius: 8px;
+    }
+
+    h2 {
+        font-size: 1.8em;
+        margin-bottom: 20px;
+    }
+
+    .back-button {
+        padding: 8px 15px;
+        font-size: 0.9em;
+        margin-bottom: 20px;
+    }
+
+    .notification-card {
+        padding: 15px;
+        border-radius: 8px;
+    }
+
+    .notification-header i {
+        font-size: 1.5em;
+        margin-right: 10px;
+    }
+
+    .notification-header h3 {
+        font-size: 1.1em;
+    }
+
+    .notification-message {
+        font-size: 0.95em;
+    }
+
+    .notification-date {
+        font-size: 0.8em;
+    }
+
+    .btn-accept, .btn-reject, .btn-view-status, .action-button.mark-read-button {
+        padding: 7px 15px;
+        font-size: 0.85em;
+        border-radius: 18px;
+    }
+
+    .message-modal-content {
+        padding: 25px 20px;
+        border-radius: 12px;
+        max-width: 95%;
+    }
+
+    .modal-close-button {
+        font-size: 24px;
+        top: 10px;
+        right: 12px;
+    }
+
+    .message-modal-title {
+        font-size: 1.5rem;
+    }
+
+    .message-modal-message {
+        font-size: 1em;
+    }
+
+    .message-modal-actions {
+        flex-direction: column; /* Apila los botones en móviles */
+        gap: 10px;
+    }
+    .message-modal-button-close, .btn-accept, .btn-reject {
+        width: 100%; /* Botones de ancho completo */
+        margin-left: 0 !important; /* Resetea el margen si se establece en otro lugar */
+    }
+    .icon-container {
+        font-size: 3em;
+    }
+}
+
 </style>
