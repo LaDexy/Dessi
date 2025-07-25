@@ -179,13 +179,22 @@ const authorizeDesignerMarketing = (req, res, next) => {
 // --- RUTAS DE AUTENTICACIÓN Y PERFIL ---
 
 // --- RUTA PARA SUBIR Y ACTUALIZAR LA IMAGEN DE PERFIL ---
-app.post('/api/upload-profile-image', authenticateToken, upload.single('profileImage'), async (req, res) => {
+app.post(
+  "/api/upload-profile-image",
+  authenticateToken,
+  upload.single("profileImage"),
+  async (req, res) => {
     // Asegúrate de que 'profileImage' coincida con el nombre del campo en tu FormData del frontend Vue.js
-    console.log("Solicitud POST /api/upload-profile-image recibida para usuario:", req.user.id_usuario);
+    console.log(
+      "Solicitud POST /api/upload-profile-image recibida para usuario:",
+      req.user.id_usuario
+    );
 
     if (!req.file) {
-        console.log("Error 400: No se ha subido ningún archivo.");
-        return res.status(400).json({ message: 'No se ha subido ningún archivo.' });
+      console.log("Error 400: No se ha subido ningún archivo.");
+      return res
+        .status(400)
+        .json({ message: "No se ha subido ningún archivo." });
     }
 
     const userId = req.user.id_usuario;
@@ -193,50 +202,68 @@ app.post('/api/upload-profile-image', authenticateToken, upload.single('profileI
 
     let connection;
     try {
-        connection = await pool.getConnection();
-        await connection.beginTransaction();
+      connection = await pool.getConnection();
+      await connection.beginTransaction();
 
-        // 1. Actualizar la URL de la foto de perfil en la tabla de usuarios
-        console.log("Actualizando foto_perfil_url en la DB para usuario:", userId);
-        const [result] = await connection.query(
-            'UPDATE usuarios SET foto_perfil_url = ? WHERE id_usuario = ?',
-            [imageUrl, userId]
-        );
+      // 1. Actualizar la URL de la foto de perfil en la tabla de usuarios
+      console.log(
+        "Actualizando foto_perfil_url en la DB para usuario:",
+        userId
+      );
+      const [result] = await connection.query(
+        "UPDATE usuarios SET foto_perfil_url = ? WHERE id_usuario = ?",
+        [imageUrl, userId]
+      );
 
-        if (result.affectedRows === 0) {
-            await connection.rollback();
-            // Opcional: Si el archivo se subió pero la DB no se actualizó, puedes considerar eliminar el archivo subido
-            fs.unlink(req.file.path, (err) => {
-                if (err) console.error("Error al eliminar archivo subido tras fallo de DB:", err);
-            });
-            return res.status(404).json({ message: 'Usuario no encontrado o no se pudo actualizar la imagen de perfil.' });
-        }
-
-        await connection.commit();
-        console.log("Imagen de perfil subida y URL actualizada en DB exitosamente.");
-        res.status(200).json({
-            message: 'Imagen de perfil subida y actualizada correctamente',
-            imageUrl: imageUrl, // Envía la URL relativa para que el frontend la use
-            fullImageUrl: `${req.protocol}://${req.get('host')}${imageUrl}` // O la URL completa si el frontend la necesita inmediatamente
+      if (result.affectedRows === 0) {
+        await connection.rollback();
+        // Opcional: Si el archivo se subió pero la DB no se actualizó, puedes considerar eliminar el archivo subido
+        fs.unlink(req.file.path, (err) => {
+          if (err)
+            console.error(
+              "Error al eliminar archivo subido tras fallo de DB:",
+              err
+            );
         });
+        return res
+          .status(404)
+          .json({
+            message:
+              "Usuario no encontrado o no se pudo actualizar la imagen de perfil.",
+          });
+      }
 
+      await connection.commit();
+      console.log(
+        "Imagen de perfil subida y URL actualizada en DB exitosamente."
+      );
+      res.status(200).json({
+        message: "Imagen de perfil subida y actualizada correctamente",
+        imageUrl: imageUrl, // Envía la URL relativa para que el frontend la use
+        fullImageUrl: `${req.protocol}://${req.get("host")}${imageUrl}`, // O la URL completa si el frontend la necesita inmediatamente
+      });
     } catch (error) {
-        if (connection) await connection.rollback();
-        // Asegúrate de eliminar el archivo subido si algo falla en la DB
-        if (req.file) {
-            fs.unlink(req.file.path, (err) => {
-                if (err) console.error("Error al eliminar archivo subido tras fallo:", err);
-            });
-        }
-        console.error('Error al procesar la subida de imagen o actualizar la DB:', error);
-        res.status(500).json({
-            message: 'Error interno del servidor al subir la imagen.',
-            error: error.message
+      if (connection) await connection.rollback();
+      // Asegúrate de eliminar el archivo subido si algo falla en la DB
+      if (req.file) {
+        fs.unlink(req.file.path, (err) => {
+          if (err)
+            console.error("Error al eliminar archivo subido tras fallo:", err);
         });
+      }
+      console.error(
+        "Error al procesar la subida de imagen o actualizar la DB:",
+        error
+      );
+      res.status(500).json({
+        message: "Error interno del servidor al subir la imagen.",
+        error: error.message,
+      });
     } finally {
-        if (connection) connection.release();
+      if (connection) connection.release();
     }
-});
+  }
+);
 
 // --- RUTA PARA REGISTRO DE USUARIOS ---
 app.post("/api/register", async (req, res) => {
@@ -543,58 +570,57 @@ app.get("/api/profile/me", authenticateToken, async (req, res) => {
   }
 });
 
-// =======================================================
-// NUEVAS RUTAS PARA NOTIFICACIONES Y SOLICITUDES DE CONTACTO
+/// NUEVAS RUTAS PARA NOTIFICACIONES Y SOLICITUDES DE CONTACTO
 // =======================================================
 
 // 1. Ruta para ENVIAR una solicitud de contacto
 app.post("/api/solicitudes-contacto", authenticateToken, async (req, res) => {
-  console.log("Solicitud de contacto recibida. Datos:", req.body);
-  const { id_receptor, email, whatsapp, instagram, tiktok, facebook } =
-    req.body;
-  const id_emisor = req.user.id_usuario; // El usuario que envía la solicitud
+    console.log("Solicitud de contacto recibida. Datos:", req.body);
+    const { id_receptor, email, whatsapp, instagram, tiktok, facebook } =
+        req.body;
+    const id_emisor = req.user.id_usuario; // El usuario que envía la solicitud
 
-  if (!id_emisor || !id_receptor) {
-    return res
-      .status(400)
-      .json({ message: "ID del emisor y receptor son requeridos." });
-  }
-  if (id_emisor === id_receptor) {
-    return res.status(400).json({
-      message: "No puedes enviarte una solicitud de contacto a ti mismo.",
-    });
-  }
-
-  let connection; // Usamos una conexión para la transacción
-  try {
-    connection = await pool.getConnection();
-    await connection.beginTransaction(); // Iniciar transacción
-
-    // Verificar si ya existe una solicitud pendiente
-    const [existingRequests] = await connection.query(
-      "SELECT * FROM solicitudes_contacto WHERE id_emisor = ? AND id_receptor = ? AND estatus = ?",
-      [id_emisor, id_receptor, "Pendiente"]
-    );
-
-    if (existingRequests.length > 0) {
-      await connection.rollback(); // Rollback si ya existe
-      return res.status(409).json({
-        message: "Ya existe una solicitud pendiente para este usuario.",
-      });
+    if (!id_emisor || !id_receptor) {
+        return res
+            .status(400)
+            .json({ message: "ID del emisor y receptor son requeridos." });
+    }
+    if (id_emisor === id_receptor) {
+        return res.status(400).json({
+            message: "No puedes enviarte una solicitud de contacto a ti mismo.",
+        });
     }
 
-    // Obtener el nombre del emisor para la notificación
-    const [emisorProfile] = await connection.query(
-      "SELECT nombre_usuario FROM usuarios WHERE id_usuario = ?",
-      [id_emisor]
-    );
-    const emisor_nombre =
-      emisorProfile.length > 0
-        ? emisorProfile[0].nombre_usuario
-        : "Usuario Desconocido";
+    let connection; // Usamos una conexión para la transacción
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction(); // Iniciar transacción
 
-    // Insertar la solicitud de contacto
-    const query = `
+        // Verificar si ya existe una solicitud pendiente
+        const [existingRequests] = await connection.query(
+            "SELECT * FROM solicitudes_contacto WHERE id_emisor = ? AND id_receptor = ? AND estatus = ?",
+            [id_emisor, id_receptor, "Pendiente"]
+        );
+
+        if (existingRequests.length > 0) {
+            await connection.rollback(); // Rollback si ya existe
+            return res.status(409).json({
+                message: "Ya existe una solicitud pendiente para este usuario.",
+            });
+        }
+
+        // Obtener el nombre del emisor para la notificación
+        const [emisorProfile] = await connection.query(
+            "SELECT nombre_usuario FROM usuarios WHERE id_usuario = ?",
+            [id_emisor]
+        );
+        const emisor_nombre =
+            emisorProfile.length > 0
+                ? emisorProfile[0].nombre_usuario
+                : "Usuario Desconocido";
+
+        // Insertar la solicitud de contacto
+        const query = `
             INSERT INTO solicitudes_contacto (
                 id_emisor,
                 id_receptor,
@@ -608,67 +634,67 @@ app.post("/api/solicitudes-contacto", authenticateToken, async (req, res) => {
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP())
         `;
-    const values = [
-      id_emisor,
-      id_receptor,
-      email || null,
-      whatsapp || null,
-      instagram || null,
-      tiktok || null,
-      facebook || null,
-      "Pendiente",
-    ];
+        const values = [
+            id_emisor,
+            id_receptor,
+            email || null,
+            whatsapp || null,
+            instagram || null,
+            tiktok || null,
+            facebook || null,
+            "Pendiente",
+        ];
 
-    const [result] = await connection.query(query, values);
-    const id_solicitud_generada = result.insertId; // ID de la solicitud de contacto generada
+        const [result] = await connection.query(query, values);
+        const id_solicitud_generada = result.insertId; // ID de la solicitud de contacto generada
 
-    // Insertar una notificación para el RECEPTOR
-    const notificationTitle = "Nueva Solicitud de Contacto";
-    const notificationMessage = `¡${emisor_nombre} te ha enviado una solicitud de contacto!`;
-    const notificationUrl = `/notificaciones?solicitud=${id_solicitud_generada}`; // Redireccionar a la página de notificaciones
+        // Insertar una notificación para el RECEPTOR
+        const notificationTitle = "Nueva Solicitud de Contacto";
+        const notificationMessage = `¡${emisor_nombre} te ha enviado una solicitud de contacto!`;
+        const notificationUrl = `/notificaciones?solicitud=${id_solicitud_generada}`; // Redireccionar a la página de notificaciones
 
-    await connection.query(
-      "INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      [
-        id_receptor,
-        "solicitud_contacto",
-        notificationTitle,
-        notificationMessage,
-        notificationUrl,
-        id_solicitud_generada,
-        false,
-      ]
-    );
+        await connection.query(
+            "INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida, creado_fecha) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
+            [
+                id_receptor,
+                "solicitud_contacto",
+                notificationTitle,
+                notificationMessage,
+                notificationUrl,
+                id_solicitud_generada,
+                false,
+            ]
+        );
 
-    await connection.commit(); // Confirmar transacción
-    res.status(201).json({
-      message: "Solicitud de contacto enviada con éxito.",
-      id_solicitud: id_solicitud_generada,
-    });
-  } catch (error) {
-    if (connection) await connection.rollback(); // Deshacer si hay error
-    console.error("Error al enviar solicitud de contacto:", error);
-    res.status(500).json({
-      message:
-        "Error interno del servidor al procesar la solicitud de contacto.",
-      error: error.message,
-    });
-  } finally {
-    if (connection) connection.release(); // Liberar conexión
-  }
+        await connection.commit(); // Confirmar transacción
+        res.status(201).json({
+            message: "Solicitud de contacto enviada con éxito.",
+            id_solicitud: id_solicitud_generada,
+        });
+    } catch (error) {
+        if (connection) await connection.rollback(); // Deshacer si hay error
+        console.error("Error al enviar solicitud de contacto:", error);
+        res.status(500).json({
+            message:
+                "Error interno del servidor al procesar la solicitud de contacto.",
+            error: error.message,
+        });
+    } finally {
+        if (connection) connection.release(); // Liberar conexión
+    }
 });
 
 // 2. Ruta para OBTENER solicitudes de contacto recibidas (filtrar por estatus)
 app.get("/api/solicitudes-recibidas", authenticateToken, async (req, res) => {
-  console.log(
-    "Solicitud GET /api/solicitudes-recibidas para usuario:",
-    req.user.id_usuario
-  );
-  const id_receptor = req.user.id_usuario;
-  const estatus = req.query.estatus || "Pendiente"; // Por defecto, obtener solicitudes pendientes
+    console.log(
+        "Solicitud GET /api/solicitudes-recibidas para usuario:",
+        req.user.id_usuario
+    );
+    const id_receptor = req.user.id_usuario;
+    const estatus = req.query.estatus || "Pendiente"; // Por defecto, obtener solicitudes pendientes
 
-  try {
-    const query = `
+    try {
+        const query = `
             SELECT
                 s.id_solicitud,
                 s.creado_fecha,
@@ -690,296 +716,273 @@ app.get("/api/solicitudes-recibidas", authenticateToken, async (req, res) => {
             ORDER BY
                 s.creado_fecha DESC;
         `;
-    const [rows] = await pool.query(query, [id_receptor, estatus]);
+        const [rows] = await pool.query(query, [id_receptor, estatus]);
 
-    rows.forEach((solicitud) => {
-      if (solicitud.emisor_foto_perfil) {
-        solicitud.emisor_foto_perfil = `${req.protocol}://${req.get("host")}${
-          solicitud.emisor_foto_perfil
-        }`;
-      }
-    });
+        rows.forEach((solicitud) => {
+            if (solicitud.emisor_foto_perfil) {
+                solicitud.emisor_foto_perfil = `${req.protocol}://${req.get("host")}${
+                    solicitud.emisor_foto_perfil
+                }`;
+            }
+        });
 
-    res.json(rows);
-  } catch (error) {
-    console.error("Error al obtener solicitudes de contacto recibidas:", error);
-    res.status(500).json({
-      message: "Error interno del servidor al obtener solicitudes recibidas.",
-    });
-  }
+        res.json(rows);
+    } catch (error) {
+        console.error("Error al obtener solicitudes de contacto recibidas:", error);
+        res.status(500).json({
+            message: "Error interno del servidor al obtener solicitudes recibidas.",
+        });
+    }
 });
 
 // 3. Ruta para ACEPTAR una solicitud de contacto
 app.patch(
-  "/api/solicitudes/:id_solicitud/aceptar",
-  authenticateToken,
-  async (req, res) => {
-    console.log(
-      "Solicitud PATCH /api/solicitudes/:id_solicitud/aceptar para solicitud:",
-      req.params.id_solicitud,
-      "por usuario:",
-      req.user.id_usuario
-    );
-    const { id_solicitud } = req.params;
-    const id_receptor = req.user.id_usuario; // El usuario logueado es el receptor que está aceptando
+    "/api/solicitudes/:id_solicitud/aceptar",
+    authenticateToken,
+    async (req, res) => {
+        console.log(
+            "Solicitud PATCH /api/solicitudes/:id_solicitud/aceptar para solicitud:",
+            req.params.id_solicitud,
+            "por usuario:",
+            req.user.id_usuario
+        );
+        const { id_solicitud } = req.params;
+        const id_receptor = req.user.id_usuario; // El usuario logueado es el receptor que está aceptando
 
-    let connection; // Usamos una conexión para la transacción
-    try {
-      connection = await pool.getConnection();
-      await connection.beginTransaction();
+        let connection; // Usamos una conexión para la transacción
+        try {
+            connection = await pool.getConnection();
+            await connection.beginTransaction();
 
-      // 1. Obtener la solicitud para verificar y obtener el id_emisor y el nombre del receptor
-      const [requests] = await connection.query(
-        "SELECT sc.id_emisor, u.nombre_usuario AS receptor_nombre FROM solicitudes_contacto sc JOIN usuarios u ON sc.id_receptor = u.id_usuario WHERE sc.id_solicitud = ? AND sc.id_receptor = ? AND sc.estatus = ?",
-        [id_solicitud, id_receptor, "Pendiente"]
-      );
+            // 1. Obtener la solicitud para verificar y obtener el id_emisor y el nombre del receptor
+            const [requests] = await connection.query(
+                "SELECT sc.id_emisor, u.nombre_usuario AS receptor_nombre FROM solicitudes_contacto sc JOIN usuarios u ON sc.id_receptor = u.id_usuario WHERE sc.id_solicitud = ? AND sc.id_receptor = ? AND sc.estatus = ?",
+                [id_solicitud, id_receptor, "Pendiente"]
+            );
 
-      if (requests.length === 0) {
-        await connection.rollback();
-        return res.status(404).json({
-          message: "Solicitud no encontrada o no pendiente para este usuario.",
-        });
-      }
+            if (requests.length === 0) {
+                await connection.rollback();
+                return res.status(404).json({
+                    message: "Solicitud no encontrada o no pendiente para este usuario.",
+                });
+            }
 
-      const id_emisor = requests[0].id_emisor; // ID del emisor de la solicitud
-      const receptor_nombre = requests[0].receptor_nombre; // Nombre del usuario que acepta (el receptor)
+            const id_emisor = requests[0].id_emisor; // ID del emisor de la solicitud
+            const receptor_nombre = requests[0].receptor_nombre; // Nombre del usuario que acepta (el receptor)
 
-      // 2. Actualizar el estatus de la solicitud a 'Aceptada'
-      const [result] = await connection.query(
-        "UPDATE solicitudes_contacto SET estatus = ?, fecha_respuesta = CURRENT_TIMESTAMP() WHERE id_solicitud = ? AND id_receptor = ? AND estatus = ?",
-        ["Aceptada", id_solicitud, id_receptor, "Pendiente"]
-      );
+            // 2. Actualizar el estatus de la solicitud a 'Aceptada'
+            const [result] = await connection.query(
+                "UPDATE solicitudes_contacto SET estatus = ?, fecha_respuesta = CURRENT_TIMESTAMP() WHERE id_solicitud = ? AND id_receptor = ? AND estatus = ?",
+                ["Aceptada", id_solicitud, id_receptor, "Pendiente"]
+            );
 
-      if (result.affectedRows === 0) {
-        await connection.rollback();
-        return res.status(404).json({
-          message: "Solicitud no encontrada o no pendiente para este usuario.",
-        });
-      }
+            if (result.affectedRows === 0) {
+                await connection.rollback();
+                return res.status(404).json({
+                    message: "Solicitud no encontrada o no pendiente para este usuario.",
+                });
+            }
 
-      // 3. Crear una notificación para el EMISOR de la solicitud
-      const notificationTitleEmisorAccepted = "Solicitud de Contacto Aceptada";
-      const mensajeNotificacionAccepted = `¡Tu solicitud de contacto ha sido ACEPTADA por ${receptor_nombre}!`;
-      const urlRedireccionAccepted = `/notificaciones?solicitud=${id_solicitud}`; // O a una vista de detalles de la solicitud
+            // 3. Crear una notificación para el EMISOR de la solicitud
+            const notificationTitleEmisorAccepted = "Solicitud de Contacto Aceptada";
+            const mensajeNotificacionAccepted = `¡Tu solicitud de contacto ha sido ACEPTADA por ${receptor_nombre}!`;
+            const urlRedireccionAccepted = `/notificaciones?solicitud=${id_solicitud}`; // O a una vista de detalles de la solicitud
 
-      await connection.query(
-        "INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        [
-          id_emisor,
-          "solicitud_aceptada",
-          notificationTitleEmisorAccepted,
-          mensajeNotificacionAccepted,
-          urlRedireccionAccepted,
-          id_solicitud,
-          false,
-        ]
-      );
+            await connection.query(
+                "INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida, creado_fecha) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
+                [
+                    id_emisor,
+                    "solicitud_aceptada",
+                    notificationTitleEmisorAccepted,
+                    mensajeNotificacionAccepted,
+                    urlRedireccionAccepted,
+                    id_solicitud,
+                    false,
+                ]
+            );
 
-      await connection.commit();
-      res.json({
-        message:
-          "Solicitud de contacto aceptada con éxito y emisor notificado.",
-      });
-    } catch (error) {
-      if (connection) await connection.rollback();
-      console.error("Error al aceptar solicitud de contacto:", error);
-      res.status(500).json({
-        message: "Error interno del servidor al aceptar la solicitud.",
-        error: error.message,
-      });
-    } finally {
-      if (connection) connection.release();
+            await connection.commit();
+            res.json({
+                message:
+                    "Solicitud de contacto aceptada con éxito y emisor notificado.",
+            });
+        } catch (error) {
+            if (connection) await connection.rollback();
+            console.error("Error al aceptar solicitud de contacto:", error);
+            res.status(500).json({
+                message: "Error interno del servidor al aceptar la solicitud.",
+                error: error.message,
+            });
+        } finally {
+            if (connection) connection.release();
+        }
     }
-  }
 );
 
 // 4. Ruta para RECHAZAR una solicitud de contacto
 app.patch(
-  "/api/solicitudes/:id_solicitud/rechazar",
-  authenticateToken,
-  async (req, res) => {
-    console.log(
-      "Solicitud PATCH /api/solicitudes/:id_solicitud/rechazar para solicitud:",
-      req.params.id_solicitud,
-      "por usuario:",
-      req.user.id_usuario
-    );
-    const { id_solicitud } = req.params;
-    const id_receptor = req.user.id_usuario; // El usuario logueado es el receptor que está rechazando
+    "/api/solicitudes/:id_solicitud/rechazar",
+    authenticateToken,
+    async (req, res) => {
+        console.log(
+            "Solicitud PATCH /api/solicitudes/:id_solicitud/rechazar para solicitud:",
+            req.params.id_solicitud,
+            "por usuario:",
+            req.user.id_usuario
+        );
+        const { id_solicitud } = req.params;
+        const id_receptor = req.user.id_usuario; // El usuario logueado es el receptor que está rechazando
 
-    let connection; // Usamos una conexión para la transacción
-    try {
-      connection = await pool.getConnection();
-      await connection.beginTransaction();
+        let connection; // Usamos una conexión para la transacción
+        try {
+            connection = await pool.getConnection();
+            await connection.beginTransaction();
 
-      // 1. Obtener la solicitud para verificar y obtener el id_emisor y el nombre del receptor
-      const [requests] = await connection.query(
-        "SELECT sc.id_emisor, u.nombre_usuario AS receptor_nombre FROM solicitudes_contacto sc JOIN usuarios u ON sc.id_receptor = u.id_usuario WHERE sc.id_solicitud = ? AND sc.id_receptor = ? AND sc.estatus = ?",
-        [id_solicitud, id_receptor, "Pendiente"]
-      );
+            // 1. Obtener la solicitud para verificar y obtener el id_emisor y el nombre del receptor
+            const [requests] = await connection.query(
+                "SELECT sc.id_emisor, u.nombre_usuario AS receptor_nombre FROM solicitudes_contacto sc JOIN usuarios u ON sc.id_receptor = u.id_usuario WHERE sc.id_solicitud = ? AND sc.id_receptor = ? AND sc.estatus = ?",
+                [id_solicitud, id_receptor, "Pendiente"]
+            );
 
-      if (requests.length === 0) {
-        await connection.rollback();
-        return res.status(404).json({
-          message: "Solicitud no encontrada o no pendiente para este usuario.",
-        });
-      }
+            if (requests.length === 0) {
+                await connection.rollback();
+                return res.status(404).json({
+                    message: "Solicitud no encontrada o no pendiente para este usuario.",
+                });
+            }
 
-      const id_emisor = requests[0].id_emisor; // ID del emisor de la solicitud
-      const receptor_nombre = requests[0].receptor_nombre; // Nombre del usuario que rechaza (el receptor)
+            const id_emisor = requests[0].id_emisor; // ID del emisor de la solicitud
+            const receptor_nombre = requests[0].receptor_nombre; // Nombre del usuario que rechaza (el receptor)
 
-      // 2. Actualizar el estatus de la solicitud a 'Rechazada'
-      const [result] = await connection.query(
-        "UPDATE solicitudes_contacto SET estatus = ?, fecha_respuesta = CURRENT_TIMESTAMP() WHERE id_solicitud = ? AND id_receptor = ? AND estatus = ?",
-        ["Rechazada", id_solicitud, id_receptor, "Pendiente"]
-      );
+            // 2. Actualizar el estatus de la solicitud a 'Rechazada'
+            const [result] = await connection.query(
+                "UPDATE solicitudes_contacto SET estatus = ?, fecha_respuesta = CURRENT_TIMESTAMP() WHERE id_solicitud = ? AND id_receptor = ? AND estatus = ?",
+                ["Rechazada", id_solicitud, id_receptor, "Pendiente"]
+            );
 
-      if (result.affectedRows === 0) {
-        await connection.rollback();
-        return res.status(404).json({
-          message: "Solicitud no encontrada o no pendiente para este usuario.",
-        });
-      }
+            if (result.affectedRows === 0) {
+                await connection.rollback();
+                return res.status(404).json({
+                    message: "Solicitud no encontrada o no pendiente para este usuario.",
+                });
+            }
 
-      // 3. Crear una notificación para el EMISOR de la solicitud
-      const notificationTitleEmisorRejected = "Solicitud de Contacto Rechazada";
-      const mensajeNotificacionRejected = `Tu solicitud de contacto ha sido RECHAZADA por ${receptor_nombre}.`;
-      const urlRedireccionRejected = `/notificaciones?solicitud=${id_solicitud}`; // O a una vista de detalles de la solicitud
+            // 3. Crear una notificación para el EMISOR de la solicitud
+            const notificationTitleEmisorRejected = "Solicitud de Contacto Rechazada";
+            const mensajeNotificacionRejected = `Tu solicitud de contacto ha sido RECHAZADA por ${receptor_nombre}.`;
+            const urlRedireccionRejected = `/notificaciones?solicitud=${id_solicitud}`; // O a una vista de detalles de la solicitud
 
-      await connection.query(
-        "INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        [
-          id_emisor,
-          "solicitud_rechazada",
-          notificationTitleEmisorRejected,
-          mensajeNotificacionRejected,
-          urlRedireccionRejected,
-          id_solicitud,
-          false,
-        ]
-      );
+            await connection.query(
+                "INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida, creado_fecha) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
+                [
+                    id_emisor,
+                    "solicitud_rechazada",
+                    notificationTitleEmisorRejected,
+                    mensajeNotificacionRejected,
+                    urlRedireccionRejected,
+                    id_solicitud,
+                    false,
+                ]
+            );
 
-      await connection.commit();
-      res.json({
-        message:
-          "Solicitud de contacto rechazada con éxito y emisor notificado.",
-      });
-    } catch (error) {
-      if (connection) await connection.rollback();
-      console.error("Error al rechazar solicitud de contacto:", error);
-      res.status(500).json({
-        message: "Error interno del servidor al rechazar la solicitud.",
-        error: error.message,
-      });
-    } finally {
-      if (connection) connection.release();
+            await connection.commit();
+            res.json({
+                message:
+                    "Solicitud de contacto rechazada con éxito y emisor notificado.",
+            });
+        } catch (error) {
+            if (connection) await connection.rollback();
+            console.error("Error al rechazar solicitud de contacto:", error);
+            res.status(500).json({
+                message: "Error interno del servidor al rechazar la solicitud.",
+                error: error.message,
+            });
+        } finally {
+            if (connection) connection.release();
+        }
     }
-  }
 );
 
-// 5. Ruta para OBTENER las notificaciones del usuario logueado
+// RUTAS DE NOTIFICACIONES (CORREGIDAS Y ESTANDARIZADAS)
+// =======================================================
+
+// Ruta para obtener las notificaciones de un usuario
+// Esta ruta devolverá todas las notificaciones, incluyendo su estado 'leida'.
 app.get("/api/notificaciones", authenticateToken, async (req, res) => {
-  console.log(
-    "Solicitud GET /api/notificaciones para usuario:",
-    req.user.id_usuario
-  );
-  const id_usuario_receptor = req.user.id_usuario;
-  const soloNoLeidas = req.query.leida === "false"; // Parámetro de consulta para filtrar por no leídas
-
-  try {
-    let query = `
-            SELECT
-                n.id_notificacion,
-                n.tipo_notificacion,
-                n.titulo,
-                n.mensaje,
-                n.url_redireccion,
-                n.id_referencia,
-                n.leida,
-                n.creado_fecha AS creado_en, -- Asegúrate de que tu columna se llame 'creado_fecha' si es la que usas en DB
-                -- Incluir datos de la solicitud de contacto si es de ese tipo
-                sc.estatus AS estatus_solicitud,
-                sc.email AS emisor_email,
-                sc.whatsapp AS emisor_whatsapp,
-                sc.instagram AS emisor_instagram,
-                sc.tiktok AS emisor_tiktok,
-                sc.facebook AS emisor_facebook,
-                u_emisor.nombre_usuario AS emisor_nombre,
-                u_emisor.foto_perfil_url AS emisor_foto_perfil
-            FROM
-                notificaciones n
-            LEFT JOIN
-                solicitudes_contacto sc ON n.id_referencia = sc.id_solicitud AND n.tipo_notificacion IN ('solicitud_contacto', 'solicitud_aceptada', 'solicitud_rechazada')
-            LEFT JOIN
-                usuarios u_emisor ON sc.id_emisor = u_emisor.id_usuario
-            WHERE
-                n.id_usuario_receptor = ?
-        `;
-    const values = [id_usuario_receptor];
-
-    if (soloNoLeidas) {
-      query += ` AND n.leida = FALSE`;
+    if (!req.user) {
+        return res.status(401).json({ message: "No autenticado." });
     }
-
-    query += ` ORDER BY n.creado_fecha DESC`; // Ordenar por fecha de creación descendente
-
-    const [rows] = await pool.query(query, values);
-
-    rows.forEach((notification) => {
-      if (notification.emisor_foto_perfil) {
-        notification.emisor_foto_perfil = `${req.protocol}://${req.get(
-          "host"
-        )}${notification.emisor_foto_perfil}`;
-      }
-    });
-
-    res.json(rows);
-  } catch (error) {
-    console.error("Error al obtener notificaciones:", error);
-    res.status(500).json({
-      message: "Error interno del servidor al obtener notificaciones.",
-      error: error.message,
-    });
-  }
-});
-
-// 6. Ruta para MARCAR una notificación como leída
-app.patch(
-  "/api/notificaciones/:id_notificacion/marcar-leida",
-  authenticateToken,
-  async (req, res) => {
-    console.log(
-      "Solicitud PATCH /api/notificaciones/:id_notificacion/marcar-leida para notificación:",
-      req.params.id_notificacion,
-      "por usuario:",
-      req.user.id_usuario
-    );
-    const { id_notificacion } = req.params;
-    const id_usuario_receptor = req.user.id_usuario; // El usuario logueado debe ser el receptor de la notificación
+    const userId = req.user.id_usuario;
 
     try {
-      const [result] = await pool.query(
-        "UPDATE notificaciones SET leida = TRUE WHERE id_notificacion = ? AND id_usuario_receptor = ? AND leida = FALSE",
-        [id_notificacion, id_usuario_receptor]
-      );
-
-      if (result.affectedRows === 0) {
-        return res.status(404).json({
-          message:
-            "Notificación no encontrada o ya marcada como leída para este usuario.",
-        });
-      }
-
-      res.json({ message: "Notificación marcada como leída con éxito." });
+        const [notifications] = await pool.query(
+            `SELECT
+                id_notificacion,
+                tipo_notificacion,
+                mensaje,
+                titulo,           
+                url_redireccion,  
+                creado_fecha AS fecha_creacion, 
+                leida AS leido,   
+                id_referencia
+            FROM
+                notificaciones
+            WHERE
+                id_usuario_receptor = ? 
+            ORDER BY
+                creado_fecha DESC`,
+            [userId]
+        );
+        res.status(200).json(notifications);
     } catch (error) {
-      console.error("Error al marcar notificación como leída:", error);
-      res.status(500).json({
-        message:
-          "Error interno del servidor al marcar la notificación como leída.",
-        error: error.message,
-      });
+        console.error("Error al obtener notificaciones:", error);
+        res
+            .status(500)
+            .json({
+                message: "Error interno del servidor al obtener notificaciones.",
+            });
     }
-  }
+});
+
+// Ruta para marcar una notificación específica como leída
+app.patch(
+    "/api/notificaciones/:id/marcar-leida",
+    authenticateToken,
+    async (req, res) => {
+        if (!req.user) {
+            return res.status(401).json({ message: "No autenticado." });
+        }
+        const notificationId = req.params.id;
+        const userId = req.user.id_usuario;
+
+        try {
+            const [result] = await pool.query(
+                "UPDATE notificaciones SET leida = TRUE WHERE id_notificacion = ? AND id_usuario_receptor = ?",
+                [notificationId, userId]
+            );
+
+            if (result.affectedRows === 0) {
+                return res
+                    .status(404)
+                    .json({
+                        message:
+                            "Notificación no encontrada o no tienes permiso para marcarla como leída.",
+                    });
+            }
+
+            res
+                .status(200)
+                .json({ message: "Notificación marcada como leída exitosamente." });
+        } catch (error) {
+            console.error("Error al marcar notificación como leída:", error);
+            res
+                .status(500)
+                .json({
+                    message:
+                        "Error interno del servidor al marcar notificación como leída.",
+                });
+        }
+    }
 );
 
 // --- RUTA: PARA ACTUALIZAR LA DESCRIPCIÓN DEL PERFIL ---
@@ -1887,143 +1890,12 @@ app.get("/api/profiles", authenticateToken, async (req, res) => {
   }
 });
 
-// ESTA RUTA YA LA DEBERÍAS TENER. ASEGÚRATE DE QUE DEVUELVE newLikesCount y likedByCurrentUser
-app.post("/api/replies/:replyId/like", authenticateToken, async (req, res) => {
-    const { replyId } = req.params;
-    const userId = req.user?.id_usuario; // Obtener ID del usuario autenticado
-
-    if (!userId) {
-        return res.status(401).json({ message: "No autenticado." });
-    }
-
-    let connection;
-    try {
-        connection = await pool.getConnection();
-        await connection.beginTransaction(); // Iniciar transacción
-
-        // 1. Verificar si el usuario ya ha reaccionado a este mensaje
-        const [existingReaction] = await connection.query(
-            `SELECT id_reaccion FROM foro_reaccion WHERE id_mensaje = ? AND id_usuario = ?`,
-            [replyId, userId]
-        );
-
-        let message = '';
-        let likedByCurrentUser = false;
-
-        if (existingReaction.length > 0) {
-            // Si ya existe una reacción (like), eliminarla (quitar "me gusta")
-            await connection.query(
-                `DELETE FROM foro_reaccion WHERE id_reaccion = ?`,
-                [existingReaction[0].id_reaccion]
-            );
-            message = 'Me gusta quitado.';
-            likedByCurrentUser = false;
-
-            // Opcional: Si la reacción acumulada del autor se ve afectada al quitar likes, actualízala aquí.
-            // Primero, obtener el ID del autor de la respuesta
-            const [replyAuthor] = await connection.query(
-                `SELECT id_usuario FROM foro_mensaje WHERE id_mensaje = ?`,
-                [replyId]
-            );
-            if (replyAuthor.length > 0) {
-                const authorId = replyAuthor[0].id_usuario;
-                // Disminuir la reputación acumulada del autor
-                await connection.query(
-                    `UPDATE usuarios SET reaccion_acumulada = reaccion_acumulada - 1 WHERE id_usuario = ?`,
-                    [authorId]
-                );
-            }
-
-        } else {
-            // Si no existe reacción, añadir una nueva reacción (dar "me gusta")
-            await connection.query(
-                `INSERT INTO foro_reaccion (id_mensaje, id_usuario, tipo_reaccion, fecha_reaccion) VALUES (?, ?, ?, NOW())`,
-                [replyId, userId, 'like'] // Asumo 'like' como tipo de reacción
-            );
-            message = 'Me gusta dado.';
-            likedByCurrentUser = true;
-
-            // Opcional: Si la reacción acumulada del autor se ve afectada al dar likes, actualízala aquí.
-            // Primero, obtener el ID del autor de la respuesta
-            const [replyAuthor] = await connection.query(
-                `SELECT id_usuario FROM foro_mensaje WHERE id_mensaje = ?`,
-                [replyId]
-            );
-            if (replyAuthor.length > 0) {
-                const authorId = replyAuthor[0].id_usuario;
-                // Incrementar la reputación acumulada del autor
-                await connection.query(
-                    `UPDATE usuarios SET reaccion_acumulada = reaccion_acumulada + 1 WHERE id_usuario = ?`,
-                    [authorId]
-                );
-            }
-        }
-
-        // 2. Obtener el nuevo conteo total de likes para este mensaje
-        const [newLikesCountResult] = await connection.query(
-            `SELECT COUNT(*) AS count FROM foro_reaccion WHERE id_mensaje = ?`,
-            [replyId]
-        );
-        const newLikesCount = newLikesCountResult[0].count;
-
-        await connection.commit(); // Confirmar la transacción
-
-        res.status(200).json({
-            message,
-            newLikesCount,
-            likedByCurrentUser
-            // Opcional: Puedes enviar la nueva reaccion_acumulada_autor si la actualizaste en esta ruta
-            // newAuthorReputation: updatedAuthorReputationValue
-        });
-
-    } catch (error) {
-        if (connection) await connection.rollback(); // Revertir transacción en caso de error
-        console.error("Error al procesar like/dislike:", error);
-        res.status(500).json({ message: "Error al procesar la reacción." });
-    } finally {
-        if (connection) connection.release();
-    }
-});
-
-
-// 4. Ruta POST para añadir una nueva respuesta a un tema
-// (Asumo que esta es la ruta a la que tu frontend llama para `submitReply`)
-app.post("/api/forum/threads/:threadId/replies", authenticateToken, async (req, res) => {
-    const { threadId } = req.params;
-    const { content } = req.body;
-    const userId = req.user?.id_usuario; // Asegúrate de que el ID de usuario viene del token
-
-    if (!userId) {
-        return res.status(401).json({ message: "No autorizado. Inicia sesión." });
-    }
-    if (!content || content.trim() === '') {
-        return res.status(400).json({ message: "El contenido de la respuesta no puede estar vacío." });
-    }
-
-    let connection;
-    try {
-        connection = await pool.getConnection();
-        const [result] = await connection.query(
-            `INSERT INTO foro_mensaje (id_tema, id_usuario, contenido_mensaje, fecha_publicacion)
-             VALUES (?, ?, ?, NOW())`,
-            [threadId, userId, content]
-        );
-        res.status(201).json({ message: "Respuesta publicada con éxito", replyId: result.insertId });
-    } catch (error) {
-        console.error("Error al publicar respuesta:", error);
-        res.status(500).json({ message: "Error al publicar la respuesta." });
-    } finally {
-        if (connection) connection.release();
-    }
-});
-
-
 // --- RUTAS DEL FORO ---
 
 // 1. Ruta para obtener TODOS los temas del foro (visibles para todos)
 app.get("/api/forum/threads", async (req, res) => {
-    try {
-        const [threads] = await pool.query(`
+  try {
+    const [threads] = await pool.query(`
             SELECT
                 f.id_foro AS id,
                 f.titulo AS title,
@@ -2038,61 +1910,74 @@ app.get("/api/forum/threads", async (req, res) => {
             ORDER BY
                 f.fecha_creacion DESC
         `);
-        res.status(200).json(threads);
-    } catch (error) {
-        console.error("Error al obtener los temas del foro:", error);
-        res.status(500).json({
-            message: "Error interno del servidor al obtener temas del foro.",
-            error: error.message,
-        });
-    }
+    res.status(200).json(threads);
+  } catch (error) {
+    console.error("Error al obtener los temas del foro:", error);
+    res.status(500).json({
+      message: "Error interno del servidor al obtener temas del foro.",
+      error: error.message,
+    });
+  }
 });
 
 // 2. Ruta para CREAR un nuevo tema del foro (requiere autenticación)
 app.post("/api/forum/threads", authenticateToken, async (req, res) => {
-    if (!req.user) {
-        return res.status(401).json({ message: "No autenticado. Debes iniciar sesión para crear un tema." });
-    }
-    console.log("Solicitud POST /api/forum/threads recibida para usuario:", req.user.id_usuario);
-    const userId = req.user.id_usuario;
-    const { title, content } = req.body;
+  if (!req.user) {
+    return res
+      .status(401)
+      .json({
+        message: "No autenticado. Debes iniciar sesión para crear un tema.",
+      });
+  }
+  console.log(
+    "Solicitud POST /api/forum/threads recibida para usuario:",
+    req.user.id_usuario
+  );
+  const userId = req.user.id_usuario;
+  const { title, content } = req.body;
 
-    if (!title || !content) {
-        return res.status(400).json({ message: "El título y el contenido del tema son obligatorios." });
-    }
+  if (!title || !content) {
+    return res
+      .status(400)
+      .json({ message: "El título y el contenido del tema son obligatorios." });
+  }
 
-    try {
-        const [result] = await pool.query(
-            "INSERT INTO foro (id_usuario, titulo, descripcion, fecha_creacion) VALUES (?, ?, ?, NOW())",
-            [userId, title, content]
-        );
-        const newThreadId = result.insertId;
-        console.log(`Tema de foro creado exitosamente por usuario ${userId}. ID: ${newThreadId}`);
-        res.status(201).json({ message: "Tema creado exitosamente", threadId: newThreadId });
-    } catch (error) {
-        console.error("Error al crear el tema del foro:", error);
-        res.status(500).json({
-            message: "Error interno del servidor al crear el tema.",
-            error: error.message,
-        });
-    }
+  try {
+    const [result] = await pool.query(
+      "INSERT INTO foro (id_usuario, titulo, descripcion, fecha_creacion) VALUES (?, ?, ?, NOW())",
+      [userId, title, content]
+    );
+    const newThreadId = result.insertId;
+    console.log(
+      `Tema de foro creado exitosamente por usuario ${userId}. ID: ${newThreadId}`
+    );
+    res
+      .status(201)
+      .json({ message: "Tema creado exitosamente", threadId: newThreadId });
+  } catch (error) {
+    console.error("Error al crear el tema del foro:", error);
+    res.status(500).json({
+      message: "Error interno del servidor al crear el tema.",
+      error: error.message,
+    });
+  }
 });
 
 // 3. Ruta para obtener un TEMA ESPECÍFICO del foro por ID y sus respuestas con información de likes
 app.get("/api/forum/threads/:id", authenticateToken, async (req, res) => {
-    const threadId = req.params.id;
-    const userId = req.user ? req.user.id_usuario : null; // userId puede ser null si no está autenticado
+  const threadId = req.params.id;
+  const userId = req.user ? req.user.id_usuario : null; // userId puede ser null si no está autenticado
 
-    console.log(
-        `Solicitud GET /api/forum/threads/${threadId} recibida. Usuario autenticado: ${
-            userId || "No"
-        }`
-    );
+  console.log(
+    `Solicitud GET /api/forum/threads/${threadId} recibida. Usuario autenticado: ${
+      userId || "No"
+    }`
+  );
 
-    try {
-        // Obtener el tema principal
-        const [threads] = await pool.query(
-            `
+  try {
+    // Obtener el tema principal
+    const [threads] = await pool.query(
+      `
             SELECT
                 f.id_foro AS id,
                 f.titulo AS title,
@@ -2108,27 +1993,27 @@ app.get("/api/forum/threads/:id", authenticateToken, async (req, res) => {
             WHERE
                 f.id_foro = ?
             `,
-            [threadId]
-        );
+      [threadId]
+    );
 
-        if (threads.length === 0) {
-            console.log(`Tema con ID ${threadId} no encontrado.`);
-            return res.status(404).json({ message: "Tema del foro no encontrado." });
-        }
+    if (threads.length === 0) {
+      console.log(`Tema con ID ${threadId} no encontrado.`);
+      return res.status(404).json({ message: "Tema del foro no encontrado." });
+    }
 
-        const thread = threads[0];
-        // Formatear la URL de la foto de perfil del autor del tema
-        if (thread.author_profile_pic) {
-            thread.author_profile_pic = `${req.protocol}://${req.get("host")}${
-                thread.author_profile_pic
-            }`;
-        } else {
-            thread.author_profile_pic = ""; // Si no hay foto, enviar cadena vacía
-        }
+    const thread = threads[0];
+    // Formatear la URL de la foto de perfil del autor del tema
+    if (thread.author_profile_pic) {
+      thread.author_profile_pic = `${req.protocol}://${req.get("host")}${
+        thread.author_profile_pic
+      }`;
+    } else {
+      thread.author_profile_pic = ""; // Si no hay foto, enviar cadena vacía
+    }
 
-        // Obtener las respuestas para ese tema
-        const [replies] = await pool.query(
-            `
+    // Obtener las respuestas para ese tema
+    const [replies] = await pool.query(
+      `
             SELECT
                 fm.id_mensaje AS id,
                 fm.contenido AS content,
@@ -2145,211 +2030,234 @@ app.get("/api/forum/threads/:id", authenticateToken, async (req, res) => {
             ORDER BY
                 fm.fecha_publicacion ASC
             `,
-            [threadId]
-        );
+      [threadId]
+    );
 
-        // Para cada respuesta, obtener el conteo de likes y si el usuario actual le dio like
-        for (const reply of replies) {
-            // Formatear la URL de la foto de perfil del autor de la respuesta
-            if (reply.author_profile_pic) {
-                reply.author_profile_pic = `${req.protocol}://${req.get("host")}${
-                    reply.author_profile_pic
-                }`;
-            } else {
-                reply.author_profile_pic = "";
-            }
+    // Para cada respuesta, obtener el conteo de likes y si el usuario actual le dio like
+    for (const reply of replies) {
+      // Formatear la URL de la foto de perfil del autor de la respuesta
+      if (reply.author_profile_pic) {
+        reply.author_profile_pic = `${req.protocol}://${req.get("host")}${
+          reply.author_profile_pic
+        }`;
+      } else {
+        reply.author_profile_pic = "";
+      }
 
-            // Contar likes
-            const [likesResult] = await pool.query(
-                `SELECT COUNT(*) AS likesCount
+      // Contar likes
+      const [likesResult] = await pool.query(
+        `SELECT COUNT(*) AS likesCount
                 FROM foro_reaccion
                 WHERE id_mensaje = ? AND tipo_reaccion = 'like'`,
-                [reply.id]
-            );
-            reply.likesCount = likesResult[0].likesCount;
+        [reply.id]
+      );
+      reply.likesCount = likesResult[0].likesCount;
 
-            // Verificar si el usuario actual le dio like
-            if (userId) {
-                const [userLikeResult] = await pool.query(
-                    `SELECT COUNT(*) AS isLiked
+      // Verificar si el usuario actual le dio like
+      if (userId) {
+        const [userLikeResult] = await pool.query(
+          `SELECT COUNT(*) AS isLiked
                     FROM foro_reaccion
                     WHERE id_mensaje = ? AND id_usuario = ? AND tipo_reaccion = 'like'`,
-                    [reply.id, userId]
-                );
-                reply.likedByCurrentUser = userLikeResult[0].isLiked > 0;
-            } else {
-                reply.likedByCurrentUser = false;
-            }
-        }
-
-        // Añadir las respuestas al objeto del tema
-        thread.replies = replies;
-
-        console.log(`Detalles del tema ${threadId} y sus respuestas obtenidos.`);
-        res.status(200).json(thread);
-    } catch (error) {
-        console.error(
-            `Error al obtener el tema ${threadId} o sus respuestas:`,
-            error
+          [reply.id, userId]
         );
-        res.status(500).json({
-            message: "Error interno del servidor al obtener el tema del foro.",
-            error: error.message,
-        });
+        reply.likedByCurrentUser = userLikeResult[0].isLiked > 0;
+      } else {
+        reply.likedByCurrentUser = false;
+      }
     }
+
+    // Añadir las respuestas al objeto del tema
+    thread.replies = replies;
+
+    console.log(`Detalles del tema ${threadId} y sus respuestas obtenidos.`);
+    res.status(200).json(thread);
+  } catch (error) {
+    console.error(
+      `Error al obtener el tema ${threadId} o sus respuestas:`,
+      error
+    );
+    res.status(500).json({
+      message: "Error interno del servidor al obtener el tema del foro.",
+      error: error.message,
+    });
+  }
 });
 
 // 4. Ruta para añadir una RESPUESTA a un tema (requiere autenticación)
 app.post(
-    "/api/forum/threads/:id/replies",
-    authenticateToken,
-    async (req, res) => {
-        if (!req.user) {
-            return res.status(401).json({ message: "No autenticado. Debes iniciar sesión para responder." });
-        }
-        const threadId = req.params.id;
-        const userId = req.user.id_usuario;
-        const { content } = req.body;
-
-        if (!content) {
-            return res.status(400).json({ message: "El contenido de la respuesta es obligatorio." });
-        }
-
-        try {
-            const [threads] = await pool.query(
-                "SELECT id_foro FROM foro WHERE id_foro = ?",
-                [threadId]
-            );
-            if (threads.length === 0) {
-                return res.status(404).json({ message: "El tema al que intentas responder no existe." });
-            }
-
-            const [result] = await pool.query(
-                "INSERT INTO foro_mensaje (id_foro, id_usuario, contenido, fecha_publicacion) VALUES (?, ?, ?, NOW())",
-                [threadId, userId, content]
-            );
-
-            const newReplyId = result.insertId;
-            console.log(`Respuesta añadida al tema ${threadId} por usuario ${userId}. ID: ${newReplyId}`);
-            res.status(201).json({
-                message: "Respuesta publicada exitosamente",
-                replyId: newReplyId,
-            });
-        } catch (error) {
-            console.error("Error al añadir respuesta al tema:", error);
-            res.status(500).json({
-                message: "Error interno del servidor al añadir respuesta.",
-                error: error.message,
-            });
-        }
+  "/api/forum/threads/:id/replies",
+  authenticateToken,
+  async (req, res) => {
+    if (!req.user) {
+      return res
+        .status(401)
+        .json({
+          message: "No autenticado. Debes iniciar sesión para responder.",
+        });
     }
+    const threadId = req.params.id; // Correcto, aquí threadId corresponde a id_foro
+    const userId = req.user.id_usuario;
+    const { content } = req.body;
+
+    if (!content || content.trim() === "") {
+      return res
+        .status(400)
+        .json({ message: "El contenido de la respuesta es obligatorio." });
+    }
+
+    try {
+      const [threads] = await pool.query(
+        "SELECT id_foro FROM foro WHERE id_foro = ?",
+        [threadId]
+      );
+      if (threads.length === 0) {
+        return res
+          .status(404)
+          .json({ message: "El tema al que intentas responder no existe." });
+      }
+
+      const [result] = await pool.query(
+        // NOTA: Aquí ya usamos 'id_foro' y 'contenido' que son los correctos según tu DB
+        "INSERT INTO foro_mensaje (id_foro, id_usuario, contenido, fecha_publicacion) VALUES (?, ?, ?, NOW())",
+        [threadId, userId, content]
+      );
+
+      const newReplyId = result.insertId;
+      console.log(
+        `Respuesta añadida al tema ${threadId} por usuario ${userId}. ID: ${newReplyId}`
+      );
+      res.status(201).json({
+        message: "Respuesta publicada exitosamente",
+        replyId: newReplyId,
+      });
+    } catch (error) {
+      console.error("Error al añadir respuesta al tema:", error);
+      res.status(500).json({
+        message: "Error interno del servidor al añadir respuesta.",
+        error: error.message,
+      });
+    }
+  }
 );
 
 // 5. RUTA: Manejar el "me gusta" para una respuesta específica (toggle like/unlike)
 app.post("/api/replies/:replyId/like", authenticateToken, async (req, res) => {
-    if (!req.user) {
-        return res.status(401).json({ message: 'No autenticado. Debes iniciar sesión para dar "me gusta".' });
+  if (!req.user) {
+    return res
+      .status(401)
+      .json({
+        message: 'No autenticado. Debes iniciar sesión para dar "me gusta".',
+      });
+  }
+  const replyId = req.params.replyId;
+  const userId = req.user.id_usuario;
+
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    const [messageDetails] = await connection.query(
+      `SELECT id_mensaje, id_usuario FROM foro_mensaje WHERE id_mensaje = ?`,
+      [replyId]
+    );
+    if (messageDetails.length === 0) {
+      await connection.rollback();
+      return res
+        .status(404)
+        .json({ message: "Mensaje (respuesta) no encontrado." });
     }
-    const replyId = req.params.replyId;
-    const userId = req.user.id_usuario;
 
-    let connection;
-    try {
-        connection = await pool.getConnection();
-        await connection.beginTransaction();
+    const replyAuthorId = messageDetails[0].id_usuario;
 
-        const [messageDetails] = await connection.query(
-            `SELECT id_mensaje, id_usuario FROM foro_mensaje WHERE id_mensaje = ?`,
-            [replyId]
-        );
-        if (messageDetails.length === 0) {
-            await connection.rollback();
-            return res.status(404).json({ message: "Mensaje (respuesta) no encontrado." });
-        }
-
-        const replyAuthorId = messageDetails[0].id_usuario;
-
-        if (userId === replyAuthorId) {
-            await connection.rollback();
-            return res.status(403).json({ message: "No puedes reaccionar a tu propia respuesta." });
-        }
-
-        const [existingReaction] = await connection.query(
-            `SELECT id_reaccion FROM foro_reaccion WHERE id_mensaje = ? AND id_usuario = ? AND tipo_reaccion = 'like'`,
-            [replyId, userId]
-        );
-
-        let action = "";
-        let reputationChange = 0; // Para el cambio de reputación
-
-        if (existingReaction.length > 0) {
-            // Quitar Like
-            await connection.query(
-                `DELETE FROM foro_reaccion WHERE id_reaccion = ?`,
-                [existingReaction[0].id_reaccion]
-            );
-            action = "unliked";
-            reputationChange = -1; // Decrementar reputación
-            console.log(`Usuario ${userId} ha quitado el like del mensaje ${replyId}.`);
-        } else {
-            // Dar Like
-            await connection.query(
-                `INSERT INTO foro_reaccion (id_mensaje, id_usuario, tipo_reaccion, fecha_reaccion) VALUES (?, ?, ?, NOW())`,
-                [replyId, userId, "like"]
-            );
-            action = "liked";
-            reputationChange = 1; // Incrementar reputación
-            console.log(`Usuario ${userId} ha dado like al mensaje ${replyId}.`);
-        }
-
-        // --- INICIO DE LA MODIFICACIÓN PARA LA REPUTACIÓN ---
-        // Actualizar la reputación del autor del mensaje
-        await connection.query(
-            `UPDATE usuarios SET reaccion_acumulada = reaccion_acumulada + ? WHERE id_usuario = ?`,
-            [reputationChange, replyAuthorId]
-        );
-
-        // Obtener la nueva reputación del autor del mensaje
-        const [newAuthorReputationResult] = await connection.query(
-            `SELECT reaccion_acumulada FROM usuarios WHERE id_usuario = ?`,
-            [replyAuthorId]
-        );
-        const reaccion_acumulada_autor = newAuthorReputationResult[0].reaccion_acumulada;
-        // --- FIN DE LA MODIFICACIÓN PARA LA REPUTACIÓN ---
-
-
-        const [newLikesCountResult] = await connection.query(
-            `SELECT COUNT(*) AS newLikesCount FROM foro_reaccion WHERE id_mensaje = ? AND tipo_reaccion = 'like'`,
-            [replyId]
-        );
-        const newLikesCount = newLikesCountResult[0].newLikesCount;
-
-        await connection.commit();
-
-        res.json({
-            success: true,
-            message: `Mensaje ${action} exitosamente.`,
-            newLikesCount: newLikesCount,
-            likedByCurrentUser: action === "liked",
-            reaccion_acumulada_autor: reaccion_acumulada_autor // Devolver la reputación actualizada
-        });
-    } catch (err) {
-        if (connection) {
-            await connection.rollback();
-        }
-        console.error("Error al procesar el like:", err);
-        res.status(500).json({ message: "Error interno del servidor al procesar la reacción." });
-    } finally {
-        if (connection) {
-            connection.release();
-        }
+    if (userId === replyAuthorId) {
+      await connection.rollback();
+      return res
+        .status(403)
+        .json({ message: "No puedes reaccionar a tu propia respuesta." });
     }
+
+    const [existingReaction] = await connection.query(
+      `SELECT id_reaccion FROM foro_reaccion WHERE id_mensaje = ? AND id_usuario = ? AND tipo_reaccion = 'like'`,
+      [replyId, userId]
+    );
+
+    let action = "";
+    let reputationChange = 0; // Para el cambio de reputación
+
+    if (existingReaction.length > 0) {
+      // Quitar Like
+      await connection.query(
+        `DELETE FROM foro_reaccion WHERE id_reaccion = ?`,
+        [existingReaction[0].id_reaccion]
+      );
+      action = "unliked";
+      reputationChange = -1; // Decrementar reputación
+      console.log(
+        `Usuario ${userId} ha quitado el like del mensaje ${replyId}.`
+      );
+    } else {
+      // Dar Like
+      await connection.query(
+        `INSERT INTO foro_reaccion (id_mensaje, id_usuario, tipo_reaccion, fecha_reaccion) VALUES (?, ?, ?, NOW())`,
+        [replyId, userId, "like"]
+      );
+      action = "liked";
+      reputationChange = 1; // Incrementar reputación
+      console.log(`Usuario ${userId} ha dado like al mensaje ${replyId}.`);
+    }
+
+    // --- INICIO DE LA MODIFICACIÓN PARA LA REPUTACIÓN ---
+    // Actualizar la reputación del autor del mensaje
+    await connection.query(
+      `UPDATE usuarios SET reaccion_acumulada = reaccion_acumulada + ? WHERE id_usuario = ?`,
+      [reputationChange, replyAuthorId]
+    );
+
+    // Obtener la nueva reputación del autor del mensaje
+    const [newAuthorReputationResult] = await connection.query(
+      `SELECT reaccion_acumulada FROM usuarios WHERE id_usuario = ?`,
+      [replyAuthorId]
+    );
+    const reaccion_acumulada_autor =
+      newAuthorReputationResult[0].reaccion_acumulada;
+    // --- FIN DE LA MODIFICACIÓN PARA LA REPUTACIÓN ---
+
+    const [newLikesCountResult] = await connection.query(
+      `SELECT COUNT(*) AS newLikesCount FROM foro_reaccion WHERE id_mensaje = ? AND tipo_reaccion = 'like'`,
+      [replyId]
+    );
+    const newLikesCount = newLikesCountResult[0].newLikesCount;
+
+    await connection.commit();
+
+    res.json({
+      success: true,
+      message: `Mensaje ${action} exitosamente.`,
+      newLikesCount: newLikesCount,
+      likedByCurrentUser: action === "liked",
+      reaccion_acumulada_autor: reaccion_acumulada_autor, // Devolver la reputación actualizada
+    });
+  } catch (err) {
+    if (connection) {
+      await connection.rollback();
+    }
+    console.error("Error al procesar el like:", err);
+    res
+      .status(500)
+      .json({ message: "Error interno del servidor al procesar la reacción." });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
 });
 
 // 6. Ruta para obtener TODOS los perfiles de usuarios (puede ser útil para mostrar perfiles de autores)
 app.get("/api/profiles", async (req, res) => {
-    try {
-        const [profiles] = await pool.query(`
+  try {
+    const [profiles] = await pool.query(`
             SELECT
                 u.id_usuario,
                 u.nombre_usuario,
@@ -2369,23 +2277,28 @@ app.get("/api/profiles", async (req, res) => {
                 u.nombre_usuario ASC
         `);
 
-        const formattedProfiles = profiles.map((profile) => {
-            const fotoUrl = profile.foto_perfil_url
-                ? `${req.protocol}://${req.get("host")}${profile.foto_perfil_url}`
-                : "";
-            const likesAcumulados = profile.likes_acumulados_foro || 0;
-            return {
-                ...profile,
-                foto_perfil_url: fotoUrl,
-                likes_acumulados_foro: likesAcumulados,
-                // reaccion_acumulada ya está en el objeto tal cual de la DB
-            };
-        });
-        res.status(200).json(formattedProfiles);
-    } catch (error) {
-        console.error("Error al obtener los perfiles:", error);
-        res.status(500).json({ message: "Error interno del servidor al obtener perfiles.", error: error.message });
-    }
+    const formattedProfiles = profiles.map((profile) => {
+      const fotoUrl = profile.foto_perfil_url
+        ? `${req.protocol}://${req.get("host")}${profile.foto_perfil_url}`
+        : "";
+      const likesAcumulados = profile.likes_acumulados_foro || 0;
+      return {
+        ...profile,
+        foto_perfil_url: fotoUrl,
+        likes_acumulados_foro: likesAcumulados,
+        // reaccion_acumulada ya está en el objeto tal cual de la DB
+      };
+    });
+    res.status(200).json(formattedProfiles);
+  } catch (error) {
+    console.error("Error al obtener los perfiles:", error);
+    res
+      .status(500)
+      .json({
+        message: "Error interno del servidor al obtener perfiles.",
+        error: error.message,
+      });
+  }
 });
 
 // Ruta de prueba
