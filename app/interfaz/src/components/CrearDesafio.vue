@@ -226,135 +226,185 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
+/* Colores de referencia:
+   - hsl(300, 29%, 78%) se traduce aproximadamente a #d9bad9 (Rosa-morado pastel)
+   - #5e1c7d (Morado oscuro)
+*/
+
+/* El contenedor principal del componente, que ahora actúa como el overlay del modal */
 .TodoDesafio {
-  position: absolute;
-  left: 500px;
-  top: 50px;
-  padding: 40px;
-  font-family: "Times New Roman", serif;
-}
-
-.wrapper {
-  position: relative;
-  width: 450px;
-  height: 645px;
-  background: white;
-  border: 5px solid rgba(0, 0, 0, 0.5);
-  border-radius: 100px;
-  backdrop-filter: blur(20px);
-  box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-  opacity: 0.9;
-}
-
-.wrapper .form-box {
-  width: 100%;
-  padding: 40px;
-}
-
-.wrapper .icon-close {
-  position: absolute;
-  top: 18px;
-  right: 28px;
-  width: 45px;
-  height: 45px;
-  font-size: 2em;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-bottom-left-radius: 100px;
-  cursor: pointer;
-}
-
-.form-box h2 {
-  font-size: 3em;
-  color: #000000;
-  text-align: center;
-}
-
-.input-box {
-  position: relative;
-  width: 100%;
-  height: 50px;
-  border-bottom: 2px solid #000000;
-  margin: 30px 0;
-}
-
-.input-box label {
-  position: absolute;
-  top: 50%;
-  left: 5px;
-  transform: translateY(-50%);
-  font-size: 1.3em;
-  color: #000000;
-  font-weight: 500;
-  pointer-events: none;
-  transition: 0.5s;
-}
-
-.input-box input:focus ~ label,
-.input-box input:valid ~ label {
-  top: -5px;
-}
-
-.input-box input {
+  position: fixed; /* Fijo en la ventana de visualización */
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  background: transparent;
-  border: none;
-  outline: none;
-  font-size: 1.5em;
-  color: #000000;
-  font-weight: 600;
-  padding: 0 35px 0 5px;
+  background-color: rgba(0, 0, 0, 0.6); /* Fondo oscuro semitransparente */
+  display: flex; /* Usa flexbox para centrar el contenido del modal */
+  justify-content: center; /* Centra horizontalmente */
+  align-items: center; /* Centra verticalmente */
+  z-index: 1000; /* Asegura que el modal esté por encima de otros elementos */
+  backdrop-filter: blur(5px); /* Un ligero desenfoque del fondo */
+  /* La animación de entrada se aplicará al modal-content */
 }
 
-.remember-forgot {
-  font-size: 1em;
-  color: #000000;
-  font-weight: 500;
-  margin: -15px 0 15px;
-  display: flex;
-  justify-content: space-between;
+/* Contenido principal del modal (equivalente a .wrapper y .form-box combinados de tu guía) */
+.modal-content {
+  background-color: #ffffff; /* Fondo blanco puro para el contenido del modal */
+  padding: 40px; /* Padding generoso */
+  border-radius: 15px; /* Bordes redondeados para un aspecto suave */
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25); /* Sombra profunda y suave */
+  max-width: 550px; /* Ancho máximo para el modal, ajustado para formularios */
+  width: 90%; /* Ancho responsivo */
+  max-height: 90vh; /* Altura máxima del modal, 90% del viewport height */
+  overflow-y: auto; /* Permite scroll vertical si el contenido excede la altura máxima */
+  position: relative; /* Necesario para posicionar el botón de cierre */
+  animation: fadeInScale 0.3s ease-out forwards; /* Animación de entrada */
+  font-family: 'Inter', sans-serif; /* Usando una fuente moderna y limpia */
 }
 
-.remember-forgot label input {
-  accent-color: #861c78;
-  margin-right: 3px;
+/* Animación de entrada para el modal */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
-.remember-forgot a {
-  color: #7598b3;
-  text-decoration: none;
-}
-
-.remember-forgot a:hover {
-  text-decoration: underline;
-}
-
-.CrearDesafio {
-  width: 100%;
-  height: 45px;
-  background: #440857;
-  border: none;
-  outline: none;
-  border-radius: 6px;
+/* Botón de cerrar el modal */
+.close-button {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 2.2em; /* Icono de cierre más grande */
+  color: #a30000; /* Un rojo oscuro para el botón de cerrar */
   cursor: pointer;
-  font-size: 1em;
-  color: #fff;
-  font-weight: 500;
+  transition: transform 0.2s ease, color 0.2s ease;
 }
 
-.duracion-input {
-  padding: 8px 12px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 16px;
-  width: 100px;
-  text-align: right;
+.close-button:hover {
+  color: #7a0000; /* Rojo más oscuro al pasar el ratón */
+  transform: rotate(90deg); /* Gira al pasar el ratón */
 }
+
+/* Título del formulario dentro del modal */
+.modal-content h2 {
+  font-size: 2.2em; /* Tamaño de fuente para el título */
+  color: #5e1c7d; /* Morado oscuro para el título */
+  text-align: center;
+  margin-bottom: 30px; /* Espacio debajo del título */
+  font-weight: bold;
+}
+
+/* Estilos para los contenedores de campo (mb-4, mb-6) */
+.mb-4 {
+  margin-bottom: 20px; /* Espacio consistente entre campos */
+}
+
+.mb-6 {
+  margin-bottom: 30px; /* Más espacio para el último campo antes del botón */
+}
+
+/* Estilos para las etiquetas de los campos */
+label {
+  display: block;
+  color: #5e1c7d; /* Morado oscuro para las etiquetas */
+  font-size: 0.95em; /* Tamaño de fuente ligeramente ajustado */
+  font-weight: 600; /* Seminegrita */
+  margin-bottom: 8px; /* Espacio debajo de la etiqueta */
+}
+
+/* Estilos para los inputs y textareas */
+input[type="text"],
+input[type="number"],
+textarea {
+  width: 100%;
+  padding: 12px 15px; /* Más padding para mejor tacto */
+  border: 1px solid #e0e0e0; /* Borde muy suave */
+  border-radius: 8px; /* Bordes redondeados */
+  font-size: 1em;
+  color: #333;
+  background-color: #fcfcfc; /* Fondo casi blanco para los campos */
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box; /* Asegura que el padding no aumente el ancho total */
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+textarea:focus {
+  outline: none;
+  border-color: #d9bad9; /* Borde pastel al enfocar */
+  box-shadow: 0 0 0 3px hsla(300, 29%, 78%, 0.5); /* Sombra de enfoque pastel */
+}
+
+/* Botón de Crear Desafío */
+button[type="submit"] {
+  width: 100%;
+  background-color: #5e1c7d; /* Morado oscuro para el botón principal */
+  color: white;
+  padding: 14px 20px; /* Más padding para un botón más robusto */
+  border: none;
+  border-radius: 25px; /* Bordes muy redondeados (pastilla) */
+  font-size: 1.15em; /* Texto del botón más grande */
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15); /* Sombra para el botón */
+}
+
+button[type="submit"]:hover:not(:disabled) {
+  background-color: #4a148c; /* Morado más oscuro al pasar el ratón */
+  transform: translateY(-3px); /* Efecto de levantamiento más pronunciado */
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+button[type="submit"]:disabled {
+  background-color: #a0a0a0; /* Gris para estado deshabilitado */
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Mensajes de error/éxito */
+p.text-red-500 {
+  color: #ef5350; /* Rojo suave para errores */
+  background-color: #ffebee; /* Fondo muy claro para errores */
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 25px; /* Más espacio */
+  font-size: 0.95em;
+  border: 1px solid #ef9a9a;
+  text-align: center; /* Centrar el texto */
+}
+
+p.text-green-500 {
+  color: #8bc34a; /* Verde suave para éxito */
+  background-color: #e8f5e9; /* Fondo muy claro para éxito */
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 25px; /* Más espacio */
+  font-size: 0.95em;
+  border: 1px solid #a5d6a7;
+  text-align: center; /* Centrar el texto */
+}
+
+/* Mensaje de desafíos restantes */
+.challenge-limit-message {
+  background-color: #f2e6f2; /* Rosa-morado pastel muy suave */
+  color: #5e1c7d; /* Morado oscuro para el texto */
+  padding: 18px; /* Más padding */
+  border-radius: 10px;
+  margin-top: 30px; /* Más espacio superior */
+  text-align: center;
+  font-size: 1em; /* Un poco más grande */
+  line-height: 1.5;
+  border: 1px solid #d9bad9;
+}
+
+/* Las clases de Tailwind como text-2xl, font-bold, text-center, text-gray-800, etc.
+   en el template serán sobrescritas por estas reglas CSS más específicas.
+   Si deseas eliminar completamente Tailwind, deberías quitar esas clases del template. */
 </style>

@@ -280,135 +280,204 @@ export default {
 </script>
 
 <style scoped>
-/* Estilos existentes (mantener igual, no se modifican en esta actualización) */
+/* Colores de referencia:
+   - hsl(300, 29%, 78%) se traduce aproximadamente a #d9bad9 (Rosa-morado pastel)
+   - #5e1c7d (Morado oscuro)
+*/
+
 .challenge-detail-container {
-  padding: 20px;
-  max-width: 800px;
-  margin: 20px auto;
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  padding: 30px; /* Aumentar el padding para más espacio */
+  max-width: 900px; /* Ligeramente más ancho */
+  margin: 30px auto; /* Centrar y dar más margen vertical */
+  background-color: #ffffff; /* Fondo blanco puro */
+  border-radius: 18px; /* Bordes más redondeados */
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1); /* Sombra más pronunciada y suave */
   color: #333;
+  font-family: 'Inter', sans-serif; /* Consistencia en la fuente */
 }
 
 .back-button {
   display: inline-flex;
   align-items: center;
-  padding: 10px 15px;
-  background-color: #6c757d; /* Gris */
-  color: white;
+  padding: 12px 20px; /* Más padding */
+  background-color: #d9bad9; /* Color pastel para el botón de volver */
+  color: #5e1c7d; /* Texto morado oscuro */
   border: none;
-  border-radius: 8px;
+  border-radius: 10px; /* Bordes redondeados */
   cursor: pointer;
-  font-size: 0.9em;
-  transition: background-color 0.2s ease;
-  margin-bottom: 25px;
+  font-size: 1em; /* Un poco más grande */
+  font-weight: 600; /* Seminegrita */
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  margin-bottom: 30px; /* Más espacio debajo */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .back-button:hover {
-  background-color: #5a6268;
+  background-color: #c0a8c0; /* Un poco más oscuro al pasar el ratón */
+  transform: translateY(-2px); /* Efecto de levantamiento */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.back-button i {
+    margin-right: 8px; /* Espacio entre icono y texto */
+}
+
+/* Mensajes de estado (cargando, error, sin desafío) */
+.loading-message, .error-message, .no-challenge-message {
+    text-align: center;
+    padding: 25px;
+    font-size: 1.1em;
+    font-weight: 500;
+    border-radius: 12px;
+    margin-top: 50px;
+}
+
+.loading-message {
+    background-color: #f0f8ff; /* Azul muy claro */
+    color: #007bff; /* Azul */
+    border: 1px solid #cceeff;
+}
+
+.error-message, .no-challenge-message {
+    background-color: #ffebee; /* Rojo muy claro */
+    color: #d32f2f; /* Rojo oscuro */
+    border: 1px solid #ef9a9a;
+}
+
+
+/* Contenido del desafío */
+.challenge-content {
+  /* No se necesitan estilos directos aquí si los hijos ya están bien espaciados */
 }
 
 .challenge-title {
-  font-size: 2.2em;
-  color: #0056b3;
-  margin-bottom: 15px;
+  font-size: 2.8em; /* Título más grande */
+  color: #5e1c7d; /* Morado oscuro para el título principal */
+  margin-bottom: 25px;
   text-align: center;
-  font-weight: bold;
+  font-weight: 800; /* Extra bold */
+  line-height: 1.2;
 }
 
 .challenge-description {
-  font-size: 1.1em;
-  line-height: 1.6;
-  color: #555;
-  margin-bottom: 30px;
+  font-size: 1.15em; /* Descripción un poco más grande */
+  line-height: 1.7;
+  color: #444; /* Gris oscuro para el texto */
+  margin-bottom: 40px; /* Más espacio */
   text-align: justify;
+  background-color: #f9f9f9; /* Fondo ligero para la descripción */
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #eee;
 }
 
 .challenge-info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 15px;
-  margin-bottom: 30px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* Columnas un poco más anchas */
+  gap: 20px; /* Más espacio entre tarjetas */
+  margin-bottom: 40px;
 }
 
 .info-card {
-  background-color: #f0f8ff; /* Azul muy claro */
-  border: 1px solid #cceeff;
-  border-radius: 10px;
-  padding: 15px;
+  background-color: #f2e6f2; /* Rosa-morado pastel muy suave */
+  border: 1px solid #d9bad9; /* Borde pastel */
+  border-radius: 12px; /* Más redondeado */
+  padding: 20px; /* Más padding */
   text-align: center;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); /* Sombra más definida */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.info-card:hover {
+  transform: translateY(-5px); /* Efecto de levantamiento al pasar el ratón */
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
 }
 
 .info-label {
-  font-size: 0.85em;
-  color: #666;
-  margin-bottom: 5px;
+  font-size: 0.9em; /* Un poco más grande */
+  color: #6a5b70; /* Un gris-morado para las etiquetas */
+  margin-bottom: 8px; /* Más espacio */
   font-weight: 600;
+  text-transform: uppercase; /* Mayúsculas para las etiquetas */
 }
 
 .info-value {
-  font-size: 1.1em;
-  color: #333;
+  font-size: 1.25em; /* Valor más grande y destacado */
+  color: #5e1c7d; /* Morado oscuro para los valores importantes */
   font-weight: bold;
 }
 
 .challenge-section {
-  background-color: #f8f8f8;
+  background-color: #f8f8f8; /* Fondo suave para secciones */
   border: 1px solid #eee;
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 25px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  padding: 25px; /* Más padding */
+  margin-bottom: 35px; /* Más espacio */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .section-title {
-  font-size: 1.5em;
-  color: #007bff;
-  margin-bottom: 15px;
-  font-weight: bold;
-  border-bottom: 2px solid #e0e0e0;
-  padding-bottom: 10px;
+  font-size: 1.8em; /* Título de sección más grande */
+  color: #5e1c7d; /* Morado oscuro para títulos de sección */
+  margin-bottom: 20px;
+  font-weight: 700; /* Negrita */
+  border-bottom: 2px solid #d9bad9; /* Borde inferior pastel */
+  padding-bottom: 12px; /* Más padding inferior */
+  text-align: left; /* Alineación a la izquierda */
 }
 
 .section-content {
-  font-size: 1em;
-  line-height: 1.6;
+  font-size: 1.05em; /* Contenido ligeramente más grande */
+  line-height: 1.7;
   color: #444;
   text-align: justify;
 }
 
 .contact-info p {
-  margin-bottom: 5px;
+  margin-bottom: 8px;
+  font-size: 1.05em;
+  color: #444;
 }
+
+.contact-info strong {
+    color: #5e1c7d; /* Morado oscuro para el "Email:" */
+    margin-right: 5px;
+}
+
 
 .participate-button {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  padding: 15px 25px;
-  background-color: #28a745; /* Verde */
+  padding: 18px 25px; /* Botón más grande */
+  background-color: #8c52ff; /* Un morado vibrante para la acción principal */
   color: white;
   border: none;
-  border-radius: 10px;
+  border-radius: 12px; /* Bordes consistentes */
   cursor: pointer;
-  font-size: 1.2em;
+  font-size: 1.3em; /* Texto más grande */
   font-weight: bold;
-  transition: background-color 0.2s ease, transform 0.1s ease;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+  margin-top: 30px; /* Espacio superior */
 }
 
 .participate-button:hover {
-  background-color: #218838;
-  transform: translateY(-2px);
+  background-color: #7a3fe0; /* Morado más oscuro al pasar el ratón */
+  transform: translateY(-3px); /* Efecto de levantamiento más pronunciado */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
 }
 
 .participate-button:active {
   transform: translateY(0);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
+
+.participate-button i {
+    margin-right: 10px; /* Espacio entre icono y texto */
+}
+
 
 /* Estilos para el modal de propuesta */
 .modal-overlay {
@@ -417,178 +486,226 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.7); /* Fondo más oscuro para el overlay */
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 2000;
+  backdrop-filter: blur(4px); /* Suave desenfoque */
 }
 
 .modal-content {
   background-color: white;
-  padding: 30px;
-  border-radius: 15px;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-  max-width: 600px;
+  padding: 40px; /* Más padding */
+  border-radius: 20px; /* Más redondeado */
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4); /* Sombra más fuerte */
+  max-width: 650px; /* Un poco más ancho */
   width: 90%;
   text-align: center;
   position: relative;
+  animation: fadeInScale 0.3s ease-out forwards; /* Animación de entrada */
+  max-height: 90vh; /* Permite scroll si el contenido es muy largo */
+  overflow-y: auto; /* Habilitar scroll */
+}
+
+/* Animación para modales (reutilizada) */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .modal-close-button {
   position: absolute;
-  top: 15px;
-  right: 15px;
+  top: 20px; /* Ajustar posición */
+  right: 25px; /* Ajustar posición */
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: 32px; /* Más grande */
   cursor: pointer;
-  color: #333;
+  color: #666; /* Un gris más suave */
+  transition: color 0.2s ease, transform 0.2s ease;
 }
 
 .modal-close-button:hover {
-  color: #ff4d4f;
+  color: #ff3d00; /* Naranja rojizo para cerrar */
+  transform: rotate(90deg);
 }
 
 .modal-title {
-  font-size: 1.8em;
+  font-size: 2.2em; /* Título de modal más grande */
   font-weight: bold;
-  color: #333;
-  margin-bottom: 15px;
+  color: #5e1c7d; /* Morado oscuro para títulos de modal */
+  margin-bottom: 20px;
+  line-height: 1.3;
 }
 
 .modal-description {
-  font-size: 1em;
+  font-size: 1.1em;
   color: #555;
-  margin-bottom: 20px;
+  margin-bottom: 25px;
 }
 
 /* Estilos para el formulario dentro del modal */
 .proposal-form {
   display: flex;
   flex-direction: column;
-  gap: 15px; /* Espacio entre los grupos de formulario */
+  gap: 20px; /* Más espacio entre grupos de formulario */
 }
 
 .form-group {
-  text-align: left; /* Alinea etiquetas y campos a la izquierda */
+  text-align: left;
 }
 
 .form-group label {
-  display: block; /* Asegura que la etiqueta esté en su propia línea */
-  margin-bottom: 8px;
+  display: block;
+  margin-bottom: 10px; /* Más espacio */
   font-weight: bold;
-  color: #333;
+  color: #5e1c7d; /* Morado oscuro para etiquetas del modal */
+  font-size: 1em;
 }
 
 .proposal-textarea {
   width: 100%;
-  min-height: 150px;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 1em;
+  min-height: 180px; /* Altura mínima mayor */
+  padding: 15px; /* Más padding */
+  border: 1px solid #d9bad9; /* Borde pastel */
+  border-radius: 10px; /* Más redondeado */
+  font-size: 1.05em;
   resize: vertical;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  background-color: #fcfcfc;
+  color: #333;
+}
+
+.proposal-textarea:focus {
+  outline: none;
+  border-color: #5e1c7d; /* Morado oscuro al enfocar */
+  box-shadow: 0 0 0 3px hsla(300, 29%, 78%, 0.6); /* Sombra de enfoque pastel */
 }
 
 .file-input {
   width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  background-color: #f9f9f9;
+  padding: 12px; /* Más padding */
+  border: 1px solid #d9bad9;
+  border-radius: 10px;
+  background-color: #f2e6f2; /* Fondo pastel suave */
   cursor: pointer;
+  color: #5e1c7d; /* Texto morado oscuro */
+  font-weight: 500;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.file-input:hover {
+    background-color: #e0d0e0;
+    border-color: #c0a8c0;
 }
 
 .image-preview-container {
-  margin-top: 15px;
+  margin-top: 20px; /* Más espacio */
   text-align: center;
-  border: 1px dashed #cccccc; /* Un borde punteado para el área de preview */
-  padding: 10px;
-  border-radius: 8px;
-  background-color: #f0f0f0;
+  border: 2px dashed #d9bad9; /* Borde punteado pastel */
+  padding: 15px;
+  border-radius: 12px;
+  background-color: #fdfdfd;
 }
 
 .image-preview {
-  max-width: 100%; /* Asegura que la imagen no se desborde */
-  max-height: 200px; /* Limita la altura de la vista previa */
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  max-width: 100%;
+  max-height: 250px; /* Altura máxima de la vista previa */
+  border: 1px solid #eee;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .submit-proposal-button {
-  background-color: #007bff; /* Azul */
+  background-color: #5e1c7d; /* Morado oscuro para el botón de enviar */
   color: white;
-  padding: 12px 25px;
-  border-radius: 8px;
+  padding: 16px 30px; /* Más padding */
+  border-radius: 12px; /* Más redondeado */
   font-weight: bold;
-  transition: background-color 0.2s ease;
+  font-size: 1.2em; /* Texto más grande */
+  transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
   cursor: pointer;
   border: none;
   width: 100%;
-  margin-top: 20px; /* Espacio adicional antes del botón */
+  margin-top: 25px; /* Más espacio */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
 
 .submit-proposal-button:hover:not(:disabled) {
-  background-color: #0056b3;
+  background-color: #4a148c; /* Morado más oscuro al pasar el ratón */
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
 }
 
 .submit-proposal-button:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
-/* Estilos para el modal de mensaje genérico (reutilizados) */
+/* Estilos para el modal de mensaje genérico (reutilizados y actualizados) */
 .message-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 3000; /* Asegúrate de que esté por encima de otros modales */
+  z-index: 3000;
+  backdrop-filter: blur(4px);
 }
 
 .message-modal-content {
   background-color: white;
-  padding: 25px;
-  border-radius: 12px;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
-  max-width: 400px;
+  padding: 30px; /* Más padding */
+  border-radius: 20px; /* Más redondeado */
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35); /* Sombra más fuerte */
+  max-width: 450px; /* Un poco más ancho */
   width: 90%;
   text-align: center;
   position: relative;
+  animation: fadeInScale 0.3s ease-out forwards;
 }
 
 .message-modal-title {
-  font-size: 1.5rem;
+  font-size: 1.8rem; /* Título más grande */
   font-weight: bold;
-  color: #333;
-  margin-bottom: 15px;
-}
-
-.message-modal-message {
-  font-size: 1rem;
-  color: #555;
+  color: #5e1c7d; /* Morado oscuro */
   margin-bottom: 20px;
 }
 
+.message-modal-message {
+  font-size: 1.1rem; /* Mensaje más grande */
+  color: #555;
+  margin-bottom: 30px;
+}
+
 .message-modal-button-close {
-  background-color: #007bff;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 8px;
+  background-color: #d9bad9; /* Pastel para el botón de cerrar */
+  color: #5e1c7d; /* Texto morado oscuro */
+  padding: 12px 25px; /* Más padding */
+  border-radius: 10px; /* Más redondeado */
   font-weight: 600;
-  transition: background-color 0.2s ease-in-out;
+  font-size: 1.05em;
+  transition: background-color 0.2s ease-in-out, transform 0.1s ease;
   cursor: pointer;
   border: none;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .message-modal-button-close:hover {
-  background-color: #0056b3;
+  background-color: #c0a8c0; /* Un poco más oscuro */
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 </style>

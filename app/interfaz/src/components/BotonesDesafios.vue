@@ -36,9 +36,8 @@ export default{
 
 .MisDesafios{
 
-top: 190px;
 left: 85%;
-position: absolute;
+position: relative;
 display: inline-block;
 
 

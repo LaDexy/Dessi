@@ -327,53 +327,63 @@ export default {
 </script>
 
 <style scoped>
-/* Estilos existentes */
+/* Colores de referencia:
+   - hsl(300, 29%, 78%) = #d9bad9 (Rosa-morado pastel)
+   - #5e1c7d (Morado oscuro)
+*/
+
 .pagina-notificaciones-container {
   padding: 20px;
   max-width: 800px;
   margin: 20px auto;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background-color: #fcfcfc; /* Un blanco muy suave */
+  border-radius: 12px; /* Bordes más redondeados */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); /* Sombra más pronunciada pero suave */
   color: #333;
 }
 
 h2 {
   text-align: center;
-  color: #0056b3;
+  color: #5e1c7d; /* Título principal en morado oscuro */
   margin-bottom: 30px;
+  font-size: 2em; /* Título un poco más grande */
 }
 
 .back-button {
   display: inline-flex;
   align-items: center;
-  padding: 10px 15px;
-  background-color: #6c757d; /* Gris */
-  color: white;
-  border: none;
-  border-radius: 8px;
+  padding: 10px 18px; /* Un poco más de padding */
+  background-color: #d9bad9; /* Rosa-morado pastel para el botón Volver */
+  color: #5e1c7d; /* Texto en morado oscuro */
+  border: 1px solid #c0a8c0; /* Borde sutil del mismo tono */
+  border-radius: 25px; /* Bordes muy redondeados (pastilla) */
   cursor: pointer;
-  font-size: 0.9em;
-  transition: background-color 0.2s ease;
+  font-size: 1em; /* Un poco más grande */
+  font-weight: 600; /* Texto seminegrita */
+  transition: background-color 0.2s ease, transform 0.2s ease;
   margin-bottom: 25px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Sombra ligera */
 }
 
 .back-button:hover {
-  background-color: #5a6268;
+  background-color: #c0a8c0; /* Tono ligeramente más oscuro al pasar el ratón */
+  transform: translateY(-2px); /* Pequeño levantamiento */
 }
 
 .loading-message, .error-message, .no-notifications-message {
   text-align: center;
   padding: 20px;
   font-size: 1.1em;
-  color: #666;
+  color: #5e1c7d; /* Mensajes en morado oscuro */
+  background-color: #f2e6f2; /* Fondo muy suave para mensajes */
+  border-radius: 8px;
+  margin-top: 20px;
 }
 
 .error-message {
-  color: #d9534f;
-  background-color: #f2dede;
-  border: 1px solid #ebccd1;
-  border-radius: 4px;
+  color: #d84315; /* Un rojo más oscuro para errores */
+  background-color: #ffe0b2; /* Fondo naranja suave para errores */
+  border: 1px solid #ffcc80;
 }
 
 .notifications-list {
@@ -383,23 +393,23 @@ h2 {
 }
 
 .notification-card {
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  background-color: #ffffff; /* Fondo blanco para las tarjetas */
+  border: 1px solid #eee; /* Borde muy sutil */
+  border-radius: 10px; /* Bordes ligeramente más redondeados */
   padding: 15px 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s ease-in-out, background-color 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); /* Sombra suave */
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease;
   cursor: pointer;
 }
 
 .notification-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12); /* Sombra más pronunciada al pasar el ratón */
 }
 
 .notification-card.unread {
-  background-color: #e6f7ff; /* Fondo azul claro para no leídas */
-  border-left: 5px solid #007bff; /* Barra lateral azul */
+  background-color: #f2e6f2; /* Rosa-morado pastel muy suave para no leídas */
+  border-left: 5px solid #5e1c7d; /* Barra lateral en morado oscuro */
 }
 
 .notification-header {
@@ -409,27 +419,27 @@ h2 {
 }
 
 .notification-header i {
-  font-size: 1.5em;
-  margin-right: 10px;
-  color: #007bff; /* Color predeterminado para iconos */
+  font-size: 1.6em; /* Icono un poco más grande */
+  margin-right: 12px;
+  color: #5e1c7d; /* Color del icono en morado oscuro */
 }
 
 .notification-header h3 {
   margin: 0;
-  font-size: 1.2em;
-  color: #333;
+  font-size: 1.25em; /* Título de notificación ligeramente más grande */
+  color: #5e1c7d; /* Título de notificación en morado oscuro */
   flex-grow: 1;
 }
 
 .notification-message {
-  font-size: 0.95em;
-  color: #555;
+  font-size: 1em; /* Mensaje ligeramente más grande */
+  color: #444; /* Color de texto más estándar */
   margin-bottom: 10px;
 }
 
 .notification-date {
-  font-size: 0.8em;
-  color: #888;
+  font-size: 0.85em; /* Fecha un poco más grande */
+  color: #777;
   text-align: right;
 }
 
@@ -442,7 +452,7 @@ h2 {
 
 .solicitud-estado {
   font-weight: bold;
-  color: #007bff;
+  color: #5e1c7d; /* Estado en morado oscuro */
   margin-bottom: 10px;
 }
 
@@ -453,48 +463,54 @@ h2 {
 }
 
 .btn-accept, .btn-reject, .btn-view-status {
-  padding: 8px 15px;
+  padding: 8px 18px; /* Más padding */
   border: none;
-  border-radius: 5px;
+  border-radius: 20px; /* Bordes muy redondeados */
   cursor: pointer;
-  font-size: 0.9em;
-  transition: background-color 0.2s ease;
+  font-size: 0.95em; /* Un poco más grande */
+  font-weight: 600;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .btn-accept {
-  background-color: #28a745;
+  background-color: #8bc34a; /* Verde suave para aceptar */
   color: white;
 }
 
 .btn-accept:hover {
-  background-color: #218838;
+  background-color: #7cb342; /* Verde más oscuro al pasar el ratón */
+  transform: translateY(-1px);
 }
 
 .btn-reject {
-  background-color: #dc3545;
+  background-color: #ef5350; /* Rojo suave para rechazar */
   color: white;
 }
 
 .btn-reject:hover {
-  background-color: #c82333;
+  background-color: #e53935; /* Rojo más oscuro al pasar el ratón */
+  transform: translateY(-1px);
 }
 
 .btn-view-status {
-  background-color: #007bff;
+  background-color: #5e1c7d; /* Morado oscuro */
   color: white;
 }
 
 .btn-view-status:hover {
-  background-color: #0056b3;
+  background-color: #4a148c; /* Morado más oscuro al pasar el ratón */
+  transform: translateY(-1px);
 }
 
 .contact-details {
   margin-top: 10px;
-  background-color: #f0f8ff;
-  border: 1px solid #cceeff;
-  border-radius: 5px;
-  padding: 10px;
+  background-color: #f7eaf7; /* Fondo muy suave en el color pastel */
+  border: 1px solid #e0c0e0;
+  border-radius: 8px;
+  padding: 12px;
   font-size: 0.9em;
+  color: #5e1c7d; /* Texto en morado oscuro */
 }
 
 .contact-details p {
@@ -508,7 +524,7 @@ h2 {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.5); /* Opacidad media */
   display: flex;
   justify-content: center;
   align-items: center;
@@ -516,10 +532,10 @@ h2 {
 }
 
 .message-modal-content {
-  background-color: white;
-  padding: 25px;
-  border-radius: 12px;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+  background-color: #ffffff;
+  padding: 30px; /* Más padding */
+  border-radius: 15px; /* Bordes más redondeados */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2); /* Sombra más profunda */
   max-width: 450px;
   width: 90%;
   text-align: center;
@@ -528,77 +544,87 @@ h2 {
 
 .modal-close-button {
   position: absolute;
-  top: 10px;
-  right: 15px;
+  top: 15px;
+  right: 18px;
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: 28px; /* Icono de cierre más grande */
   cursor: pointer;
-  color: #999;
+  color: #a30000; /* Un rojo más oscuro */
+  transition: transform 0.2s ease;
 }
 .modal-close-button:hover {
-  color: #555;
+  color: #7a0000;
+  transform: rotate(90deg); /* Gira al pasar el ratón */
 }
 
 
 .message-modal-title {
-  font-size: 1.5rem;
+  font-size: 1.8rem; /* Título de modal más grande */
   font-weight: bold;
-  color: #333;
+  color: #5e1c7d; /* Título de modal en morado oscuro */
   margin-bottom: 15px;
 }
 
 .message-modal-message {
-  font-size: 1rem;
-  color: #555;
-  margin-bottom: 20px;
+  font-size: 1.1rem; /* Mensaje de modal más grande */
+  color: #444;
+  margin-bottom: 25px; /* Más espacio */
+}
+
+.message-modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 15px; /* Espacio entre botones en acciones del modal */
 }
 
 .message-modal-button-close {
-  background-color: #007bff;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 8px;
+  background-color: #d9bad9; /* Rosa-morado pastel para el botón de cerrar modal */
+  color: #5e1c7d; /* Texto en morado oscuro */
+  padding: 12px 25px; /* Más padding */
+  border-radius: 25px; /* Bordes redondeados */
   font-weight: 600;
-  transition: background-color 0.2s ease-in-out;
+  transition: background-color 0.2s ease-in-out, transform 0.2s ease;
   cursor: pointer;
   border: none;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
 }
 
 .message-modal-button-close:hover {
-  background-color: #0056b3;
+  background-color: #c0a8c0; /* Tono ligeramente más oscuro */
+  transform: translateY(-2px);
 }
 
 .contact-details-modal-info p {
   margin: 8px 0;
-  font-size: 1em;
-  color: #444;
+  font-size: 1.05em;
+  color: #333;
 }
 
 .icon-container {
-  font-size: 3em;
-  margin-bottom: 15px;
+  font-size: 3.5em; /* Iconos más grandes en el modal */
+  margin-bottom: 20px;
 }
 
 .success-icon {
-  color: #28a745; /* Verde para éxito */
+  color: #8bc34a; /* Verde para éxito (de la paleta pastel) */
 }
 
 .error-icon {
-  color: #dc3545; /* Rojo para error */
+  color: #ef5350; /* Rojo para error (de la paleta pastel) */
 }
 
 .success-title {
-  color: #28a745;
+  color: #8bc34a; /* Verde para título de éxito */
 }
 
 .error-title {
-  color: #dc3545;
+  color: #ef5350; /* Rojo para título de error */
 }
 
 .received-date {
   font-size: 0.9em;
-  color: #777;
+  color: #888;
   margin-top: 15px;
 }
 </style>

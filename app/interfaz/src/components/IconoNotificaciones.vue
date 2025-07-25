@@ -155,18 +155,17 @@ export default {
 /* Estilos para el icono de notificaciones */
 .Notificaciones {
   position: fixed;
-  width: 50px; /* Tamaño del área del icono */
+  width: 50px;
   height: 50px;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 28px; /* Tamaño del icono de campana */
-  color: #f4bd00; /* Color inicial de la campana */
+  font-size: 28px; 
   cursor: pointer;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   transition: transform 0.2s ease-in-out;
-  border-radius: 50%; /* Hace que el contenedor sea redondo */
-  background-color: #f7f7f7; /* Fondo para el círculo */
+  border-radius: 50%; 
+  background-color: #f7f7f7; 
   bottom: 0;
   
 }
@@ -177,8 +176,7 @@ export default {
 
 /* Estilo para la campana cuando HAY nuevas notificaciones */
 .Notificaciones .fa-bell.has-new-notifications {
-  color: #ff4d4f; /* Rojo para indicar nueva notificación */
-  animation: shake 0.8s cubic-bezier(.36,.07,.19,.97) both infinite; /* Efecto de temblor */
+  animation: shake 0.8s cubic-bezier(.36,.07,.19,.97) both infinite; 
   transform-origin: top center;
 }
 
@@ -193,18 +191,18 @@ export default {
 /* Estilos para el badge de notificación */
 .notification-badge {
   position: absolute;
-  top: 0px; /* Ajusta la posición */
-  right: 5px; /* Ajusta la posición */
-  background-color: #ff4d4f; /* Rojo */
+  top: 0px; 
+  right: 5px;
+  background-color: #793096;
   color: white;
   border-radius: 50%;
-  padding: 2px 7px; /* Ajusta el padding para que sea un círculo o un óvalo pequeño */
+  padding: 2px 7px; 
   font-size: 0.7em;
   font-weight: bold;
-  min-width: 15px; /* Para asegurar que el círculo no sea demasiado pequeño */
+  min-width: 15px;
   text-align: center;
-  line-height: 1; /* Centrar el texto verticalmente */
-  border: 1px solid white; /* Borde blanco para visibilidad */
+  line-height: 1; 
+  border: 1px solid white; 
 }
 
 /* Estilos para el Modal de Notificaciones */
@@ -263,8 +261,8 @@ export default {
 
 .notificaciones-list {
   flex-grow: 1;
-  overflow-y: auto; /* Permite el scroll si hay muchas notificaciones */
-  padding-right: 5px; /* Pequeño espacio para la barra de scroll */
+  overflow-y: auto; 
+  padding-right: 5px;
 }
 
 /* Estilos de la barra de desplazamiento para el área de mensajes */
