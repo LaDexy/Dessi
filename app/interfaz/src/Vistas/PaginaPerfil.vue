@@ -1,28 +1,20 @@
 <template>
   <div>
-
-  
-
     <ContenidoMenu :userRole="userProfileType" class="fixed-menu-button" />
-
-      
     
-      <ImagenPerfil
-        ref="imagenPerfilComponent"
-        :profileImageSrc="profileImageSrc"
-        @imageSelected="handleImageSelected"
-      />
+    <ImagenPerfil
+      ref="imagenPerfilComponent"
+      :profileImageSrc="profileImageSrc"
+      @imageSelected="handleImageSelected"
+    />
 
-      <BarraPerfil />
-      <IconoEditar @click="activateImageUpload" class="edit-icon-overlay" />
+    <BarraPerfil />
+    <IconoEditar @click="activateImageUpload" class="edit-icon-overlay" />
     
-
     <div class="user-name-display-wrapper">
       <h1 class="user-name-display">{{ userName }}</h1>
     </div>
-
     
-
     <TipoPerfil
       :profileType="userProfile"
       :description="userDescription"
@@ -34,18 +26,16 @@
       @MostrarRegistro="MostrarRegistro"
     />
 
-
-      <IconoCamara
-        @imageSelected="handlePortfolioImageSelected"
-        class="portfolio-camera-icon"
-      />
-      <IconoPortafolio
-        :userProfile="userProfile"
-        @documentSelected="handlePortfolioDocumentSelected"
-      />
-      <PortafolioPerfil :projects="userProjects" :documents="userDocuments" />
-   
-
+    <IconoCamara
+      @imageSelected="handlePortfolioImageSelected"
+      class="portfolio-camera-icon"
+    />
+    <IconoPortafolio
+      :userProfile="userProfile"
+      @documentSelected="handlePortfolioDocumentSelected"
+    />
+    <PortafolioPerfil :projects="userProjects" :documents="userDocuments" />
+    
     <CrearDesafio
       v-if="CrearDesafioNuevo"
       :userId="userId"
@@ -57,7 +47,8 @@
       v-if="VerDesafiosCreados"
       :userId="userId"
       @cerrar="VerDesafiosCreados = false"
-      @verDetalle="handleVerDetalleDesafio" ref="verDesafioComponent"
+      @verDetalle="handleVerDetalleDesafio"
+      ref="verDesafioComponent"
     />
 
     <ParticipantesDesafios
@@ -80,7 +71,7 @@ import PortafolioPerfil from "../components/PortafolioPerfil.vue";
 import BotonesDesafios from "../components/BotonesDesafios.vue";
 import IconoCamara from "@/components/IconoCamara.vue";
 import IconoPortafolio from "@/components/IconoPortafolio.vue";
-import ParticipantesDesafios from "@/components/ParticipantesDesafios.vue"; 
+import ParticipantesDesafios from "@/components/ParticipantesDesafios.vue";
 import ContenidoMenu from "@/components/ContenidoMenu.vue";
 import axios from "axios";
 
@@ -112,8 +103,8 @@ export default {
     BotonesDesafios,
     IconoCamara,
     IconoPortafolio,
-    ParticipantesDesafios, 
-    ContenidoMenu
+    ParticipantesDesafios,
+    ContenidoMenu,
   },
   mounted() {
     this.loadUserProfileData();
@@ -138,6 +129,7 @@ export default {
           const profile = response.data;
           this.userId = profile.id_usuario;
           this.userName = profile.nombre_usuario;
+          // Esta línea ya debería recibir la URL completa desde el backend
           this.profileImageSrc = profile.foto_perfil_url || require("../assets/Usuario.png");
           this.userProfile = profile.tipo_perfil;
           this.userDescription = profile.descripcion_perfil || "Aca va una breve descripcion";
@@ -196,7 +188,9 @@ export default {
         );
 
         if (response.status === 200) {
-          const newImageUrl = response.data.imageUrl;
+          // *** ESTA ES LA LÍNEA MODIFICADA CLAVE ***
+          const newImageUrl = response.data.fullImageUrl; // ¡Ahora usa la URL completa!
+          // ***************************************
           this.profileImageSrc = newImageUrl;
           alert("Foto de perfil actualizada exitosamente!");
           console.log("Foto de perfil actualizada a:", newImageUrl);
@@ -370,9 +364,9 @@ export default {
     },
     // MÉTODO AGREGADO: Maneja el evento 'verDetalle' emitido por VerDesafios
     handleVerDetalleDesafio(id) {
-        this.selectedChallengeId = id;        // Guarda el ID del desafío
-        this.showDetalleDesafioModal = true;  // Abre el modal de detalle
-        this.VerDesafiosCreados = false;      // Cierra el modal de lista
+        this.selectedChallengeId = id;          // Guarda el ID del desafío
+        this.showDetalleDesafioModal = true;    // Abre el modal de detalle
+        this.VerDesafiosCreados = false;        // Cierra el modal de lista
     }
   },
 };

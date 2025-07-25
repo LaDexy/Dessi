@@ -336,7 +336,7 @@ export default {
 .TarjetaIndividual h3 {
     font-size: 1.5em;
     font-weight: 700;
-    color: white; /* Morado oscuro para el título del tema */
+    color: #d288c0; /* Morado oscuro para el título del tema */
     margin-bottom: 8px;
     cursor: pointer; /* Indica que el título es clicable */
     transition: color 0.2s ease;

@@ -3,7 +3,7 @@
     <!--Componentes de pagina de perfil-->
 
     <ForoUsuarios/>
-   
+  
 
   </div>
 </template>
@@ -12,7 +12,6 @@
 
 /*Importacion de componentes de pagina de perfil*/
 import ForoUsuarios from '@/components/ForoUsuarios.vue';
-
 export default{
 
     name: "PaginaForo",
@@ -20,6 +19,7 @@ export default{
     components: {
 
         ForoUsuarios,
+      
     
   }
 

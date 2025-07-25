@@ -10,7 +10,7 @@
       <hr>
       <h3>Respuestas</h3>
       <div v-if="thread.replies && thread.replies.length > 0">
-        <div v-for="reply in thread.replies" :key="reply.id" class="reply-item">
+        <div v-for="reply in thread.replies" :key="reply.id_mensaje" class="reply-item">
           <p class="reply-author"><strong>{{ reply.author }}</strong> el {{ formatDate(reply.date) }}</p>
           <p class="reply-content">{{ reply.content }}</p>
           <div class="likes-section">
@@ -20,6 +20,9 @@
               :title="reply.likedByCurrentUser ? 'Quitar Me Gusta' : 'Dar Me Gusta'"
             />
             <span class="likes-count">{{ reply.likesCount }}</span>
+            <span class="author-reputation" v-if="reply.reaccion_acumulada_autor !== undefined">
+              Reputación del autor: {{ reply.reaccion_acumulada_autor }}
+            </span>
           </div>
         </div>
       </div>
@@ -57,7 +60,7 @@ export default {
   },
   data() {
     return {
-      thread: null,
+      thread: null, // Este objeto contendrá el tema y un array de respuestas
       loading: false,
       error: null,
       newReplyContent: '',
@@ -83,12 +86,34 @@ export default {
         const token = this.getToken();
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
+        // CAMBIO CLAVE AQUÍ: UNA SOLA LLAMADA AL BACKEND
+        // Esta única llamada a /api/forum/threads/:id debe traer tanto el tema principal
+        // como un array de sus respuestas, tal como lo tienes en tu server.js actual.
         const response = await axios.get(`${this.API_BASE_URL}/forum/threads/${this.id}`, { headers });
-        this.thread = response.data;
-        console.log('Detalles del tema cargados:', this.thread);
+        
+        let threadData = response.data; // La respuesta ahora contiene el tema y las respuestas
+
+        // Mapear las respuestas para asegurar la reactividad y nombres de propiedades consistentes
+        // NOTA: Los nombres de propiedades aquí deben coincidir exactamente con los que tu backend
+        // devuelve para CADA RESPUESTA dentro del array 'replies'.
+        // Tu backend los devuelve como: 'id', 'content', 'author', 'date', 'likesCount', 'likedByCurrentUser', 'reaccion_acumulada_autor'
+        threadData.replies = threadData.replies.map(reply => ({
+          id_mensaje: reply.id, // Mapea 'id' del backend a 'id_mensaje' para Vue key y toggleLike
+          author: reply.author,
+          date: reply.date,
+          content: reply.content,
+          likesCount: reply.likesCount || 0, // Asegura que sea un número
+          likedByCurrentUser: reply.likedByCurrentUser || false, // Asegura que sea booleano
+          reaccion_acumulada_autor: reply.reaccion_acumulada_autor || 0, // Asegura que sea un número
+          author_profile_pic: reply.author_profile_pic || '' // Agregado para compatibilidad si el backend lo envía
+        }));
+
+        this.thread = threadData; // Asigna los datos procesados a la propiedad 'thread'
+        console.log('Detalles del tema y respuestas cargados:', this.thread);
+
       } catch (err) {
         console.error('Error al cargar los detalles del tema:', err);
-        this.error = 'No se pudo cargar el tema. Inténtalo de nuevo más tarde.';
+        this.error = 'No se pudo cargar el tema o sus respuestas. Inténtalo de nuevo más tarde.';
         alert('Error al cargar el tema: ' + (err.response?.data?.message || err.message));
         if (err.response && err.response.status === 404) {
             this.$router.push({ name: 'Foro' });
@@ -98,6 +123,7 @@ export default {
       }
     },
     formatDate(dateString) {
+      if (!dateString) return '';
       const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
       return new Date(dateString).toLocaleDateString(undefined, options);
     },
@@ -114,35 +140,46 @@ export default {
 
       try {
         const res = await axios.post(
-          `${this.API_BASE_URL}/replies/${reply.id}/like`,
+          `${this.API_BASE_URL}/replies/${reply.id_mensaje}/like`,
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        // --- ¡AQUÍ ESTÁ EL CAMBIO! ---
-        if (res.data.success) {
-          console.log("Respuesta del like:", res.data); // Para depuración
-
-          const replyIndex = this.thread.replies.findIndex(r => r.id === reply.id);
+        if (res.status === 200) {
+          // Desestructurar la nueva propiedad 'reaccion_acumulada_autor' que viene del backend
+          const { newLikesCount, likedByCurrentUser, reaccion_acumulada_autor } = res.data; 
+          
+          const replyIndex = this.thread.replies.findIndex(r => r.id_mensaje === reply.id_mensaje);
 
           if (replyIndex !== -1) {
-            this.$set(this.thread.replies[replyIndex], 'likesCount', res.data.newLikesCount);
-            this.$set(this.thread.replies[replyIndex], 'likedByCurrentUser', res.data.likedByCurrentUser);
+            // SOLUCIÓN PARA this.$set is not a function y reactividad
+            const updatedReply = {
+              ...this.thread.replies[replyIndex], // Copia todas las propiedades existentes
+              likesCount: newLikesCount,          // Sobrescribe likesCount
+              likedByCurrentUser: likedByCurrentUser, // Sobrescribe likedByCurrentUser
+              reaccion_acumulada_autor: reaccion_acumulada_autor // <--- ¡ESTE ES EL CAMBIO CLAVE!
+            };
+
+            // Reemplazar el objeto en el array, lo cual es reactivo en Vue 2
+            this.thread.replies.splice(replyIndex, 1, updatedReply);
+            
             console.log("Reply actualizada:", this.thread.replies[replyIndex]);
+            // alert(res.data.message); // Descomentar si quieres mostrar el mensaje de éxito del backend
           }
-          // Opcional: Si quieres un mensaje de éxito, ponlo aquí
-          // alert(res.data.message); // Por ejemplo, "Reacción procesada con éxito."
-        } else {
-          // Esto solo se ejecutará si success es false
-          alert('Error al procesar el "me gusta": ' + (res.data.message || 'Error desconocido.'));
         }
       } catch (error) {
         console.error('Error al dar/quitar "me gusta":', error);
-        if (error.response && error.response.status === 401) {
-            alert('Tu sesión ha expirado o no estás autorizado. Por favor, inicia sesión.');
-            this.$router.push('/login');
+        if (error.response) {
+            if (error.response.status === 401 || error.response.status === 403) {
+                alert('Tu sesión ha expirado o no estás autorizado. Por favor, inicia sesión.');
+                this.$router.push('/login');
+            } else if (error.response.status === 404) {
+                alert('Respuesta no encontrada.');
+            } else {
+                alert('Ocurrió un error al procesar tu solicitud: ' + (error.response.data.message || error.message));
+            }
         } else {
-            alert('Ocurrió un error al procesar tu solicitud.');
+            alert('Ocurrió un error de red o del servidor.');
         }
       }
     },
@@ -166,7 +203,8 @@ export default {
         );
         alert('Respuesta publicada exitosamente!');
         this.newReplyContent = '';
-        this.fetchThreadDetail(); // Recargar el tema para ver la nueva respuesta y su estado inicial de likes
+        // Después de publicar una respuesta, recarga los detalles del tema para ver la nueva respuesta
+        this.fetchThreadDetail();
         console.log('Respuesta enviada:', response.data);
       } catch (error) {
         console.error('Error al publicar respuesta:', error.response?.data || error.message);
@@ -178,11 +216,12 @@ export default {
 </script>
 
 <style scoped>
+/* Tus estilos CSS existentes aquí */
 /* Colores de referencia de tu paleta:
-   - hsl(300, 29%, 78%) se traduce aproximadamente a #d9bad9 (Rosa-morado pastel)
-   - #5e1c7d (Morado oscuro principal)
-   - #e4a0d5 (Rosa vibrante)
-   - Otros tonos de morado y rosa para complementos.
+    - hsl(300, 29%, 78%) se traduce aproximadamente a #d9bad9 (Rosa-morado pastel)
+    - #5e1c7d (Morado oscuro principal)
+    - #e4a0d5 (Rosa vibrante)
+    - Otros tonos de morado y rosa para complementos.
 */
 
 .foro-interaccion-container {
@@ -215,10 +254,6 @@ export default {
     border: 1px solid #f5c6cb;
 }
 
-/* Detalle del tema principal */
-.thread-detail {
-    /* Contenedor general de los detalles, no necesita estilos propios fuertes */
-}
 
 .thread-detail h2 {
     font-size: 2.5em; /* Título del tema más grande */
@@ -318,6 +353,12 @@ h3 {
     font-weight: bold;
     color: #5e1c7d; /* Morado oscuro para el contador de likes */
     font-size: 1em;
+}
+
+.author-reputation {
+  font-size: 0.9em;
+  color: #666;
+  margin-left: 15px;
 }
 
 /* Formulario para añadir respuesta */

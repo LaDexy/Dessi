@@ -178,6 +178,66 @@ const authorizeDesignerMarketing = (req, res, next) => {
 
 // --- RUTAS DE AUTENTICACIÓN Y PERFIL ---
 
+// --- RUTA PARA SUBIR Y ACTUALIZAR LA IMAGEN DE PERFIL ---
+app.post('/api/upload-profile-image', authenticateToken, upload.single('profileImage'), async (req, res) => {
+    // Asegúrate de que 'profileImage' coincida con el nombre del campo en tu FormData del frontend Vue.js
+    console.log("Solicitud POST /api/upload-profile-image recibida para usuario:", req.user.id_usuario);
+
+    if (!req.file) {
+        console.log("Error 400: No se ha subido ningún archivo.");
+        return res.status(400).json({ message: 'No se ha subido ningún archivo.' });
+    }
+
+    const userId = req.user.id_usuario;
+    const imageUrl = `/uploads/${req.file.filename}`; // Ruta relativa para guardar en DB y acceder desde el frontend
+
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        // 1. Actualizar la URL de la foto de perfil en la tabla de usuarios
+        console.log("Actualizando foto_perfil_url en la DB para usuario:", userId);
+        const [result] = await connection.query(
+            'UPDATE usuarios SET foto_perfil_url = ? WHERE id_usuario = ?',
+            [imageUrl, userId]
+        );
+
+        if (result.affectedRows === 0) {
+            await connection.rollback();
+            // Opcional: Si el archivo se subió pero la DB no se actualizó, puedes considerar eliminar el archivo subido
+            fs.unlink(req.file.path, (err) => {
+                if (err) console.error("Error al eliminar archivo subido tras fallo de DB:", err);
+            });
+            return res.status(404).json({ message: 'Usuario no encontrado o no se pudo actualizar la imagen de perfil.' });
+        }
+
+        await connection.commit();
+        console.log("Imagen de perfil subida y URL actualizada en DB exitosamente.");
+        res.status(200).json({
+            message: 'Imagen de perfil subida y actualizada correctamente',
+            imageUrl: imageUrl, // Envía la URL relativa para que el frontend la use
+            fullImageUrl: `${req.protocol}://${req.get('host')}${imageUrl}` // O la URL completa si el frontend la necesita inmediatamente
+        });
+
+    } catch (error) {
+        if (connection) await connection.rollback();
+        // Asegúrate de eliminar el archivo subido si algo falla en la DB
+        if (req.file) {
+            fs.unlink(req.file.path, (err) => {
+                if (err) console.error("Error al eliminar archivo subido tras fallo:", err);
+            });
+        }
+        console.error('Error al procesar la subida de imagen o actualizar la DB:', error);
+        res.status(500).json({
+            message: 'Error interno del servidor al subir la imagen.',
+            error: error.message
+        });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
 // --- RUTA PARA REGISTRO DE USUARIOS ---
 app.post("/api/register", async (req, res) => {
   console.log("Solicitud de registro recibida. Datos:", req.body);
@@ -966,12 +1026,13 @@ app.patch("/api/profile/description", authenticateToken, async (req, res) => {
 
 // --- RUTA: SUBIR MÚLTIPLES IMÁGENES AL PORTAFOLIO ---
 app.post(
-  "/api/upload-portfolio-images",
+  // CAMBIA ESTA LÍNEA:
+  "/api/upload-portafolio-images", // <--- ¡Cambiado a 'portafolio' con 'a'!
   authenticateToken,
-  upload.array("portfolioImages", 10),
+  upload.array("portfolioImages", 10), // 'portfolioImages' aquí es el nombre del campo en FormData, no la URL
   async (req, res) => {
     console.log(
-      "Solicitud POST /api/upload-portfolio-images recibida para usuario:",
+      "Solicitud POST /api/upload-portafolio-images recibida para usuario:",
       req.user.id_usuario
     );
     const userId = req.user.id_usuario;
@@ -1019,8 +1080,10 @@ app.post(
       }
 
       // 2. Insertar cada imagen en la tabla 'imagen' y asociarla al proyecto
+      // Aquí asumo que la tabla 'imagen' es donde se guardan las URLs de las imágenes
+      // de los proyectos (incluido el portafolio).
       for (const file of req.files) {
-        const imageUrl = `/uploads/${file.filename}`;
+        const imageUrl = `/uploads/${file.filename}`; // O /uploads/portafolio/${file.filename} si configuras un storage específico
         const [imageResult] = await connection.query(
           "INSERT INTO imagen (id_proyecto, url_imagen, descripcion_imagen) VALUES (?, ?, ?)",
           [projectId, imageUrl, "Imagen de portafolio"] // Puedes añadir una descripción por defecto
@@ -1055,7 +1118,6 @@ app.post(
     }
   }
 );
-
 // --- RUTA: ELIMINAR IMAGEN DEL PORTAFOLIO ---
 app.delete(
   "/api/delete-portfolio-image/:id_imagen",
@@ -1825,138 +1887,143 @@ app.get("/api/profiles", authenticateToken, async (req, res) => {
   }
 });
 
-// --- PARA REACCIONES ACUMULADAS DE LOS LIKES EN FORO
-
-// Asegúrate de que esta es la ruta app.post('/api/replies/:replyId/like')
+// ESTA RUTA YA LA DEBERÍAS TENER. ASEGÚRATE DE QUE DEVUELVE newLikesCount y likedByCurrentUser
 app.post("/api/replies/:replyId/like", authenticateToken, async (req, res) => {
-  const { replyId } = req.params;
-  const userId = req.user.id_usuario; // ID del usuario que da el like
+    const { replyId } = req.params;
+    const userId = req.user?.id_usuario; // Obtener ID del usuario autenticado
 
-  let connection;
-  try {
-    connection = await pool.getConnection();
-    await connection.beginTransaction();
-
-    // 1. Obtener información de la respuesta y su autor
-    const [replyInfo] = await connection.query(
-      "SELECT id_usuario FROM foro_mensaje WHERE id_mensaje = ?",
-      [replyId]
-    );
-
-    if (replyInfo.length === 0) {
-      console.warn(`Error 404: Respuesta con ID ${replyId} no encontrada.`);
-      await connection.rollback();
-      return res.status(404).json({ message: "Respuesta no encontrada." });
+    if (!userId) {
+        return res.status(401).json({ message: "No autenticado." });
     }
 
-    const replyAuthorId = replyInfo[0].id_usuario; // ID del autor de la respuesta
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction(); // Iniciar transacción
 
-    // Evitar que un usuario se dé "me gusta" a sí mismo
-    if (userId === replyAuthorId) {
-      console.warn(
-        `Error 403: Usuario ${userId} intentó dar like a su propia respuesta ${replyId}.`
-      );
-      await connection.rollback();
-      return res
-        .status(403)
-        .json({ message: 'No puedes dar "me gusta" a tu propia respuesta.' });
+        // 1. Verificar si el usuario ya ha reaccionado a este mensaje
+        const [existingReaction] = await connection.query(
+            `SELECT id_reaccion FROM foro_reaccion WHERE id_mensaje = ? AND id_usuario = ?`,
+            [replyId, userId]
+        );
+
+        let message = '';
+        let likedByCurrentUser = false;
+
+        if (existingReaction.length > 0) {
+            // Si ya existe una reacción (like), eliminarla (quitar "me gusta")
+            await connection.query(
+                `DELETE FROM foro_reaccion WHERE id_reaccion = ?`,
+                [existingReaction[0].id_reaccion]
+            );
+            message = 'Me gusta quitado.';
+            likedByCurrentUser = false;
+
+            // Opcional: Si la reacción acumulada del autor se ve afectada al quitar likes, actualízala aquí.
+            // Primero, obtener el ID del autor de la respuesta
+            const [replyAuthor] = await connection.query(
+                `SELECT id_usuario FROM foro_mensaje WHERE id_mensaje = ?`,
+                [replyId]
+            );
+            if (replyAuthor.length > 0) {
+                const authorId = replyAuthor[0].id_usuario;
+                // Disminuir la reputación acumulada del autor
+                await connection.query(
+                    `UPDATE usuarios SET reaccion_acumulada = reaccion_acumulada - 1 WHERE id_usuario = ?`,
+                    [authorId]
+                );
+            }
+
+        } else {
+            // Si no existe reacción, añadir una nueva reacción (dar "me gusta")
+            await connection.query(
+                `INSERT INTO foro_reaccion (id_mensaje, id_usuario, tipo_reaccion, fecha_reaccion) VALUES (?, ?, ?, NOW())`,
+                [replyId, userId, 'like'] // Asumo 'like' como tipo de reacción
+            );
+            message = 'Me gusta dado.';
+            likedByCurrentUser = true;
+
+            // Opcional: Si la reacción acumulada del autor se ve afectada al dar likes, actualízala aquí.
+            // Primero, obtener el ID del autor de la respuesta
+            const [replyAuthor] = await connection.query(
+                `SELECT id_usuario FROM foro_mensaje WHERE id_mensaje = ?`,
+                [replyId]
+            );
+            if (replyAuthor.length > 0) {
+                const authorId = replyAuthor[0].id_usuario;
+                // Incrementar la reputación acumulada del autor
+                await connection.query(
+                    `UPDATE usuarios SET reaccion_acumulada = reaccion_acumulada + 1 WHERE id_usuario = ?`,
+                    [authorId]
+                );
+            }
+        }
+
+        // 2. Obtener el nuevo conteo total de likes para este mensaje
+        const [newLikesCountResult] = await connection.query(
+            `SELECT COUNT(*) AS count FROM foro_reaccion WHERE id_mensaje = ?`,
+            [replyId]
+        );
+        const newLikesCount = newLikesCountResult[0].count;
+
+        await connection.commit(); // Confirmar la transacción
+
+        res.status(200).json({
+            message,
+            newLikesCount,
+            likedByCurrentUser
+            // Opcional: Puedes enviar la nueva reaccion_acumulada_autor si la actualizaste en esta ruta
+            // newAuthorReputation: updatedAuthorReputationValue
+        });
+
+    } catch (error) {
+        if (connection) await connection.rollback(); // Revertir transacción en caso de error
+        console.error("Error al procesar like/dislike:", error);
+        res.status(500).json({ message: "Error al procesar la reacción." });
+    } finally {
+        if (connection) connection.release();
     }
-
-    // 2. Verificar si el usuario ya le dio "me gusta" a esta respuesta
-    const [existingLike] = await connection.query(
-      "SELECT * FROM foro_reaccion WHERE id_usuario = ? AND id_mensaje = ?",
-      [userId, replyId]
-    );
-
-    let newLikesCount;
-    let likedByCurrentUser;
-
-    if (existingLike.length > 0) {
-      // El usuario ya le había dado "me gusta", ahora lo quita (dislike)
-      console.log(`Usuario ${userId} quitando like a respuesta ${replyId}.`);
-      await connection.query(
-        "DELETE FROM foro_reaccion WHERE id_usuario = ? AND id_mensaje = ?",
-        [userId, replyId]
-      );
-
-      // AGREGAR ESTO: Decrementar reaccion_acumulada del autor de la respuesta
-      await connection.query(
-        "UPDATE usuarios SET reaccion_acumulada = GREATEST(0, reaccion_acumulada - 1) WHERE id_usuario = ?",
-        [replyAuthorId]
-      );
-      // Consulta para depuración
-      const [updatedAuthor] = await connection.query(
-        "SELECT reaccion_acumulada FROM usuarios WHERE id_usuario = ?",
-        [replyAuthorId]
-      );
-      console.log(
-        `Backend: Reacción acumulada del autor ${replyAuthorId} decrementada. Ahora es: ${updatedAuthor[0].reaccion_acumulada}`
-      );
-
-      likedByCurrentUser = false;
-    } else {
-      // El usuario no le había dado "me gusta", ahora lo añade (like)
-      console.log(`Usuario ${userId} dando like a respuesta ${replyId}.`);
-      await connection.query(
-        "INSERT INTO foro_reaccion (id_usuario, id_mensaje, tipo_reaccion, fecha_reaccion) VALUES (?, ?, ?, NOW())",
-        [userId, replyId, "like"] // Asume 'like' como tipo de reacción
-      );
-
-      // AGREGAR ESTO: Incrementar reaccion_acumulada del autor de la respuesta
-      await connection.query(
-        "UPDATE usuarios SET reaccion_acumulada = reaccion_acumulada + 1 WHERE id_usuario = ?",
-        [replyAuthorId]
-      );
-      // Consulta para depuración
-      const [updatedAuthor] = await connection.query(
-        "SELECT reaccion_acumulada FROM usuarios WHERE id_usuario = ?",
-        [replyAuthorId]
-      );
-      console.log(
-        `Backend: Reacción acumulada del autor ${replyAuthorId} incrementada. Ahora es: ${updatedAuthor[0].reaccion_acumulada}`
-      );
-
-      likedByCurrentUser = true;
-    }
-
-    // 3. Obtener el nuevo conteo total de "me gusta" para esta respuesta
-    const [likesCountResult] = await connection.query(
-      "SELECT COUNT(*) AS totalLikes FROM foro_reaccion WHERE id_mensaje = ?",
-      [replyId]
-    );
-    newLikesCount = likesCountResult[0].totalLikes;
-
-    await connection.commit();
-    console.log(
-      `Transacción de like/dislike completada para respuesta ${replyId}. Nuevo conteo: ${newLikesCount}`
-    );
-    res.status(200).json({
-      newLikesCount,
-      likedByCurrentUser,
-      message: "Reacción procesada con éxito.",
-    });
-  } catch (error) {
-    if (connection) {
-      await connection.rollback();
-    }
-    console.error('Error al procesar el "me gusta" en la respuesta:', error);
-    res.status(500).json({
-      message: "Error interno del servidor al procesar la reacción.",
-      error: error.message,
-    });
-  } finally {
-    if (connection) {
-      connection.release();
-    }
-  }
 });
+
+
+// 4. Ruta POST para añadir una nueva respuesta a un tema
+// (Asumo que esta es la ruta a la que tu frontend llama para `submitReply`)
+app.post("/api/forum/threads/:threadId/replies", authenticateToken, async (req, res) => {
+    const { threadId } = req.params;
+    const { content } = req.body;
+    const userId = req.user?.id_usuario; // Asegúrate de que el ID de usuario viene del token
+
+    if (!userId) {
+        return res.status(401).json({ message: "No autorizado. Inicia sesión." });
+    }
+    if (!content || content.trim() === '') {
+        return res.status(400).json({ message: "El contenido de la respuesta no puede estar vacío." });
+    }
+
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        const [result] = await connection.query(
+            `INSERT INTO foro_mensaje (id_tema, id_usuario, contenido_mensaje, fecha_publicacion)
+             VALUES (?, ?, ?, NOW())`,
+            [threadId, userId, content]
+        );
+        res.status(201).json({ message: "Respuesta publicada con éxito", replyId: result.insertId });
+    } catch (error) {
+        console.error("Error al publicar respuesta:", error);
+        res.status(500).json({ message: "Error al publicar la respuesta." });
+    } finally {
+        if (connection) connection.release();
+    }
+});
+
 
 // --- RUTAS DEL FORO ---
 
 // 1. Ruta para obtener TODOS los temas del foro (visibles para todos)
 app.get("/api/forum/threads", async (req, res) => {
-  try {
-    const [threads] = await pool.query(`
+    try {
+        const [threads] = await pool.query(`
             SELECT
                 f.id_foro AS id,
                 f.titulo AS title,
@@ -1971,86 +2038,68 @@ app.get("/api/forum/threads", async (req, res) => {
             ORDER BY
                 f.fecha_creacion DESC
         `);
-
-    // No necesitas 'formattedThreads' separado si los nombres de columna ya son buenos.
-    // Asegúrate de que los nombres de columna en la consulta SQL coincidan con lo que esperas en el frontend.
-    // replies_count ya es lo que el frontend puede esperar como 'replies'.
-
-    res.status(200).json(threads);
-  } catch (error) {
-    console.error("Error al obtener los temas del foro:", error);
-    res.status(500).json({
-      message: "Error interno del servidor al obtener temas del foro.",
-      error: error.message,
-    });
-  }
+        res.status(200).json(threads);
+    } catch (error) {
+        console.error("Error al obtener los temas del foro:", error);
+        res.status(500).json({
+            message: "Error interno del servidor al obtener temas del foro.",
+            error: error.message,
+        });
+    }
 });
 
 // 2. Ruta para CREAR un nuevo tema del foro (requiere autenticación)
 app.post("/api/forum/threads", authenticateToken, async (req, res) => {
-  if (!req.user) {
-    // Asegúrate de que el usuario esté autenticado
-    return res.status(401).json({
-      message: "No autenticado. Debes iniciar sesión para crear un tema.",
-    });
-  }
-  console.log(
-    "Solicitud POST /api/forum/threads recibida para usuario:",
-    req.user.id_usuario
-  );
-  const userId = req.user.id_usuario;
-  const { title, content } = req.body;
+    if (!req.user) {
+        return res.status(401).json({ message: "No autenticado. Debes iniciar sesión para crear un tema." });
+    }
+    console.log("Solicitud POST /api/forum/threads recibida para usuario:", req.user.id_usuario);
+    const userId = req.user.id_usuario;
+    const { title, content } = req.body;
 
-  if (!title || !content) {
-    return res
-      .status(400)
-      .json({ message: "El título y el contenido del tema son obligatorios." });
-  }
+    if (!title || !content) {
+        return res.status(400).json({ message: "El título y el contenido del tema son obligatorios." });
+    }
 
-  try {
-    const [result] = await pool.query(
-      "INSERT INTO foro (id_usuario, titulo, descripcion, fecha_creacion) VALUES (?, ?, ?, NOW())",
-      [userId, title, content]
-    );
-
-    const newThreadId = result.insertId;
-    console.log(
-      `Tema de foro creado exitosamente por usuario ${userId}. ID: ${newThreadId}`
-    );
-    res
-      .status(201)
-      .json({ message: "Tema creado exitosamente", threadId: newThreadId });
-  } catch (error) {
-    console.error("Error al crear el tema del foro:", error);
-    res.status(500).json({
-      message: "Error interno del servidor al crear el tema.",
-      error: error.message,
-    });
-  }
+    try {
+        const [result] = await pool.query(
+            "INSERT INTO foro (id_usuario, titulo, descripcion, fecha_creacion) VALUES (?, ?, ?, NOW())",
+            [userId, title, content]
+        );
+        const newThreadId = result.insertId;
+        console.log(`Tema de foro creado exitosamente por usuario ${userId}. ID: ${newThreadId}`);
+        res.status(201).json({ message: "Tema creado exitosamente", threadId: newThreadId });
+    } catch (error) {
+        console.error("Error al crear el tema del foro:", error);
+        res.status(500).json({
+            message: "Error interno del servidor al crear el tema.",
+            error: error.message,
+        });
+    }
 });
 
 // 3. Ruta para obtener un TEMA ESPECÍFICO del foro por ID y sus respuestas con información de likes
 app.get("/api/forum/threads/:id", authenticateToken, async (req, res) => {
-  const threadId = req.params.id;
-  // req.user ya está poblado por authenticateToken, puede ser null si no hay token o es inválido.
-  const userId = req.user ? req.user.id_usuario : null;
+    const threadId = req.params.id;
+    const userId = req.user ? req.user.id_usuario : null; // userId puede ser null si no está autenticado
 
-  console.log(
-    `Solicitud GET /api/forum/threads/${threadId} recibida. Usuario autenticado: ${
-      userId || "No"
-    }`
-  );
+    console.log(
+        `Solicitud GET /api/forum/threads/${threadId} recibida. Usuario autenticado: ${
+            userId || "No"
+        }`
+    );
 
-  try {
-    // Obtener el tema principal
-    const [threads] = await pool.query(
-      `
+    try {
+        // Obtener el tema principal
+        const [threads] = await pool.query(
+            `
             SELECT
                 f.id_foro AS id,
                 f.titulo AS title,
                 f.descripcion AS content,
                 u.nombre_usuario AS author,
                 f.fecha_creacion AS date,
+                u.reaccion_acumulada AS author_reputation,
                 u.foto_perfil_url AS author_profile_pic
             FROM
                 foro f
@@ -2058,33 +2107,34 @@ app.get("/api/forum/threads/:id", authenticateToken, async (req, res) => {
                 usuarios u ON f.id_usuario = u.id_usuario
             WHERE
                 f.id_foro = ?
-        `,
-      [threadId]
-    );
+            `,
+            [threadId]
+        );
 
-    if (threads.length === 0) {
-      console.log(`Tema con ID ${threadId} no encontrado.`);
-      return res.status(404).json({ message: "Tema del foro no encontrado." });
-    }
+        if (threads.length === 0) {
+            console.log(`Tema con ID ${threadId} no encontrado.`);
+            return res.status(404).json({ message: "Tema del foro no encontrado." });
+        }
 
-    const thread = threads[0];
-    // Formatear la URL de la foto de perfil del autor del tema
-    if (thread.author_profile_pic) {
-      thread.author_profile_pic = `${req.protocol}://${req.get("host")}${
-        thread.author_profile_pic
-      }`;
-    } else {
-      thread.author_profile_pic = ""; // Si no hay foto, enviar cadena vacía
-    }
+        const thread = threads[0];
+        // Formatear la URL de la foto de perfil del autor del tema
+        if (thread.author_profile_pic) {
+            thread.author_profile_pic = `${req.protocol}://${req.get("host")}${
+                thread.author_profile_pic
+            }`;
+        } else {
+            thread.author_profile_pic = ""; // Si no hay foto, enviar cadena vacía
+        }
 
-    // Obtener las respuestas para ese tema
-    const [replies] = await pool.query(
-      `
+        // Obtener las respuestas para ese tema
+        const [replies] = await pool.query(
+            `
             SELECT
                 fm.id_mensaje AS id,
                 fm.contenido AS content,
                 u.nombre_usuario AS author,
                 fm.fecha_publicacion AS date,
+                u.reaccion_acumulada AS reaccion_acumulada_autor,
                 u.foto_perfil_url AS author_profile_pic
             FROM
                 foro_mensaje fm
@@ -2094,134 +2144,224 @@ app.get("/api/forum/threads/:id", authenticateToken, async (req, res) => {
                 fm.id_foro = ?
             ORDER BY
                 fm.fecha_publicacion ASC
-        `,
-      [threadId]
-    );
-
-    // Para cada respuesta, obtener el conteo de likes y si el usuario actual le dio like
-    for (const reply of replies) {
-      // Formatear la URL de la foto de perfil del autor de la respuesta
-      if (reply.author_profile_pic) {
-        reply.author_profile_pic = `${req.protocol}://${req.get("host")}${
-          reply.author_profile_pic
-        }`;
-      } else {
-        reply.author_profile_pic = "";
-      }
-
-      // Contar likes
-      const [likesResult] = await pool.query(
-        `SELECT COUNT(*) AS likesCount
-                 FROM foro_reaccion
-                 WHERE id_mensaje = ? AND tipo_reaccion = 'like'`,
-        [reply.id]
-      );
-      reply.likesCount = likesResult[0].likesCount;
-
-      // Verificar si el usuario actual le dio like
-      if (userId) {
-        // Solo si hay un usuario autenticado
-        const [userLikeResult] = await pool.query(
-          `SELECT COUNT(*) AS isLiked
-                     FROM foro_reaccion
-                     WHERE id_mensaje = ? AND id_usuario = ? AND tipo_reaccion = 'like'`,
-          [reply.id, userId]
+            `,
+            [threadId]
         );
-        reply.likedByCurrentUser = userLikeResult[0].isLiked > 0;
-      } else {
-        reply.likedByCurrentUser = false; // No autenticado, entonces no ha dado like
-      }
+
+        // Para cada respuesta, obtener el conteo de likes y si el usuario actual le dio like
+        for (const reply of replies) {
+            // Formatear la URL de la foto de perfil del autor de la respuesta
+            if (reply.author_profile_pic) {
+                reply.author_profile_pic = `${req.protocol}://${req.get("host")}${
+                    reply.author_profile_pic
+                }`;
+            } else {
+                reply.author_profile_pic = "";
+            }
+
+            // Contar likes
+            const [likesResult] = await pool.query(
+                `SELECT COUNT(*) AS likesCount
+                FROM foro_reaccion
+                WHERE id_mensaje = ? AND tipo_reaccion = 'like'`,
+                [reply.id]
+            );
+            reply.likesCount = likesResult[0].likesCount;
+
+            // Verificar si el usuario actual le dio like
+            if (userId) {
+                const [userLikeResult] = await pool.query(
+                    `SELECT COUNT(*) AS isLiked
+                    FROM foro_reaccion
+                    WHERE id_mensaje = ? AND id_usuario = ? AND tipo_reaccion = 'like'`,
+                    [reply.id, userId]
+                );
+                reply.likedByCurrentUser = userLikeResult[0].isLiked > 0;
+            } else {
+                reply.likedByCurrentUser = false;
+            }
+        }
+
+        // Añadir las respuestas al objeto del tema
+        thread.replies = replies;
+
+        console.log(`Detalles del tema ${threadId} y sus respuestas obtenidos.`);
+        res.status(200).json(thread);
+    } catch (error) {
+        console.error(
+            `Error al obtener el tema ${threadId} o sus respuestas:`,
+            error
+        );
+        res.status(500).json({
+            message: "Error interno del servidor al obtener el tema del foro.",
+            error: error.message,
+        });
     }
-
-    // Añadir las respuestas al objeto del tema
-    thread.replies = replies;
-
-    console.log(`Detalles del tema ${threadId} y sus respuestas obtenidos.`);
-    res.status(200).json(thread);
-  } catch (error) {
-    console.error(
-      `Error al obtener el tema ${threadId} o sus respuestas:`,
-      error
-    );
-    res.status(500).json({
-      message: "Error interno del servidor al obtener el tema del foro.",
-      error: error.message,
-    });
-  }
 });
 
 // 4. Ruta para añadir una RESPUESTA a un tema (requiere autenticación)
 app.post(
-  "/api/forum/threads/:id/replies",
-  authenticateToken,
-  async (req, res) => {
-    if (!req.user) {
-      return res.status(401).json({
-        message: "No autenticado. Debes iniciar sesión para responder.",
-      });
+    "/api/forum/threads/:id/replies",
+    authenticateToken,
+    async (req, res) => {
+        if (!req.user) {
+            return res.status(401).json({ message: "No autenticado. Debes iniciar sesión para responder." });
+        }
+        const threadId = req.params.id;
+        const userId = req.user.id_usuario;
+        const { content } = req.body;
+
+        if (!content) {
+            return res.status(400).json({ message: "El contenido de la respuesta es obligatorio." });
+        }
+
+        try {
+            const [threads] = await pool.query(
+                "SELECT id_foro FROM foro WHERE id_foro = ?",
+                [threadId]
+            );
+            if (threads.length === 0) {
+                return res.status(404).json({ message: "El tema al que intentas responder no existe." });
+            }
+
+            const [result] = await pool.query(
+                "INSERT INTO foro_mensaje (id_foro, id_usuario, contenido, fecha_publicacion) VALUES (?, ?, ?, NOW())",
+                [threadId, userId, content]
+            );
+
+            const newReplyId = result.insertId;
+            console.log(`Respuesta añadida al tema ${threadId} por usuario ${userId}. ID: ${newReplyId}`);
+            res.status(201).json({
+                message: "Respuesta publicada exitosamente",
+                replyId: newReplyId,
+            });
+        } catch (error) {
+            console.error("Error al añadir respuesta al tema:", error);
+            res.status(500).json({
+                message: "Error interno del servidor al añadir respuesta.",
+                error: error.message,
+            });
+        }
     }
-    const threadId = req.params.id;
-    const userId = req.user.id_usuario;
-    const { content } = req.body;
-
-    if (!content) {
-      return res
-        .status(400)
-        .json({ message: "El contenido de la respuesta es obligatorio." });
-    }
-
-    try {
-      // Verificar si el tema existe
-      const [threads] = await pool.query(
-        "SELECT id_foro FROM foro WHERE id_foro = ?",
-        [threadId]
-      );
-      if (threads.length === 0) {
-        return res
-          .status(404)
-          .json({ message: "El tema al que intentas responder no existe." });
-      }
-
-      const [result] = await pool.query(
-        "INSERT INTO foro_mensaje (id_foro, id_usuario, contenido, fecha_publicacion) VALUES (?, ?, ?, NOW())",
-        [threadId, userId, content]
-      );
-
-      const newReplyId = result.insertId;
-      console.log(
-        `Respuesta añadida al tema ${threadId} por usuario ${userId}. ID: ${newReplyId}`
-      );
-      res.status(201).json({
-        message: "Respuesta publicada exitosamente",
-        replyId: newReplyId,
-      });
-    } catch (error) {
-      console.error("Error al añadir respuesta al tema:", error);
-      res.status(500).json({
-        message: "Error interno del servidor al añadir respuesta.",
-        error: error.message,
-      });
-    }
-  }
 );
 
-// 1. Ruta para obtener TODOS los perfiles de usuarios
+// 5. RUTA: Manejar el "me gusta" para una respuesta específica (toggle like/unlike)
+app.post("/api/replies/:replyId/like", authenticateToken, async (req, res) => {
+    if (!req.user) {
+        return res.status(401).json({ message: 'No autenticado. Debes iniciar sesión para dar "me gusta".' });
+    }
+    const replyId = req.params.replyId;
+    const userId = req.user.id_usuario;
+
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        const [messageDetails] = await connection.query(
+            `SELECT id_mensaje, id_usuario FROM foro_mensaje WHERE id_mensaje = ?`,
+            [replyId]
+        );
+        if (messageDetails.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ message: "Mensaje (respuesta) no encontrado." });
+        }
+
+        const replyAuthorId = messageDetails[0].id_usuario;
+
+        if (userId === replyAuthorId) {
+            await connection.rollback();
+            return res.status(403).json({ message: "No puedes reaccionar a tu propia respuesta." });
+        }
+
+        const [existingReaction] = await connection.query(
+            `SELECT id_reaccion FROM foro_reaccion WHERE id_mensaje = ? AND id_usuario = ? AND tipo_reaccion = 'like'`,
+            [replyId, userId]
+        );
+
+        let action = "";
+        let reputationChange = 0; // Para el cambio de reputación
+
+        if (existingReaction.length > 0) {
+            // Quitar Like
+            await connection.query(
+                `DELETE FROM foro_reaccion WHERE id_reaccion = ?`,
+                [existingReaction[0].id_reaccion]
+            );
+            action = "unliked";
+            reputationChange = -1; // Decrementar reputación
+            console.log(`Usuario ${userId} ha quitado el like del mensaje ${replyId}.`);
+        } else {
+            // Dar Like
+            await connection.query(
+                `INSERT INTO foro_reaccion (id_mensaje, id_usuario, tipo_reaccion, fecha_reaccion) VALUES (?, ?, ?, NOW())`,
+                [replyId, userId, "like"]
+            );
+            action = "liked";
+            reputationChange = 1; // Incrementar reputación
+            console.log(`Usuario ${userId} ha dado like al mensaje ${replyId}.`);
+        }
+
+        // --- INICIO DE LA MODIFICACIÓN PARA LA REPUTACIÓN ---
+        // Actualizar la reputación del autor del mensaje
+        await connection.query(
+            `UPDATE usuarios SET reaccion_acumulada = reaccion_acumulada + ? WHERE id_usuario = ?`,
+            [reputationChange, replyAuthorId]
+        );
+
+        // Obtener la nueva reputación del autor del mensaje
+        const [newAuthorReputationResult] = await connection.query(
+            `SELECT reaccion_acumulada FROM usuarios WHERE id_usuario = ?`,
+            [replyAuthorId]
+        );
+        const reaccion_acumulada_autor = newAuthorReputationResult[0].reaccion_acumulada;
+        // --- FIN DE LA MODIFICACIÓN PARA LA REPUTACIÓN ---
+
+
+        const [newLikesCountResult] = await connection.query(
+            `SELECT COUNT(*) AS newLikesCount FROM foro_reaccion WHERE id_mensaje = ? AND tipo_reaccion = 'like'`,
+            [replyId]
+        );
+        const newLikesCount = newLikesCountResult[0].newLikesCount;
+
+        await connection.commit();
+
+        res.json({
+            success: true,
+            message: `Mensaje ${action} exitosamente.`,
+            newLikesCount: newLikesCount,
+            likedByCurrentUser: action === "liked",
+            reaccion_acumulada_autor: reaccion_acumulada_autor // Devolver la reputación actualizada
+        });
+    } catch (err) {
+        if (connection) {
+            await connection.rollback();
+        }
+        console.error("Error al procesar el like:", err);
+        res.status(500).json({ message: "Error interno del servidor al procesar la reacción." });
+    } finally {
+        if (connection) {
+            connection.release();
+        }
+    }
+});
+
+// 6. Ruta para obtener TODOS los perfiles de usuarios (puede ser útil para mostrar perfiles de autores)
 app.get("/api/profiles", async (req, res) => {
-  try {
-    const [profiles] = await pool.query(`
+    try {
+        const [profiles] = await pool.query(`
             SELECT
                 u.id_usuario,
                 u.nombre_usuario,
                 u.tipo_perfil,
                 u.descripcion_perfil,
                 u.foto_perfil_url,
-                u.reputacion,
-                -- NUEVO: Subconsulta para contar el total de likes recibidos por el usuario en el foro
+                u.reaccion_acumulada, -- Usamos reaccion_acumulada directamente
                 (
-                    SELECT SUM(CASE WHEN fr.tipo_reaccion = 'like' THEN 1 ELSE 0 END)
+                    SELECT COUNT(*)
                     FROM foro_mensaje fm
                     LEFT JOIN foro_reaccion fr ON fm.id_mensaje = fr.id_mensaje
-                    WHERE fm.id_usuario = u.id_usuario -- Filtra por los mensajes del usuario
+                    WHERE fm.id_usuario = u.id_usuario AND fr.tipo_reaccion = 'like'
                 ) AS likes_acumulados_foro
             FROM
                 usuarios u
@@ -2229,132 +2369,23 @@ app.get("/api/profiles", async (req, res) => {
                 u.nombre_usuario ASC
         `);
 
-    // Formatear las URLs de las fotos de perfil
-    const formattedProfiles = profiles.map((profile) => {
-      const fotoUrl = profile.foto_perfil_url
-        ? `${req.protocol}://${req.get("host")}${profile.foto_perfil_url}`
-        : "";
-
-      // Asegúrate de que likes_acumulados_foro sea un número, incluso si es NULL del SQL (significaría 0)
-      const likesAcumulados = profile.likes_acumulados_foro || 0;
-
-      return {
-        ...profile,
-        foto_perfil_url: fotoUrl,
-        likes_acumulados_foro: likesAcumulados,
-      };
-    });
-
-    res.status(200).json(formattedProfiles);
-  } catch (error) {
-    console.error("Error al obtener los perfiles:", error);
-    res.status(500).json({
-      message: "Error interno del servidor al obtener perfiles.",
-      error: error.message,
-    });
-  }
-});
-
-// 5. NUEVA RUTA: Manejar el "me gusta" para una respuesta específica (toggle like/unlike)
-app.post("/api/replies/:replyId/like", authenticateToken, async (req, res) => {
-  if (!req.user) {
-    return res.status(401).json({
-      message: 'No autenticado. Debes iniciar sesión para dar "me gusta".',
-    });
-  }
-  const replyId = req.params.replyId;
-  const userId = req.user.id_usuario;
-
-  let connection;
-  try {
-    connection = await pool.getConnection();
-    await connection.beginTransaction();
-
-    // 1. Verificar si el mensaje (respuesta) existe y obtener su autor
-    const [messageDetails] = await connection.query(
-      `SELECT id_mensaje, id_usuario FROM foro_mensaje WHERE id_mensaje = ?`,
-      [replyId]
-    );
-    if (messageDetails.length === 0) {
-      await connection.rollback();
-      return res
-        .status(404)
-        .json({ message: "Mensaje (respuesta) no encontrado." });
+        const formattedProfiles = profiles.map((profile) => {
+            const fotoUrl = profile.foto_perfil_url
+                ? `${req.protocol}://${req.get("host")}${profile.foto_perfil_url}`
+                : "";
+            const likesAcumulados = profile.likes_acumulados_foro || 0;
+            return {
+                ...profile,
+                foto_perfil_url: fotoUrl,
+                likes_acumulados_foro: likesAcumulados,
+                // reaccion_acumulada ya está en el objeto tal cual de la DB
+            };
+        });
+        res.status(200).json(formattedProfiles);
+    } catch (error) {
+        console.error("Error al obtener los perfiles:", error);
+        res.status(500).json({ message: "Error interno del servidor al obtener perfiles.", error: error.message });
     }
-
-    const replyAuthorId = messageDetails[0].id_usuario;
-
-    // **AQUÍ LA MODIFICACIÓN:**
-    // Si el ID del usuario autenticado es el mismo que el ID del autor de la respuesta,
-    // no permitir el "me gusta" y enviar el mensaje específico.
-    if (userId === replyAuthorId) {
-      await connection.rollback(); // Revertir la transacción si se abrió
-      return res
-        .status(403)
-        .json({ message: "No puedes reaccionar a tu propia respuesta." }); // ¡Mensaje modificado aquí!
-    }
-    // **FIN DE LA MODIFICACIÓN**
-
-    // 2. Verificar si el usuario ya reaccionó con 'like' a este mensaje
-    const [existingReaction] = await connection.query(
-      `SELECT id_reaccion FROM foro_reaccion
-             WHERE id_mensaje = ? AND id_usuario = ? AND tipo_reaccion = 'like'`,
-      [replyId, userId]
-    );
-
-    let action = ""; // Para saber si se dio like o se quitó
-    if (existingReaction.length > 0) {
-      // Si ya existe, eliminar la reacción (quitar like)
-      await connection.query(
-        `DELETE FROM foro_reaccion
-                 WHERE id_reaccion = ?`,
-        [existingReaction[0].id_reaccion]
-      );
-      action = "unliked";
-      console.log(
-        `Usuario ${userId} ha quitado el like del mensaje ${replyId}.`
-      );
-    } else {
-      // Si no existe, insertar la reacción (dar like)
-      await connection.query(
-        `INSERT INTO foro_reaccion (id_mensaje, id_usuario, tipo_reaccion, fecha_reaccion)
-                 VALUES (?, ?, ?, NOW())`,
-        [replyId, userId, "like"]
-      );
-      action = "liked";
-      console.log(`Usuario ${userId} ha dado like al mensaje ${replyId}.`);
-    }
-
-    // 3. Obtener el nuevo conteo de likes para el mensaje
-    const [newLikesCountResult] = await connection.query(
-      `SELECT COUNT(*) AS newLikesCount
-             FROM foro_reaccion
-             WHERE id_mensaje = ? AND tipo_reaccion = 'like'`,
-      [replyId]
-    );
-    const newLikesCount = newLikesCountResult[0].newLikesCount;
-
-    await connection.commit();
-
-    res.json({
-      success: true,
-      message: `Mensaje ${action} exitosamente.`,
-      newLikesCount: newLikesCount,
-      likedByCurrentUser: action === "liked", // El usuario lo tiene 'like' si la acción fue 'liked'
-    });
-  } catch (err) {
-    if (connection) {
-      await connection.rollback();
-    }
-    console.error("Error al procesar el like:", err);
-    res
-      .status(500)
-      .json({ message: "Error interno del servidor al procesar la reacción." });
-  } finally {
-    if (connection) {
-      connection.release();
-    }
-  }
 });
 
 // Ruta de prueba
