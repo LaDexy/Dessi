@@ -12,7 +12,9 @@
         ref="descriptionInput"
       ></textarea>
       
+      <div class="CambioDescripcion">
       <IconoEditar v-if="!isEditing" @click="startEditing" class="edit-description-icon-position" />
+        </div>
 
       <div v-if="isEditing" class="edit-actions">
         <button @click="saveDescription">Guardar</button>
@@ -71,6 +73,15 @@ export default {
 </script>
 
 <style scoped> 
+
+.CambioDescripcion{
+
+  position: absolute;
+top: 54%;
+left: 53%;
+
+}
+
 .tipo-perfil-container {
   display: flex;
   flex-direction: column;
