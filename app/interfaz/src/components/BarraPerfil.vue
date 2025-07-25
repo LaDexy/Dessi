@@ -16,6 +16,7 @@ export default {
 
 /* Rectángulo de barra superior */
 .Barra {
+  position: relative;
   width: 100%; /* Ocupa el 100% del ancho disponible */
   height: 180px; /* Altura fija para la barra */
   background-color: hsl(300, 29%, 78%); /* Tu color rosado */

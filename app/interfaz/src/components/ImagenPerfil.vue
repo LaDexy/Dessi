@@ -35,8 +35,8 @@ export default {
 
 <style scoped>
 .Perfil {
-  position: fixed; /* Cambiado de 'absolute' a 'fixed' */
-  top: 100px;
+  position: relative; 
+  top: 20px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
@@ -45,23 +45,24 @@ export default {
 }
 
 .circulo {
-  position: relative; /* Mantenemos esto si quieres elementos dentro del círculo con position absolute */
-  width: 200px; /* Tamaño definitivo del círculo */
+  position: absolute;
+    width: 200px;
   height: 200px;
-  background-color: rgb(199, 127, 199); /* Color de fondo del círculo */
-  border-radius: 50%; /* Para un círculo perfecto */
-  overflow: hidden; /* Recorta la imagen dentro del círculo */
-  border: 5px solid white; /* Borde blanco para el círculo */
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2); /* Sombra suave */
-  display: flex; /* Para centrar la imagen dentro del círculo si es más pequeña */
+  background-color: rgb(199, 127, 199); 
+  border-radius: 50%; 
+  overflow: hidden; 
+  border: 5px solid white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  display: flex; 
   justify-content: center;
   align-items: center;
 }
 
 .circulo img {
+  position: absolute;
   width: 100%;
   height: 100%;
-  object-fit: cover; /* Asegura que la imagen cubra el círculo sin distorsionarse */
-  border-radius: 50%; /* ¡Importante! También redondea la imagen misma */
+  object-fit: cover; 
+  border-radius: 50%; 
 }
 </style>  

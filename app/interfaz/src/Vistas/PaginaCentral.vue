@@ -1,48 +1,42 @@
 <template>
-  <div class="main-wrapper">
+  <div>
     <ContenidoMenu :userRole="userProfileType" class="fixed-menu-button" />
 
     <BarraBusqueda @search="handleSearch" class="fixed-search-bar" />
 
-    <div class="fixed-profile-image-wrapper">
-      <ImagenPerfil
-        ref="imagenPerfilComponent"
-        :profileImageSrc="profileImageSrc"
-        @imageSelected="handleImageSelected"
-      />
+    <ImagenPerfil
+      ref="imagenPerfilComponent"
+      :profileImageSrc="profileImageSrc"
+      @imageSelected="handleImageSelected"
+    />
+
+    <IconoNotificaciones @click="goToNotificationsPage" />
+
+    <BarraPerfil :userName="userName" />
+
+    <div class="user-name-display-wrapper">
+      <h1 class="user-name-display">{{ userName }}</h1>
+      <p class="user-profile-type">{{ userProfileType }}</p>
     </div>
 
-    <div class="fixed-notifications-icon-wrapper">
-      <IconoNotificaciones @click="goToNotificationsPage" />
-    </div>
+    <OpcionPerfil />
 
-    <div class="content-area-scrollable">
-      <BarraPerfil :userName="userName" />
+    <BotonesFiltro
+      @filter="handleFilter"
+      class="buttons-filter-margin-bottom"
+    />
 
-      <div class="user-name-display-wrapper">
-        <h1 class="user-name-display">{{ userName }}</h1>
-        <p class="user-profile-type">{{ userProfileType }}</p>
-      </div>
+    <h2 class="TituloPerfiles">Perfiles de Usuarios</h2>
 
-      <OpcionPerfil class="component-margin-bottom" />
+    <TarjetasPerfiles
+      :profiles="filteredProfiles"
+      @send-request="openVentanaSolicitud"
+      @view-profile="handleViewProfile"
+    />
 
-      <BotonesFiltro
-        @filter="handleFilter"
-        class="buttons-filter-margin-bottom"
-      />
-
-      <h2 class="TituloPerfiles">Perfiles de Usuarios</h2>
-
-      <TarjetasPerfiles
-        :profiles="filteredProfiles"
-        @send-request="openVentanaSolicitud"
-        @view-profile="handleViewProfile"
-      />
-
-      <p v-if="filteredProfiles.length === 0" class="no-profiles-message">
-        No se encontraron perfiles que coincidan con su búsqueda o filtro.
-      </p>
-    </div>
+    <p v-if="filteredProfiles.length === 0" class="no-profiles-message">
+      No se encontraron perfiles que coincidan con su búsqueda o filtro.
+    </p>
 
     <div v-if="showMessageModal" class="message-modal-overlay">
       <div class="message-modal-content">
@@ -404,15 +398,6 @@ export default {
 
 <style scoped>
 /* Contenedor principal de la página, sin transformaciones que afecten a 'fixed' */
-.main-wrapper {
-  position: relative; /* Opcional: si necesitas un contexto para algunos absolutos, pero no para los fixed */
-  min-height: 100vh; /* Asegura que el main-wrapper tenga al menos la altura de la ventana */
-  display: flex; /* Usar flexbox para organizar el contenido */
-  flex-direction: column; /* Apilar los elementos verticalmente */
-  align-items: center; /* Centrar el contenido de la página horizontalmente */
-  /* NO DEBE TENER 'overflow: hidden', 'transform', 'filter', etc. */
-}
-
 /* Un nuevo contenedor para el contenido que SÍ se desplaza */
 .content-area-scrollable {
   width: 100%;
@@ -456,18 +441,18 @@ export default {
   justify-content: center;
   align-items: center;
 }
-.fixed-profile-image-wrapper > .imagen-perfil { /* Si ImagenPerfil es la raíz, apuntamos a ella */
+.fixed-profile-image-wrapper > .imagen-perfil {
+  /* Si ImagenPerfil es la raíz, apuntamos a ella */
   width: 100%;
   height: 100%;
 }
 /* Estilo para la imagen dentro de ImagenPerfil si no la gestiona ya */
 .fixed-profile-image-wrapper img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 50%;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
 }
-
 
 /* Contenedor para el icono de notificaciones */
 .fixed-notifications-icon-wrapper {
@@ -477,7 +462,6 @@ export default {
   z-index: 1035; /* Entre la imagen de perfil y la barra de búsqueda */
   /* Añade estilos si quieres un fondo o forma específica para el icono de notificación */
 }
-
 
 /* Aquí puedes mantener los estilos que ya tenías para el resto del contenido
    como TituloPerfiles, user-name-display-wrapper, etc.
