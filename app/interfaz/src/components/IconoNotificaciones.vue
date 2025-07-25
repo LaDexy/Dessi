@@ -154,7 +154,7 @@ export default {
 <style scoped>
 /* Estilos para el icono de notificaciones */
 .Notificaciones {
-  position: relative;
+  position: fixed;
   width: 50px; /* Tamaño del área del icono */
   height: 50px;
   display: flex;
@@ -167,6 +167,8 @@ export default {
   transition: transform 0.2s ease-in-out;
   border-radius: 50%; /* Hace que el contenedor sea redondo */
   background-color: #f7f7f7; /* Fondo para el círculo */
+  bottom: 0;
+  
 }
 
 .Notificaciones:hover {

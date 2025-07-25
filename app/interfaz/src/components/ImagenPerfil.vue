@@ -36,7 +36,6 @@ export default {
 <style scoped>
 .Perfil {
   position: relative; 
-  top: 20px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 10;
