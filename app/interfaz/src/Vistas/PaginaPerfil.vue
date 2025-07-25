@@ -1,19 +1,27 @@
 <template>
-  <div class="pagina-perfil-container">
-    <div class="profile-image-section">
+  <div>
+
+  
+
+    <ContenidoMenu :userRole="userProfileType" class="fixed-menu-button" />
+
+      
+    
       <ImagenPerfil
         ref="imagenPerfilComponent"
         :profileImageSrc="profileImageSrc"
         @imageSelected="handleImageSelected"
       />
+
+      <BarraPerfil />
       <IconoEditar @click="activateImageUpload" class="edit-icon-overlay" />
-    </div>
+    
 
     <div class="user-name-display-wrapper">
       <h1 class="user-name-display">{{ userName }}</h1>
     </div>
 
-    <BarraPerfil />
+    
 
     <TipoPerfil
       :profileType="userProfile"
@@ -26,7 +34,7 @@
       @MostrarRegistro="MostrarRegistro"
     />
 
-    <div class="portfolio-section-wrapper">
+
       <IconoCamara
         @imageSelected="handlePortfolioImageSelected"
         class="portfolio-camera-icon"
@@ -36,7 +44,7 @@
         @documentSelected="handlePortfolioDocumentSelected"
       />
       <PortafolioPerfil :projects="userProjects" :documents="userDocuments" />
-    </div>
+   
 
     <CrearDesafio
       v-if="CrearDesafioNuevo"
@@ -72,7 +80,8 @@ import PortafolioPerfil from "../components/PortafolioPerfil.vue";
 import BotonesDesafios from "../components/BotonesDesafios.vue";
 import IconoCamara from "@/components/IconoCamara.vue";
 import IconoPortafolio from "@/components/IconoPortafolio.vue";
-import ParticipantesDesafios from "@/components/ParticipantesDesafios.vue"; // Importado el nuevo nombre
+import ParticipantesDesafios from "@/components/ParticipantesDesafios.vue"; 
+import ContenidoMenu from "@/components/ContenidoMenu.vue";
 import axios from "axios";
 
 export default {
@@ -103,7 +112,8 @@ export default {
     BotonesDesafios,
     IconoCamara,
     IconoPortafolio,
-    ParticipantesDesafios, // Registrado con el nuevo nombre
+    ParticipantesDesafios, 
+    ContenidoMenu
   },
   mounted() {
     this.loadUserProfileData();
@@ -369,27 +379,53 @@ export default {
 </script>
 
 <style scoped>
-/* Scoped styles are generally better for components to prevent style bleeding */
-.pagina-perfil-container {
-    position: relative; /* Para posicionar los modales si son 'absolute' */
-    /* Asegúrate de que el contenedor principal de tu página tenga suficiente z-index
-       o que los modales tengan un z-index alto para aparecer encima. */
+
+/* Contenedor para el botón de menú */
+.fixed-menu-button {
+  position: fixed;
+  top: 20px; 
+  left: 20px; 
+  z-index: 1050; 
 }
 
-/* Estilos existentes para los elementos de PaginaPerfil */
 .user-name-display-wrapper {
-  position: absolute;
-  top: 180px; /* Ajusta según tu diseño */
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 2;
   text-align: center;
+  margin-top: 20px;
+  margin-bottom: 30px;
+  padding: 0 20px;
 }
 
 .user-name-display {
-  color: #333; /* O el color que uses para el nombre de usuario */
-  font-size: 2.5em; /* Ajusta el tamaño de fuente */
-  margin: 0;
+  font-family: "Times New Roman", serif;
+  font-size: 2.8em;
+  color: #333;
+  margin-bottom: 5px;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+
+
+@media (max-width: 768px) {
+  .user-name-display {
+    font-size: 2.2em;
+  }
+  
+  .user-name-display-wrapper {
+    margin-top: 15px;
+    margin-bottom: 25px;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-name-display {
+    font-size: 1.8em;
+  }
+ 
+  .user-name-display-wrapper {
+    margin-top: 10px;
+    margin-bottom: 20px;
+  }
 }
 
 </style>

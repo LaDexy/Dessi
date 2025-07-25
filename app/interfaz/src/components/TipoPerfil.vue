@@ -70,7 +70,7 @@ export default {
 };
 </script>
 
-<style scoped> /* ¡IMPORTANTE! Se agregó 'scoped' */
+<style scoped> 
 .tipo-perfil-container {
   display: flex;
   flex-direction: column;
@@ -82,22 +82,23 @@ export default {
 
 /* Selector corregido para el h2 y eliminación de posicionamiento absoluto */
 .tipo-perfil-container h2 {
-  color: #333;
+  color: #6a1b9a;
   font-size: 1.8em;
   margin-bottom: 10px;
   text-align: center;
-  /* Se eliminó position: absolute y top: 250px; */
+  align-items: center;
 }
 
 /* Selector corregido para el h3 y eliminación de posicionamiento absoluto */
 .Descripcion-editable-wrapper h3 {
   color: #555;
-  font-size: 1.1em;
+  font-size: 1.5em;
   text-align: center;
-  max-width: 100%; /* Ajustado para que ocupe el ancho completo del wrapper */
-  line-height: 1.5;
-  padding-right: 30px; /* Espacio para el icono de edición */
-  /* Se eliminó position: absolute; */
+  max-width: 100%; 
+  line-height: 1.1;
+  padding-right: 30px; 
+  align-items: center;
+ 
 }
 
 .description-textarea {
@@ -109,17 +110,20 @@ export default {
   font-size: 1em;
   resize: vertical;
   margin-bottom: 10px;
+  align-items: center;
 }
 
 .edit-description-icon-position {
   top: 0;
   right: 0;
+  align-items: center;
 }
 
 .edit-actions {
   display: flex;
   gap: 10px;
   margin-top: 10px;
+  align-items: center;
 }
 
 .edit-actions button {
@@ -132,12 +136,12 @@ export default {
 }
 
 .edit-actions button:first-child {
-  background-color: #6a0dad;
+  background-color: hsl(300, 29%, 78%);
   color: white;
 }
 
 .edit-actions button:first-child:hover {
-  background-color: #5a0c9d;
+  background-color: hsl(300, 29%, 78%);
 }
 
 .edit-actions button:last-child {

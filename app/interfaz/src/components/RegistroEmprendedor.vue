@@ -303,7 +303,7 @@ text-decoration: underline;
 
 width: 100%;
 height: 45px;
-background: #440857;
+background: hsl(300, 29%, 78%);
 border: none;
 outline: none;
 border-radius: 6px;

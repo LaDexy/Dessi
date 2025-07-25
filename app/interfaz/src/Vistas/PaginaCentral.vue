@@ -397,25 +397,14 @@ export default {
 </script>
 
 <style scoped>
-/* Contenedor principal de la página, sin transformaciones que afecten a 'fixed' */
-/* Un nuevo contenedor para el contenido que SÍ se desplaza */
-.content-area-scrollable {
-  width: 100%;
-  max-width: 1400px; /* O el ancho máximo que desees para tu contenido principal */
-  padding: 100px 20px 40px 20px; /* Relleno superior para dejar espacio a los elementos fijos */
-  box-sizing: border-box; /* Incluye padding en el ancho */
-  /* Si tu página tiene una barra superior, ajusta este padding-top para que el contenido no quede debajo */
-  margin-top: 0; /* Elimina el margin-top anterior si lo tenías */
-}
 
-/* Estilos para los elementos FIJOS */
 
 /* Contenedor para el botón de menú */
 .fixed-menu-button {
   position: fixed;
-  top: 20px; /* Ajusta según tu diseño */
-  left: 20px; /* Ajusta según tu diseño */
-  z-index: 1050; /* Muy alto */
+  top: 20px; 
+  left: 20px; 
+  z-index: 1050; 
 }
 
 /* Contenedor para la barra de búsqueda */
