@@ -186,316 +186,436 @@ export default {
 };
 </script>
 
-<style>
-
-/*Rectangulo de barra superior*/
-
-.RectanguloForo {
-
-  width: 1525px;
-  height: 230px;
-  background-color: hsl(300, 29%, 78%);
-   display: flex;
-  flex-wrap: wrap;
-  justify-content: center; 
-  gap: 20px; 
-  padding: 20px;
-  margin-left: 0%;
-}
+<style scoped>
+/* Colores de referencia:
+   - hsl(300, 29%, 78%) se traduce aproximadamente a #d9bad9 (Rosa-morado pastel)
+   - #5e1c7d (Morado oscuro principal)
+   - Otros tonos de morado y rosa para complementos.
+*/
 
 /* Contenedor principal del foro */
-        .forum-container {
-            max-width: 960px;
-            margin: 2rem auto; 
-            padding: 1.5rem;
-            background-color: #ffffff;
-            border-radius: 0.75rem; 
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); 
-        }
+.RectanguloForo {
+    width: 100%; /* Ocupa el 100% del ancho disponible */
+    /* Eliminar height fijo si el contenido debe determinar la altura */
+    min-height: 230px; /* Asegura una altura mínima para la cabecera */
+    background-color: hsl(0, 0%, 100%); /* Rosa-morado pastel para la cabecera */
+    display: flex;
+    flex-direction: column; /* Apila el header y el main */
+    align-items: center; /* Centra el contenido horizontalmente */
+    padding: 0; /* Padding se manejará en los elementos internos */
+    margin: 0; /* Elimina márgenes externos */
+    font-family: 'Inter', sans-serif; /* Fuente consistente */
+    box-sizing: border-box; /* Incluye padding y border en el ancho/alto total */
+    position: relative; /* Necesario para posicionar el título si es absoluto */
+}
 
-        /* Estilos para el título principal del foro */
-        .titulo-foro {
-            top: 90px;
-            position: absolute;
-            font-size: 3rem; 
-            font-weight: bold;
-            color: #ffffff; 
-            margin-bottom: 1.5rem; 
-            text-align: center; 
-        }
+/* Cabecera del foro */
+.forum-header {
+    width: 100%;
+    padding: 60px 20px 40px; /* Más padding para el título */
+    background-color: #d9bad9; /* Morado oscuro para la cabecera, más imponente */
+    color: white;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    margin-bottom: 30px; /* Espacio debajo de la cabecera */
+}
 
-        /* Contenedor de la lista de temas */
-        .ListaTemas {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem; 
-            margin-bottom: 1.5rem;
-        }
+.titulo-foro {
+    font-size: 3.5rem; /* Título más grande y dominante */
+    font-weight: 900; /* Extra Black */
+    color: #ffffff; /* Blanco puro */
+    margin: 0;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); /* Sombra para realzar el texto */
+}
 
-        /* Contenedor del título "Temas Recientes" y el botón "Crear Nuevo Tema" */
-        .titulo-temas {
-            display: flex;
-            justify-content: space-between; 
-            align-items: center; 
-            margin-bottom: 1rem; 
-        }
+/* Contenido principal del foro (debajo de la cabecera) */
+.forum-content {
+    max-width: 1000px; /* Ancho máximo para el contenido del foro */
+    width: 95%; /* Se ajusta a la ventana */
+    margin: -80px auto 40px auto; /* Mueve el contenido hacia arriba para superponerse con la cabecera */
+    padding: 30px;
+    background-color: #ffffff; /* Fondo blanco para el contenido */
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); /* Sombra más pronunciada */
+    position: relative; /* Para el z-index */
+    z-index: 100; /* Asegura que esté sobre el RectanguloForo */
+}
 
-        /* Estilos para el h2 "Temas Recientes" */
-        .Seccion {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #4a5568; 
-        }
+/* Sección de lista de temas */
+.ListaTemas {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
 
-        /* Estilos para el botón "Crear Nuevo Tema" */
-        .NuevoTema {
-            background-color: #e4a0d5;
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            border: none; 
-            cursor: pointer;
-            transition: background-color 0.2s ease-in-out; 
-        }
+/* Título "Temas Recientes" y botón "Crear Nuevo Tema" */
+.titulo-temas {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee; /* Separador sutil */
+}
 
-        .NuevoTema:hover {
-            background-color: #e4a0d5; 
-        }
+.Seccion {
+    font-size: 1.8em;
+    font-weight: 700;
+    color: #5e1c7d; /* Morado oscuro para los títulos de sección */
+    margin: 0;
+}
 
-        /* Contenedor donde se cargarán las tarjetas de los temas */
-        .TarjetasTemas {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem; 
-        }
+.NuevoTema {
+    background-color: #e4a0d5; /* Rosa vibrante */
+    color: white;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
 
-        /* Estilos para cada tarjeta de tema individual */
-        .TarjetaIndividual {
-            background-color: #ffffff;
-            padding: 1.25rem;
-            border-radius: 0.5rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            cursor: pointer;
-            transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start; 
-        }
+.NuevoTema:hover {
+    background-color: #d288c0; /* Un poco más oscuro al pasar el ratón */
+    transform: translateY(-2px);
+    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
+}
 
-        .TarjetaIndividual:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
+/* Mensajes de carga, error y "no hay temas" */
+.loading-message, .error-message, .no-threads-message {
+    text-align: center;
+    padding: 25px;
+    font-size: 1.1em;
+    border-radius: 10px;
+    margin-top: 20px;
+    background-color: #f8f0ff; /* Fondo muy claro para mensajes */
+   color: white;
+    border: 1px solid #d9bad9;
+}
 
-        .TarjetaIndividual h3 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #333333;
-            margin-bottom: 0.25rem;
-        }
+.error-message {
+    background-color: #ffebeb;
+    color: #dc3545;
+    border: 1px solid #f5c6cb;
+}
 
-        .TarjetaIndividual p {
-            font-size: 0.875rem;
-            color: #666666;
-            margin-bottom: 0.5rem;
-        }
+.no-threads-message {
+    font-style: italic;
+    color: #777;
+}
 
-        .InfoAdicional {
-            display: flex;
-            justify-content: space-between;
-            width: 100%;
-            font-size: 0.8rem;
-            color: #777777;
-        }
+/* Lista de tarjetas de temas */
+.TarjetasTemas {
+    list-style: none; /* Elimina los puntos de la lista */
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 15px; /* Espacio entre las tarjetas de tema */
+}
 
-        /* Estilos para el icono de reputación (círculo amarillo con número) */
-        .reputacion-icono {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 1.5rem;
-            height: 1.5rem;
-            border-radius: 50%;
-            background-color: #fcd34d; 
-            color: #92400e; 
-            font-weight: bold;
-            font-size: 0.75rem;
-            margin-left: 0.5rem;
-        }
+/* Tarjeta de tema individual */
+.TarjetaIndividual {
+    background-color: #fdfdfd; /* Blanco casi puro para las tarjetas */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08); /* Sombra suave */
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid #eee; /* Borde sutil */
+    display: flex;
+    flex-direction: column;
+}
 
-        /* --- Estilos para la vista de detalle del tema --- */
-        .DetalleTemas {
-            background-color: #f9fafb; 
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            display: flex;
-            flex-direction: column;
-            gap: 1rem; 
-        }
-        .VolverBoton { /* Botón para volver al foro */
-            background-color: #e5e7eb;
-            color: #4b5563;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.2s ease-in-out;
-            margin-bottom: 1rem; 
-            align-self: flex-start; 
-        }
-        .VolverBoton:hover {
-            background-color: #d1d5db;
-        }
-        .PrimerTema { /* Tarjeta del tema principal en el detalle */
-            background-color: #e0f2fe; 
-            border: 1px solid #90cdf4;
-            border-radius: 0.5rem;
-            padding: 1.5rem;
-            margin-bottom: 1rem; 
-        }
-        .PrimerTema h3 {
-            font-size: 1.75rem;
-            font-weight: bold;
-            color: #2b6cb0;
-            margin-bottom: 0.5rem;
-        }
-        .InfoAutor { /* Información del autor del tema principal */
-            font-size: 0.9rem;
-            color: #4a5568;
-            margin-bottom: 1rem;
-        }
-        .contenido-tema { /* Contenido del tema principal */
-            font-size: 1rem;
-            line-height: 1.6;
-            color: #2d3748;
-        }
-        .Respuestas { /* Título de la sección de respuestas */
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #4a5568;
-            margin-top: 1rem; 
-            margin-bottom: 1rem;
-        }
-        .respuestas-lista { /* Contenedor de la lista de respuestas */
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .TarjetaRespuesta { /* Cada tarjeta de respuesta individual */
-            background-color: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 0.5rem;
-            padding: 1rem;
-        }
-        .InfoAutorRespuesta { /* Información del autor de la respuesta */
-            font-size: 0.85rem;
-            color: #666666;
-            margin-bottom: 0.5rem;
-        }
-        .ContenidoRespuesta { /* Contenido de la respuesta */
-            font-size: 0.95rem;
-            line-height: 1.5;
-            color: #333333;
-        }
-        .FormularioRespuesta { /* Contenedor del formulario para responder */
-            background-color: #f7fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 0.5rem;
-            padding: 1.5rem;
-        }
-        .TituloFormularioRespuesta { /* Título del formulario de respuesta */
-            font-size: 1.125rem;
-            font-weight: 600;
-            color: #4a5568;
-            margin-bottom: 1rem;
-        }
-        .CampoRespuesta { /* Área de texto para la respuesta */
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #cbd5e0;
-            border-radius: 0.375rem;
-            margin-bottom: 1rem;
-            resize: vertical; /* Permite redimensionar verticalmente */
-            font-size: 1rem;
-            color: #2d3748;
-        }
-        .CampoRespuesta:focus { /* Estilo al enfocar el campo */
-            outline: none;
-            border-color: #667eea; /* Color de foco */
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-        }
-        .PublicarRespuesta { /* Botón para publicar respuesta */
-            background-color: #e4a0d5;
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.2s ease-in-out;
-        }
-        .PublicarRespuesta:hover {
-            background-color: #e4a0d5;
-        }
+.TarjetaIndividual:hover {
+    transform: translateY(-5px); /* Efecto de levantamiento al pasar el ratón */
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
+}
 
-        /* --- Estilos para el formulario de nuevo tema --- */
-        .FormularioNuevoTema { 
-            background-color: #f9fafb;
-            padding: 1.5rem;
-            border-radius: 0.75rem;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        .TituloNuevoTema { /* Título del formulario de nuevo tema */
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #4a5568;
-            margin-bottom: 1rem;
-        }
-        .CamposNuevoFormulario { /* Contenedor de los campos del formulario */
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-        .EtiquetaCampo { /* Etiquetas de los campos del formulario */
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: #4a5568;
-            margin-bottom: 0.25rem;
-        }
-        .CampoTexto { /* Campos de texto (input y textarea) */
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #cbd5e0;
-            border-radius: 0.375rem;
-            font-size: 1rem;
-            color: #2d3748;
-        }
-        .CampoTexto:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-        }
-        .PublicarTema { /* Botón para publicar el nuevo tema */
-            background-color: #e4a0d5;
-            color: white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.2s ease-in-out;
-            margin-top: 1rem;
-        }
-        .PublicarTema:hover {
-            background-color: #7a71dc;
-        }
+.TarjetaIndividual h3 {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: white; /* Morado oscuro para el título del tema */
+    margin-bottom: 8px;
+    cursor: pointer; /* Indica que el título es clicable */
+    transition: color 0.2s ease;
+}
 
+.TarjetaIndividual h3:hover {
+    color: #8c2aae; /* Morado más claro al pasar el ratón */
+    text-decoration: underline;
+}
+
+.InfoAutor {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 12px;
+}
+
+.author-name {
+    font-weight: 600;
+    color: #5e1c7d; /* Morado oscuro para el nombre del autor */
+}
+
+.reputacion-icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 25px; /* Ancho mínimo para números de 1 o 2 dígitos */
+    height: 25px;
+    border-radius: 50%;
+    background-color: #fcd34d; /* Amarillo para reputación */
+    color: #92400e; /* Marrón oscuro para el texto */
+    font-weight: bold;
+    font-size: 0.8em;
+    margin-left: 8px;
+    padding: 0 5px; /* Pequeño padding horizontal */
+}
+
+.thread-description {
+    font-size: 1em;
+    color: #444;
+    line-height: 1.6;
+    margin-bottom: 15px;
+}
+
+.thread-stats {
+    font-size: 0.9em;
+    color: #777;
+    margin-top: auto; /* Empuja las estadísticas hacia abajo */
+    text-align: right;
+    padding-top: 10px;
+    border-top: 1px dashed #eee; /* Separador para las estadísticas */
+}
+
+.view-thread-button {
+    background-color: #d9bad9; /* Rosa-morado pastel para el botón de ver */
+    color: white; /* Texto morado oscuro */
+    padding: 8px 18px;
+    border-radius: 6px;
+    border: none;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    align-self: flex-end; /* Alinea el botón a la derecha */
+    margin-top: 15px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.view-thread-button:hover {
+    background-color: #c0a0c0; /* Un poco más oscuro al pasar el ratón */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Estilos para el modal (overlay y contenido) */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.75);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 3000; /* Asegura que esté por encima de todo */
+    backdrop-filter: blur(5px);
+    animation: fadeIn 0.3s ease-out forwards;
+}
+
+.modal-content {
+    background-color: white;
+    padding: 35px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    max-width: 600px;
+    width: 90%;
+    position: relative;
+    animation: slideInFromTop 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+.modal-content h3 {
+    font-size: 2em;
+    color: #5e1c7d;
+    margin-bottom: 25px;
+    text-align: center;
+    font-weight: 700;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    font-size: 1.05em;
+    color: #333;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.form-group input[type="text"],
+.form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1em;
+    box-sizing: border-box; /* Asegura que padding no aumente el ancho */
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-group input[type="text"]:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #e4a0d5; /* Color de foco rosa */
+    box-shadow: 0 0 0 3px rgba(228, 160, 213, 0.3);
+}
+
+.form-group textarea {
+    resize: vertical; /* Permite redimensionar verticalmente */
+    min-height: 120px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.submit-button, .cancel-button {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+}
+
+.submit-button {
+    background-color: #d9bad9; /* Morado oscuro para acción principal */
+    color: white;
+}
+
+.submit-button:hover:not(:disabled) {
+    background-color: #4a1766; /* Morado más oscuro al pasar el ratón */
+    transform: translateY(-2px);
+    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.2);
+}
+
+.submit-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.cancel-button {
+    background-color: #e0e0e0; /* Gris claro para cancelar */
+    color: #555;
+}
+
+.cancel-button:hover {
+    background-color: #c0c0c0; /* Gris más oscuro al pasar el ratón */
+    transform: translateY(-2px);
+    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Animaciones (reutilizadas del componente anterior) */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideInFromTop {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Media Queries para responsividad */
+@media (max-width: 768px) {
+    .forum-header {
+        padding: 40px 15px 30px;
+    }
+    .titulo-foro {
+        font-size: 2.5rem;
+    }
+    .forum-content {
+        width: 98%;
+        padding: 20px;
+        margin: -60px auto 30px auto;
+    }
+    .titulo-temas {
+        flex-direction: column; /* Apila el título y el botón */
+        align-items: flex-start;
+        gap: 15px;
+    }
+    .NuevoTema {
+        width: 100%; /* Botón ocupa todo el ancho */
+        text-align: center;
+    }
+    .Seccion {
+        font-size: 1.5em;
+    }
+    .TarjetaIndividual {
+        padding: 15px;
+    }
+    .TarjetaIndividual h3 {
+        font-size: 1.3em;
+    }
+    .modal-content {
+        width: 95%;
+        padding: 25px;
+    }
+    .modal-content h3 {
+        font-size: 1.7em;
+    }
+}
+
+@media (max-width: 480px) {
+    .forum-header {
+        padding: 30px 10px 20px;
+    }
+    .titulo-foro {
+        font-size: 2rem;
+    }
+    .forum-content {
+        padding: 15px;
+        margin: -50px auto 20px auto;
+    }
+    .Seccion {
+        font-size: 1.3em;
+    }
+    .TarjetaIndividual h3 {
+        font-size: 1.1em;
+    }
+    .InfoAutor, .thread-description, .thread-stats {
+        font-size: 0.85em;
+    }
+    .view-thread-button {
+        padding: 7px 15px;
+        font-size: 0.9em;
+    }
+    .modal-content {
+        padding: 20px;
+    }
+    .modal-actions {
+        flex-direction: column;
+        gap: 10px;
+    }
+    .submit-button, .cancel-button {
+        width: 100%;
+        text-align: center;
+    }
+}
 </style>

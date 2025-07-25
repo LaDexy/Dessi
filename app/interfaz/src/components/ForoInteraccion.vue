@@ -1,6 +1,5 @@
 <template>
   <div class="foro-interaccion-container">
-    <button @click="goBackToForum" class="back-button">Volver al Foro</button>
     <div v-if="loading" class="loading-message">Cargando tema...</div>
     <div v-if="error" class="error-message">{{ error }}</div>
 
@@ -178,148 +177,280 @@ export default {
 };
 </script>
 
-<style>
-/* Aquí va tu CSS actual para ForoInteraccion.vue */
+<style scoped>
+/* Colores de referencia de tu paleta:
+   - hsl(300, 29%, 78%) se traduce aproximadamente a #d9bad9 (Rosa-morado pastel)
+   - #5e1c7d (Morado oscuro principal)
+   - #e4a0d5 (Rosa vibrante)
+   - Otros tonos de morado y rosa para complementos.
+*/
+
 .foro-interaccion-container {
-    max-width: 800px;
-    margin: 20px auto;
-    padding: 20px;
-    background-color: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-width: 900px; /* Un poco más ancho para el contenido del tema */
+    margin: 40px auto; /* Más margen superior/inferior para separarlo */
+    padding: 35px; /* Más padding interno */
+    background-color: #ffffff; /* Fondo blanco */
+    border-radius: 15px; /* Bordes más redondeados */
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); /* Sombra más pronunciada */
+    font-family: 'Inter', sans-serif; /* Fuente consistente */
+    box-sizing: border-box;
 }
 
-.back-button {
-    background-color: #6a0dad; /* Púrpura */
-    color: white;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    margin-bottom: 20px;
-    font-size: 16px;
-}
-
-.back-button:hover {
-    background-color: #5a099a; /* Púrpura más oscuro */
-}
-
+/* Mensajes de carga y error */
 .loading-message, .error-message {
     text-align: center;
-    padding: 20px;
-    color: #555;
+    padding: 25px;
+    font-size: 1.1em;
+    font-weight: 500;
+    border-radius: 12px;
+    margin-top: 20px;
+    background-color: #f8f0ff; /* Fondo muy claro para carga */
+    color: #5e1c7d;
+    border: 1px solid #d9bad9;
 }
 
 .error-message {
-    color: #d32f2f;
+    background-color: #ffebeb; /* Rojo muy claro para error */
+    color: #dc3545; /* Rojo oscuro para error */
+    border: 1px solid #f5c6cb;
+}
+
+/* Detalle del tema principal */
+.thread-detail {
+    /* Contenedor general de los detalles, no necesita estilos propios fuertes */
 }
 
 .thread-detail h2 {
-    color: #333;
-    font-size: 28px;
-    margin-bottom: 10px;
+    font-size: 2.5em; /* Título del tema más grande */
+    color: #5e1c7d; /* Morado oscuro para el título */
+    margin-bottom: 15px;
+    text-align: center;
+    font-weight: 800; /* Extra bold */
+    line-height: 1.3;
 }
 
 .author-info {
-    color: #777;
-    font-size: 14px;
-    margin-bottom: 20px;
+    font-size: 1em;
+    color: #666;
+    margin-bottom: 25px;
+    text-align: center;
+    font-style: italic;
+    padding-bottom: 15px;
+    border-bottom: 1px dashed #eee; /* Separador sutil */
+}
+
+.author-info strong {
+    color: #5e1c7d; /* Destaca el nombre del autor */
 }
 
 .thread-content {
-    background-color: #f9f9f9;
-    padding: 15px;
-    border-radius: 5px;
-    margin-bottom: 20px;
-    line-height: 1.6;
+    background-color: #fcfcfc; /* Fondo casi blanco para el contenido */
+    padding: 25px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+    line-height: 1.7; /* Mayor legibilidad */
+    font-size: 1.05em;
+    color: #333;
+    box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.05); /* Sombra interna sutil */
+    border: 1px solid #f0f0f0;
     white-space: pre-wrap; /* Mantiene saltos de línea y espacios */
 }
 
 hr {
     border: 0;
-    border-top: 1px solid #eee;
-    margin: 30px 0;
+    border-top: 2px solid #f2e6f2; /* Línea divisoria más gruesa y pastel */
+    margin: 40px 0; /* Más espacio */
 }
 
 h3 {
-    color: #333;
-    font-size: 24px;
-    margin-bottom: 15px;
+    font-size: 2.1em; /* Título "Respuestas" más grande */
+    color: #5e1c7d; /* Morado oscuro */
+    margin-bottom: 25px;
+    text-align: center;
+    font-weight: 700;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #d9bad9; /* Borde inferior pastel */
 }
 
+/* Estilo para cada respuesta individual */
 .reply-item {
-    background-color: #f0f0f0;
-    padding: 15px;
-    border-radius: 5px;
-    margin-bottom: 15px;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    background-color: #fdfafc; /* Fondo muy suave para las respuestas */
+    padding: 20px;
+    border-radius: 12px; /* Más redondeado */
+    margin-bottom: 20px; /* Espacio entre respuestas */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Sombra suave pero visible */
+    border: 1px solid #d9bad9; /* Borde pastel */
+    position: relative; /* Para posicionamiento de elementos internos si es necesario */
 }
 
 .reply-author {
-    font-size: 14px;
-    color: #555;
-    margin-bottom: 5px;
+    font-size: 0.95em;
+    color: #666;
+    margin-bottom: 8px;
+    font-weight: 500;
 }
 
 .reply-author strong {
-    color: #333;
+    color: #5e1c7d; /* Morado oscuro para el autor de la respuesta */
+    margin-right: 5px;
 }
 
 .reply-content {
-    font-size: 16px;
-    line-height: 1.5;
+    font-size: 1em;
+    line-height: 1.6;
+    color: #333;
     white-space: pre-wrap;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
 }
 
 .likes-section {
     display: flex;
     align-items: center;
-    gap: 8px; /* Espacio entre el icono y el contador */
-    font-size: 14px;
-    color: #666;
+    gap: 10px; /* Más espacio entre el icono y el contador */
+    font-size: 0.9em;
+    color: #888;
+    margin-top: 10px; /* Margen superior para separarlo del contenido */
+    padding-top: 8px;
+    border-top: 1px dashed #f2e6f2; /* Separador para la sección de likes */
 }
 
 .likes-section .likes-count {
     font-weight: bold;
-    color: #333;
+    color: #5e1c7d; /* Morado oscuro para el contador de likes */
+    font-size: 1em;
 }
 
+/* Formulario para añadir respuesta */
 .reply-form {
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid #eee;
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 2px solid #d9bad9; /* Separador más robusto */
+    background-color: #f8f0ff; /* Fondo pastel para el formulario */
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
 }
 
 .reply-form h4 {
-    font-size: 20px;
-    margin-bottom: 15px;
-    color: #333;
+    font-size: 1.8em;
+    margin-bottom: 20px;
+    color: #5e1c7d; /* Morado oscuro para el título del formulario */
+    text-align: center;
+    font-weight: 700;
 }
 
 .reply-form textarea {
-    width: calc(100% - 20px);
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    font-size: 16px;
-    min-height: 80px;
-    margin-bottom: 15px;
+    width: 100%; /* Ocupa todo el ancho disponible */
+    padding: 15px;
+    border: 1px solid #d9bad9; /* Borde pastel */
+    border-radius: 10px; /* Más redondeado */
+    font-size: 1em;
+    min-height: 120px; /* Altura mínima para el textarea */
+    margin-bottom: 20px;
     resize: vertical;
+    box-sizing: border-box; /* Incluye padding y border en el ancho */
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    color: #333;
+}
+
+.reply-form textarea:focus {
+    outline: none;
+    border-color: #e4a0d5; /* Rosa vibrante al enfocar */
+    box-shadow: 0 0 0 4px rgba(228, 160, 213, 0.25); /* Sombra de foco */
 }
 
 .reply-form button {
-    background-color: #8197FC; /* Azul más claro */
+    background-color: #e4a0d5; /* Rosa vibrante para el botón de acción */
     color: white;
-    padding: 12px 20px;
+    padding: 14px 28px; /* Más padding para un botón más grande */
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 16px;
-    transition: background-color 0.3s ease;
+    font-size: 1.1em;
+    font-weight: bold;
+    transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    display: block; /* Ocupa todo el ancho si es un solo botón */
+    width: fit-content; /* Se ajusta al contenido */
+    margin: 0 auto; /* Centra el botón */
 }
 
 .reply-form button:hover {
-    background-color: #6a7edb; /* Azul más oscuro al pasar el ratón */
+    background-color: #d288c0; /* Rosa más oscuro al pasar el ratón */
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Estilo para el caso de tema no encontrado */
+.foro-interaccion-container > p {
+    text-align: center;
+    padding: 20px;
+    font-size: 1.1em;
+    color: #777;
+    margin-top: 30px;
+    font-style: italic;
+}
+
+
+/* Media Queries para responsividad */
+@media (max-width: 768px) {
+    .foro-interaccion-container {
+        padding: 25px;
+        margin: 20px auto;
+        width: 95%;
+    }
+    .thread-detail h2 {
+        font-size: 2em;
+    }
+    h3 {
+        font-size: 1.8em;
+    }
+    .reply-form h4 {
+        font-size: 1.5em;
+    }
+    .reply-form button {
+        padding: 12px 20px;
+        font-size: 1em;
+    }
+}
+
+@media (max-width: 480px) {
+    .foro-interaccion-container {
+        padding: 15px;
+        margin: 15px auto;
+    }
+    .thread-detail h2 {
+        font-size: 1.8em;
+    }
+    .author-info {
+        font-size: 0.9em;
+    }
+    .thread-content, .reply-content {
+        font-size: 0.95em;
+        padding: 15px;
+    }
+    h3 {
+        font-size: 1.6em;
+    }
+    .reply-item {
+        padding: 15px;
+    }
+    .reply-author {
+        font-size: 0.9em;
+    }
+    .likes-section {
+        font-size: 0.85em;
+    }
+    .reply-form h4 {
+        font-size: 1.3em;
+    }
+    .reply-form textarea {
+        padding: 10px;
+        min-height: 100px;
+    }
+    .reply-form button {
+        padding: 10px 18px;
+        font-size: 0.95em;
+    }
 }
 </style>

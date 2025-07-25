@@ -1,7 +1,6 @@
 <template>
   <div class="modal-overlay" @click.self="cerrarModalDetalle">
     <div class="modal-content-detail">
-      <span class="close-button" @click="cerrarModalDetalle">&times;</span>
       <div v-if="isLoadingDetail" class="loading-message-detail">Cargando detalles del desafío y participantes...</div>
       <div v-else-if="detailErrorMessage" class="error-message-detail">{{ detailErrorMessage }}</div>
       <div v-else-if="challengeDetail" class="challenge-detail-view">
@@ -32,10 +31,7 @@
             </div>
         </div>
 
-        <div class="detail-actions">
-          <button @click="editChallenge" class="action-button edit-button">Editar Desafío</button>
-          <button @click="closeChallenge" class="action-button close-button">Cerrar Desafío</button>
-        </div>
+       
 
       </div>
     </div>
@@ -79,9 +75,9 @@ export default {
     }
   },
   methods: {
-    cerrarModalDetalle() {
-      this.$emit('cerrarDetalle');
-    },
+
+    
+   
     async fetchChallengeDetails(id) {
       this.isLoadingDetail = true;
       this.detailErrorMessage = '';
@@ -155,189 +151,256 @@ export default {
 </script>
 
 <style scoped>
-/* Estilos para el nuevo modal de detalle */
+/* Colores de referencia:
+   - hsl(300, 29%, 78%) se traduce aproximadamente a #d9bad9 (Rosa-morado pastel)
+   - #5e1c7d (Morado oscuro)
+*/
+
+/* Título del modal */
+.modal-content h2 {
+  font-size: 2.5em; /* Tamaño de fuente para el título */
+  color: #5e1c7d; /* Morado oscuro para el título */
+  text-align: center;
+  margin-bottom: 35px; /* Espacio debajo del título */
+  font-weight: bold;
+}
+
+/* Overlay general del modal */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.7); /* Fondo más oscuro */
+  background-color: rgba(0, 0, 0, 0.75); /* Fondo más oscuro y opaco */
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 2500; /* Asegura que esté por encima de otros modales */
+  z-index: 2500; /* Asegura que esté por encima de otros elementos */
+  backdrop-filter: blur(6px); /* Mayor desenfoque */
+  animation: fadeIn 0.3s ease-out forwards; /* Animación de entrada para el overlay */
 }
 
+/* Animación de entrada para el overlay */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Contenido principal del modal de detalle */
 .modal-content-detail {
-  background-color: white;
-  padding: 35px;
-  border-radius: 15px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
-  max-width: 700px; /* Un poco más ancho para más contenido */
-  width: 95%;
+  background-color: #ffffff; /* Fondo blanco puro */
+  padding: 40px; /* Más padding para una sensación premium */
+  border-radius: 20px; /* Bordes más redondeados */
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4); /* Sombra más profunda */
+  max-width: 800px; /* Ancho más generoso para el detalle */
+  width: 90%; /* Responsivo */
   max-height: 90vh; /* Limita la altura y permite scroll */
   overflow-y: auto;
   position: relative;
   text-align: left;
+  animation: slideInFromTop 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards; /* Animación de entrada más dinámica */
+  font-family: 'Inter', sans-serif;
 }
 
-.close-button {
-  position: absolute;
-  top: 15px;
-  right: 20px;
-  background: none;
-  border: none;
-  font-size: 30px;
-  cursor: pointer;
-  color: #555;
-  transition: color 0.2s ease;
+/* Animación para el contenido del modal */
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
-.close-button:hover {
-  color: #dc3545; /* Rojo para cerrar */
-}
-
+/* Mensajes de carga y error */
 .loading-message-detail, .error-message-detail {
   text-align: center;
-  padding: 20px;
-  font-size: 1.1em;
-  color: #007bff;
-}
-.error-message-detail {
-    color: #dc3545;
+  padding: 30px;
+  font-size: 1.2em;
+  font-weight: 500;
+  border-radius: 12px;
+  margin-top: 20px;
+  background-color: #f0f8ff; /* Azul muy claro para carga */
+  color: #007bff; /* Azul */
+  border: 1px solid #cceeff;
 }
 
+.error-message-detail {
+  background-color: #ffebee; /* Rojo muy claro para error */
+  color: #d32f2f; /* Rojo oscuro para error */
+  border: 1px solid #ef9a9a;
+}
+
+
 .detail-title {
-  font-size: 2.2em;
-  color: #0056b3;
-  margin-bottom: 10px;
+  font-size: 2.8em; /* Título principal más grande */
+  color: #5e1c7d; /* Morado oscuro para el título */
+  margin-bottom: 20px;
   text-align: center;
-  font-weight: bold;
+  font-weight: 800; /* Extra bold */
+  line-height: 1.2;
 }
 
 .detail-description {
-  font-size: 1.1em;
-  line-height: 1.6;
-  color: #555;
-  margin-bottom: 25px;
+  font-size: 1.15em; /* Descripción ligeramente más grande */
+  line-height: 1.7;
+  color: #444; /* Gris oscuro para el texto */
+  margin-bottom: 35px; /* Más espacio */
   text-align: justify;
+  background-color: #f9f9f9; /* Fondo suave para la descripción */
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #eee;
 }
 
+/* Grid de información clave del desafío */
 .detail-info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 15px;
-  margin-bottom: 25px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* Más flexible */
+  gap: 20px; /* Más espacio entre ítems */
+  margin-bottom: 35px;
 }
 
 .info-item {
-  background-color: #e9f5ff; /* Azul más claro */
-  border: 1px solid #cceeff;
-  border-radius: 10px;
-  padding: 12px 18px;
+  background-color: #f2e6f2; /* Rosa-morado pastel muy suave */
+  border: 1px solid #d9bad9; /* Borde pastel */
+  border-radius: 12px; /* Más redondeado */
+  padding: 15px 20px; /* Más padding */
   font-size: 0.95em;
   color: #333;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); /* Sombra más pronunciada */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
+
+.info-item:hover {
+  transform: translateY(-3px); /* Efecto de levantamiento */
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
+}
+
 .info-item p {
-    margin: 0;
+  margin: 0;
+  line-height: 1.4;
 }
+
 .info-item strong {
-    color: #0056b3;
+  color: #5e1c7d; /* Morado oscuro para las etiquetas */
+  margin-right: 5px;
 }
-.full-width {
-    grid-column: 1 / -1; /* Ocupa todo el ancho en el grid */
+
+.info-item.full-width {
+  grid-column: 1 / -1; /* Ocupa todo el ancho en el grid */
+  text-align: left; /* Alinea el texto a la izquierda en la fila completa */
 }
 
 hr {
   border: 0;
-  border-top: 1px solid #eee;
-  margin: 30px 0;
+  border-top: 2px solid #f2e6f2; /* Línea divisoria más gruesa y pastel */
+  margin: 35px 0;
 }
 
 .section-subtitle {
-  font-size: 1.7em;
-  color: #007bff;
-  margin-bottom: 20px;
+  font-size: 2.1em; /* Subtítulo más grande */
+  color: #5e1c7d; /* Morado oscuro */
+  margin-bottom: 25px;
   text-align: center;
-  font-weight: 600;
+  font-weight: 700; /* Negrita */
+  padding-bottom: 10px;
+  border-bottom: 2px solid #d9bad9; /* Borde inferior pastel */
 }
 
 .no-proposals-message {
   text-align: center;
   font-style: italic;
   color: #777;
-  padding: 20px;
-  border: 1px dashed #ccc;
-  border-radius: 8px;
-  margin-bottom: 25px;
+  padding: 25px;
+  border: 2px dashed #d9bad9; /* Borde punteado pastel */
+  border-radius: 12px;
+  margin-bottom: 30px;
+  background-color: #fdfafc; /* Fondo casi blanco */
 }
 
+/* Lista de propuestas */
 .proposals-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 25px; /* Más espacio entre propuestas */
 }
 
+/* Tarjeta de propuesta individual */
 .proposal-card {
-  background-color: #fcfcfc;
-  border: 1px solid #e0e0e0;
-  border-radius: 10px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background-color: #ffffff; /* Fondo blanco para las tarjetas */
+  border: 1px solid #e0e0e0; /* Borde suave */
+  border-radius: 15px; /* Más redondeado */
+  padding: 25px; /* Más padding */
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Sombra suave */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative; /* Para la fecha de envío */
+}
+
+.proposal-card:hover {
+  transform: translateY(-3px); /* Ligero levantamiento */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
 }
 
 .proposal-card p {
-  margin-bottom: 8px;
-  line-height: 1.5;
+  margin-bottom: 10px; /* Más espacio entre párrafos */
+  line-height: 1.6;
   color: #444;
 }
 
+.proposal-card p:first-of-type { /* "De: [nombre]" */
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #5e1c7d; /* Morado oscuro para el nombre */
+}
+
 .proposal-card strong {
-  color: #007bff;
+  color: #5e1c7d; /* Morado oscuro para las etiquetas */
+  margin-right: 5px;
 }
 
 .proposal-image-container {
-  margin-top: 15px;
+  margin-top: 20px; /* Más espacio */
   text-align: center;
-  border: 1px dashed #cccccc;
-  padding: 10px;
-  border-radius: 8px;
-  background-color: #f0f0f0;
+  border: 2px dashed #d9bad9; /* Borde punteado pastel */
+  padding: 15px;
+  border-radius: 12px;
+  background-color: #fefefe;
+  display: inline-block; /* Para que el borde se ajuste al contenido */
+  max-width: 100%; /* Asegura que no desborde */
 }
+
 .proposal-image {
   max-width: 100%;
-  max-height: 250px; /* Limita el tamaño de la imagen de la propuesta */
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  max-height: 280px; /* Límite de altura para la imagen de la propuesta */
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  object-fit: contain; /* Asegura que la imagen se ajuste sin recortarse */
 }
 
 .proposal-date {
-  font-size: 0.85em;
+  font-size: 0.9em;
   color: #888;
   text-align: right;
-  margin-top: 10px;
+  margin-top: 15px; /* Más espacio */
+  font-style: italic;
 }
 
-.detail-actions {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  margin-top: 30px;
-  padding-top: 20px;
-  border-top: 1px solid #eee;
-}
 
 .action-button {
-  padding: 12px 25px;
+  padding: 14px 28px; /* Más padding para botones más grandes */
   border: none;
-  border-radius: 8px;
-  font-size: 1em;
+  border-radius: 12px; /* Más redondeado */
+  font-size: 1.1em;
   font-weight: bold;
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+  transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  flex-grow: 1; /* Permite que los botones crezcan */
+  max-width: 220px; /* Limita el ancho para que no sean demasiado grandes */
 }
 
 .edit-button {
@@ -346,17 +409,72 @@ hr {
 }
 
 .edit-button:hover {
-  background-color: #e0a800;
-  transform: translateY(-2px);
+  background-color: #e0a800; /* Amarillo más oscuro al pasar el ratón */
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
 }
 
-.close-button {
+.close-button.action-button { /* Asegura la especificidad para el botón de acción "Cerrar Desafío" */
   background-color: #dc3545; /* Rojo para cerrar/eliminar */
   color: white;
 }
 
-.close-button:hover {
-  background-color: #c82333;
-  transform: translateY(-2px);
+.close-button.action-button:hover {
+  background-color: #c82333; /* Rojo más oscuro al pasar el ratón */
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Media Queries para responsividad */
+@media (max-width: 768px) {
+  .modal-content-detail {
+    padding: 25px;
+    width: 95%;
+  }
+
+  .detail-title {
+    font-size: 2.2em;
+  }
+
+  .section-subtitle {
+    font-size: 1.8em;
+  }
+
+  .detail-info-grid {
+    grid-template-columns: 1fr; /* Una columna en pantallas pequeñas */
+  }
+
+  .detail-actions {
+    flex-direction: column; /* Botones apilados en pantallas pequeñas */
+    gap: 15px;
+  }
+
+  .action-button {
+    max-width: 100%; /* Ocupa todo el ancho disponible */
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-content-detail {
+    padding: 20px;
+  }
+
+  .detail-title {
+    font-size: 1.8em;
+  }
+
+  .close-button {
+    font-size: 2.2em;
+    top: 15px;
+    right: 15px;
+  }
+
+  .section-subtitle {
+    font-size: 1.6em;
+  }
+
+  .proposal-card p {
+    font-size: 0.95em;
+  }
 }
 </style>
