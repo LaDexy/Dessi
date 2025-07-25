@@ -21,6 +21,7 @@ export default {
 position: relative;
 top: 10%;
 left: 55%;
+display: flex;
 
 }
 

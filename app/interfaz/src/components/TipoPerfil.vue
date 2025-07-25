@@ -76,14 +76,12 @@ export default {
 
 .CambioDescripcion{
 
-  position: absolute;
-top: 54%;
-left: 53%;
+  position: relative;
 
 }
 
 .tipo-perfil-container {
-  display: flex;
+
   flex-direction: column;
   align-items: center; /* Centra el contenido horizontalmente */
   width: 100%;
