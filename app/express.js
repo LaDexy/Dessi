@@ -2284,14 +2284,14 @@ app.post("/api/replies/:replyId/like", authenticateToken, async (req, res) => {
 // 6. RUTA PARA OBTENER TODOS LOS PERFILES
 app.get("/api/profiles", async (req, res) => {
   try {
-    const [profiles] = await pool.query(`
+    const [profiles] = await pool.query(` 
             SELECT
                 u.id_usuario,
                 u.nombre_usuario,
                 u.tipo_perfil,
                 u.descripcion_perfil,
                 u.foto_perfil_url,
-                u.reaccion_acumulada, -- Usamos reaccion_acumulada directamente
+                u.reaccion_acumulada,
                 (
                     SELECT COUNT(*)
                     FROM foro_mensaje fm
@@ -2302,7 +2302,7 @@ app.get("/api/profiles", async (req, res) => {
                 usuarios u
             ORDER BY
                 u.nombre_usuario ASC
-        `);
+        `); 
 
     const formattedProfiles = profiles.map((profile) => {
       const fotoUrl = profile.foto_perfil_url
@@ -2313,21 +2313,17 @@ app.get("/api/profiles", async (req, res) => {
         ...profile,
         foto_perfil_url: fotoUrl,
         likes_acumulados_foro: likesAcumulados,
-       
       };
     });
     res.status(200).json(formattedProfiles);
   } catch (error) {
     console.error("Error al obtener los perfiles:", error);
-    res
-      .status(500)
-      .json({
-        message: "Error interno del servidor al obtener perfiles.",
-        error: error.message,
-      });
+    res.status(500).json({
+      message: "Error interno del servidor al obtener perfiles.",
+      error: error.message,
+    });
   }
 });
-
 // RUTA DE PRUEBA 
 app.get("/", (req, res) => {
   res.send("API de Convenio de Emprendimiento funcionando!");
