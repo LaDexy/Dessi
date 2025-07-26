@@ -1,5 +1,7 @@
 <template>
   <div>
+
+    <!--ESTE ES EL ICONO PARA BUSCAR PERFILES-->
     <div class="IconoBuscar">
       <div class="buscar">
         <input
@@ -24,15 +26,11 @@ export default {
   name: "BarraBusqueda",
   data() {
     return {
-      searchTerm: "", // Nuevo: Almacena el término de búsqueda
+      searchTerm: "",
     };
   },
   methods: {
-    /**
-     * @description Emite el término de búsqueda actual al componente padre.
-     */
     emitSearch() {
-      // Usamos trim() para eliminar espacios en blanco al inicio y al final
       this.$emit("search", this.searchTerm.trim());
       console.log(
         "Término de búsqueda emitido desde BarraBusqueda:",
@@ -44,24 +42,15 @@ export default {
 </script>
 
 <style scope>
-/*Barra de busqueda*/
-
 .IconoBuscar {
-
-position: relative;
-
+  position: relative;
 }
 
 .buscar {
-   /* ¡Cambiado de 'relative' a 'fixed' para que no se mueva con el scroll! */
-
-  z-index: 1040; /* Asegura que esté por encima del contenido y debajo del menú */
-
-  display: flex; /* Para alinear el input y el botón visualmente */
-  align-items: center; /* Centrar verticalmente el input y el botón */
-  padding: 5px; /* Pequeño padding alrededor del input y el botón */
-
-  /* Eliminamos los márgenes que eran para posicionamiento relativo */
+  z-index: 1040;
+  display: flex;
+  align-items: center;
+  padding: 5px;
   margin-left: 0;
   margin-top: 0;
 }

@@ -1,5 +1,11 @@
 <template>
   <div class="pagina-notificaciones-container">
+
+      <!--RENDERIZAR PARA ADAPTACION A NAVEGADOR-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+       <!--FUNCION PARA TODA LA PAGINA O URL CORRESPONDIENTE A LA NOTIFICACIONES, ESTA ES LA PAGINA QUE SE DESPLIEGA AL PRESIONAR ICONODE NOTIFICACION-->
+
     <h2>Tus Notificaciones</h2>
     <button @click="goBack" class="back-button">
       <i class="fas fa-arrow-left mr-2"></i> Volver
@@ -113,10 +119,14 @@
             <p v-if="selectedNewRequest.emisor_tiktok"><strong>TikTok:</strong> {{ selectedNewRequest.emisor_tiktok }}</p>
             <p v-if="selectedNewRequest.emisor_facebook"><strong>Facebook:</strong> {{ selectedNewRequest.emisor_facebook }}</p>
         </div>
+
+        <!--ESTA FUNCION ESTA AGREGADA PERO REQUIERE DE FINALIZACION EN EXPRESS. ES DECIR, ESTA EN ESTATUS DE PENDIENTE-->
+        <!--
         <div class="message-modal-actions">
           <button @click="acceptContactRequestFromModal(selectedNewRequest)" class="btn-accept">Aceptar</button>
           <button @click="rejectContactRequestFromModal(selectedNewRequest)" class="btn-reject">Rechazar</button>
         </div>
+      -->
       </div>
     </div>
   </div>
@@ -178,7 +188,7 @@ export default {
           this.errorMessage = 'Tu sesión ha expirado o no tienes permisos. Por favor, inicia sesión.';
           localStorage.removeItem('userToken');
           sessionStorage.removeItem('userToken');
-          this.$router.push({ name: 'Principal' }); // <<< CAMBIADO AQUÍ: Asumiendo que 'Principal' es tu ruta de login/inicio
+          this.$router.push({ name: 'Principal' }); 
         } else {
           this.errorMessage = 'Error de conexión con el servidor o al obtener notificaciones.';
         }
@@ -351,52 +361,45 @@ export default {
 </script>
 
 <style scoped>
-/* Colores de referencia:
-    - hsl(300, 29%, 78%) = #d9bad9 (Rosa-morado pastel)
-    - #5e1c7d (Morado oscuro)
-    - Un verde para aceptar: #8bc34a (Light Green 500 de Material Design)
-    - Un rojo para rechazar: #ef5350 (Red 400 de Material Design)
-    - Blanco muy suave: #fcfcfc
-*/
 
 .pagina-notificaciones-container {
   padding: 20px;
   max-width: 800px;
   margin: 20px auto;
-  background-color: #fcfcfc; /* Un blanco muy suave */
-  border-radius: 12px; /* Bordes más redondeados */
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); /* Sombra más pronunciada pero suave */
+  background-color: #fcfcfc;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
   color: #333;
-  font-family: 'Arial', sans-serif; /* Puedes ajustar la fuente si tienes una específica */
+  font-family: 'Arial', sans-serif;
 }
 
 h2 {
   text-align: center;
-  color: #5e1c7d; /* Título principal en morado oscuro */
+  color: #5e1c7d;
   margin-bottom: 30px;
-  font-size: 2.2em; /* Título un poco más grande */
-  font-weight: 700; /* Más negrita para los títulos */
+  font-size: 2.2em;
+  font-weight: 700;
 }
 
 .back-button {
   display: inline-flex;
   align-items: center;
-  padding: 10px 18px; /* Un poco más de padding */
-  background-color: #d9bad9; /* Rosa-morado pastel para el botón Volver */
-  color: #5e1c7d; /* Texto en morado oscuro */
-  border: 1px solid #c0a8c0; /* Borde sutil del mismo tono */
-  border-radius: 25px; /* Bordes muy redondeados (pastilla) */
+  padding: 10px 18px;
+  background-color: #d9bad9;
+  color: #5e1c7d;
+  border: 1px solid #c0a8c0;
+  border-radius: 25px;
   cursor: pointer;
-  font-size: 1.05em; /* Un poco más grande */
-  font-weight: 600; /* Texto seminegrita */
+  font-size: 1.05em;
+  font-weight: 600;
   transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
   margin-bottom: 25px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05); /* Sombra ligera */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .back-button:hover {
-  background-color: #c0a8c0; /* Tono ligeramente más oscuro al pasar el ratón */
-  transform: translateY(-2px); /* Pequeño levantamiento */
+  background-color: #c0a8c0;
+  transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -404,16 +407,16 @@ h2 {
   text-align: center;
   padding: 20px;
   font-size: 1.1em;
-  color: #5e1c7d; /* Mensajes en morado oscuro */
-  background-color: #f2e6f2; /* Fondo muy suave para mensajes */
+  color: #5e1c7d;
+  background-color: #f2e6f2;
   border-radius: 8px;
   margin-top: 20px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .error-message {
-  color: #d84315; /* Un rojo más oscuro para errores */
-  background-color: #ffe0b2; /* Fondo naranja suave para errores */
+  color: #d84315;
+  background-color: #ffe0b2;
   border: 1px solid #ffcc80;
 }
 
@@ -424,26 +427,26 @@ h2 {
 }
 
 .notification-card {
-  background-color: #ffffff; /* Fondo blanco para las tarjetas */
-  border: 1px solid #eee; /* Borde muy sutil */
-  border-radius: 10px; /* Bordes ligeramente más redondeados */
-  padding: 18px 22px; /* Más padding para que respire */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08); /* Sombra suave */
+  background-color: #ffffff;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: 18px 22px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease;
   cursor: pointer;
-  position: relative; /* Para el indicador de no leído */
-  overflow: hidden; /* Asegura que la barra izquierda no se salga */
+  position: relative;
+  overflow: hidden;
 }
 
 .notification-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12); /* Sombra más pronunciada al pasar el ratón */
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
 }
 
 .notification-card.unread {
-  background-color: #f7eff7; /* Rosa-morado pastel muy suave para no leídas */
-  border-left: 6px solid #5e1c7d; /* Barra lateral en morado oscuro, un poco más ancha */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 0 0 1px #5e1c7d; /* Añade un borde sutil para destacar más */
+  background-color: #f7eff7;
+  border-left: 6px solid #5e1c7d;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 0 0 1px #5e1c7d;
 }
 
 .notification-header {
@@ -453,50 +456,49 @@ h2 {
 }
 
 .notification-header i {
-  font-size: 1.7em; /* Icono un poco más grande */
+  font-size: 1.7em;
   margin-right: 15px;
-  color: #5e1c7d; /* Color del icono en morado oscuro */
-  min-width: 30px; /* Evita que el texto se superponga si el icono es muy pequeño */
+  color: #5e1c7d;
+  min-width: 30px;
   text-align: center;
 }
 
 .notification-header h3 {
   margin: 0;
-  font-size: 1.3em; /* Título de notificación ligeramente más grande */
-  color: #5e1c7d; /* Título de notificación en morado oscuro */
+  font-size: 1.3em;
+  color: #5e1c7d;
   flex-grow: 1;
   font-weight: 600;
 }
 
 .notification-message {
-  font-size: 1.05em; /* Mensaje ligeramente más grande */
-  color: #444; /* Color de texto más estándar */
+  font-size: 1.05em;
+  color: #444;
   margin-bottom: 12px;
-  line-height: 1.5; /* Mejor legibilidad */
+  line-height: 1.5;
 }
 
 .notification-date {
-  font-size: 0.88em; /* Fecha un poco más grande */
+  font-size: 0.88em;
   color: #777;
   text-align: right;
   margin-top: 10px;
 }
 
-/* Estilos específicos para solicitudes de contacto */
 .solicitud-acciones {
   margin-top: 15px;
   padding-top: 15px;
   border-top: 1px solid #eee;
   display: flex;
   flex-direction: column;
-  align-items: flex-end; /* Alinea los elementos a la derecha */
+  align-items: flex-end;
 }
 
 .solicitud-estado {
   font-weight: bold;
-  color: #5e1c7d; /* Estado en morado oscuro */
+  color: #5e1c7d;
   margin-bottom: 10px;
-  align-self: flex-start; /* Alinea el estado a la izquierda */
+  align-self: flex-start;
 }
 
 .action-buttons {
@@ -505,89 +507,88 @@ h2 {
 }
 
 .btn-accept, .btn-reject, .btn-view-status {
-  padding: 9px 20px; /* Más padding */
+  padding: 9px 20px;
   border: none;
-  border-radius: 22px; /* Bordes muy redondeados */
+  border-radius: 22px;
   cursor: pointer;
-  font-size: 0.98em; /* Un poco más grande */
+  font-size: 0.98em;
   font-weight: 600;
   transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  white-space: nowrap; /* Evita que el texto del botón se rompa */
+  white-space: nowrap;
 }
 
 .btn-accept {
-  background-color: #8bc34a; /* Verde suave para aceptar */
+  background-color: #8bc34a;
   color: white;
 }
 
 .btn-accept:hover {
-  background-color: #7cb342; /* Verde más oscuro al pasar el ratón */
+  background-color: #7cb342;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .btn-reject {
-  background-color: #ef5350; /* Rojo suave para rechazar */
+  background-color: #ef5350;
   color: white;
 }
 
 .btn-reject:hover {
-  background-color: #e53935; /* Rojo más oscuro al pasar el ratón */
+  background-color: #e53935;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .btn-view-status {
-  background-color: #5e1c7d; /* Morado oscuro */
+  background-color: #5e1c7d;
   color: white;
 }
 
 .btn-view-status:hover {
-  background-color: #4a148c; /* Morado más oscuro al pasar el ratón */
+  background-color: #4a148c;
   transform: translateY(-1px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .contact-details {
   margin-top: 10px;
-  background-color: #f7eaf7; /* Fondo muy suave en el color pastel */
+  background-color: #f7eaf7;
   border: 1px solid #e0c0e0;
   border-radius: 8px;
   padding: 12px;
   font-size: 0.9em;
-  color: #5e1c7d; /* Texto en morado oscuro */
+  color: #5e1c7d;
 }
 
 .contact-details p {
   margin: 5px 0;
 }
 
-/* Estilos para modales (reutilizados y específicos) */
 .message-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.6); /* Opacidad media-alta para el fondo */
+  background-color: rgba(0, 0, 0, 0.6);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  backdrop-filter: blur(4px); /* Efecto de desenfoque en el fondo */
+  backdrop-filter: blur(4px);
 }
 
 .message-modal-content {
   background-color: #ffffff;
-  padding: 35px 30px; /* Más padding en general */
-  border-radius: 18px; /* Bordes más redondeados */
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3); /* Sombra más profunda y notable */
-  max-width: 500px; /* Un poco más de ancho máximo */
+  padding: 35px 30px;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  max-width: 500px;
   width: 90%;
   text-align: center;
   position: relative;
-  animation: fadeIn 0.3s ease-out; /* Animación de entrada */
+  animation: fadeIn 0.3s ease-out;
 }
 
 @keyframes fadeIn {
@@ -601,44 +602,43 @@ h2 {
   right: 18px;
   background: none;
   border: none;
-  font-size: 30px; /* Icono de cierre más grande */
+  font-size: 30px;
   cursor: pointer;
-  color: #b71c1c; /* Un rojo más oscuro y distintivo */
+  color: #b71c1c;
   transition: transform 0.2s ease, color 0.2s ease;
 }
 .modal-close-button:hover {
   color: #8c0000;
-  transform: rotate(90deg) scale(1.1); /* Gira y se agranda ligeramente */
+  transform: rotate(90deg) scale(1.1);
 }
 
-
 .message-modal-title {
-  font-size: 2rem; /* Título de modal más grande */
+  font-size: 2rem;
   font-weight: bold;
-  color: #5e1c7d; /* Título de modal en morado oscuro */
+  color: #5e1c7d;
   margin-bottom: 20px;
   line-height: 1.2;
 }
 
 .message-modal-message {
-  font-size: 1.15rem; /* Mensaje de modal más grande */
+  font-size: 1.15rem;
   color: #444;
-  margin-bottom: 30px; /* Más espacio */
+  margin-bottom: 30px;
   line-height: 1.6;
 }
 
 .message-modal-actions {
   display: flex;
   justify-content: center;
-  gap: 15px; /* Espacio entre botones en acciones del modal */
-  margin-top: 20px; /* Espacio superior para separar del texto */
+  gap: 15px;
+  margin-top: 20px;
 }
 
 .message-modal-button-close {
-  background-color: #d9bad9; /* Rosa-morado pastel para el botón de cerrar modal */
-  color: #5e1c7d; /* Texto en morado oscuro */
-  padding: 12px 28px; /* Más padding */
-  border-radius: 25px; /* Bordes redondeados */
+  background-color: #d9bad9;
+  color: #5e1c7d;
+  padding: 12px 28px;
+  border-radius: 25px;
   font-weight: 600;
   transition: background-color 0.2s ease-in-out, transform 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
@@ -647,15 +647,15 @@ h2 {
 }
 
 .message-modal-button-close:hover {
-  background-color: #c0a8c0; /* Tono ligeramente más oscuro */
+  background-color: #c0a8c0;
   transform: translateY(-2px);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
 
 .contact-details-modal-info {
-  text-align: left; /* Alinea el texto de los detalles a la izquierda */
+  text-align: left;
   margin-bottom: 25px;
-  background-color: #fcf6fc; /* Fondo muy suave para la info de contacto */
+  background-color: #fcf6fc;
   border-radius: 10px;
   padding: 15px 20px;
   border: 1px solid #eee;
@@ -667,42 +667,40 @@ h2 {
   line-height: 1.4;
 }
 .contact-details-modal-info strong {
-  color: #5e1c7d; /* Resalta las etiquetas fuertes */
+  color: #5e1c7d;
 }
 
-
 .icon-container {
-  font-size: 4em; /* Iconos más grandes en el modal */
+  font-size: 4em;
   margin-bottom: 20px;
-  display: flex; /* Para centrar el icono */
+  display: flex;
   justify-content: center;
 }
 
 .success-icon {
-  color: #8bc34a; /* Verde para éxito (de la paleta pastel) */
+  color: #8bc34a;
 }
 
 .error-icon {
-  color: #ef5350; /* Rojo para error (de la paleta pastel) */
+  color: #ef5350;
 }
 
 .success-title {
-  color: #8bc34a; /* Verde para título de éxito */
+  color: #8bc34a;
 }
 
 .error-title {
-  color: #ef5350; /* Rojo para título de error */
+  color: #ef5350;
 }
 
 .received-date {
   font-size: 0.95em;
   color: #888;
-  margin-top: 20px; /* Más espacio superior */
+  margin-top: 20px;
 }
 
-/* Nuevos estilos para el botón "Marcar como leído" */
 .action-button.mark-read-button {
-    background-color: #793096; /* Morado oscuro para el botón de leído */
+    background-color: #793096;
     color: white;
     padding: 8px 15px;
     border-radius: 20px;
@@ -715,11 +713,10 @@ h2 {
 }
 
 .action-button.mark-read-button:hover {
-    background-color: #61257a; /* Un morado más oscuro al pasar el ratón */
+    background-color: #61257a;
     transform: translateY(-1px);
 }
 
-/* Responsive adjustments */
 @media (max-width: 600px) {
     .pagina-notificaciones-container {
         padding: 15px;
@@ -787,12 +784,12 @@ h2 {
     }
 
     .message-modal-actions {
-        flex-direction: column; /* Apila los botones en móviles */
+        flex-direction: column;
         gap: 10px;
     }
     .message-modal-button-close, .btn-accept, .btn-reject {
-        width: 100%; /* Botones de ancho completo */
-        margin-left: 0 !important; /* Resetea el margen si se establece en otro lugar */
+        width: 100%;
+        margin-left: 0 !important;
     }
     .icon-container {
         font-size: 3em;

@@ -1,7 +1,8 @@
 <template>
   <div>
+    <!--ESTA ES LA BARRA ROSADA QUE SE OBSERVA EN LA PARTE SUPERIOR DE LA PAGINA-->
     <div class="Barra">
-      </div>
+    </div>
   </div>
 </template>
 
@@ -12,16 +13,12 @@ export default {
 </script>
 
 <style scoped>
-
-
-/* Rectángulo de barra superior */
 .Barra {
   position: relative;
-  width: 100%; /* Ocupa el 100% del ancho disponible */
-  height: 180px; /* Altura fija para la barra */
-  background-color: hsl(300, 29%, 78%); /* Tu color rosado */
-  /* Eliminamos el margin-top para que la barra esté pegada a la parte superior */
-  margin-top: 0; 
-  box-sizing: border-box; /* Asegura que el padding se incluya en el ancho/alto */
+  width: 100%;
+  height: 180px;
+  background-color: hsl(300, 29%, 78%);
+  margin-top: 0;
+  box-sizing: border-box;
 }
 </style>

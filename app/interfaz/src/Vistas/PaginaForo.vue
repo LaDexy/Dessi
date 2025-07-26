@@ -1,7 +1,9 @@
 <template>
   <div>
-    <!--Componentes de pagina de perfil-->
 
+     <!--RENDERIZAR PARA ADAPTACION A NAVEGADOR-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <ForoUsuarios/>
   
 
@@ -10,7 +12,7 @@
 
 <script>
 
-/*Importacion de componentes de pagina de perfil*/
+
 import ForoUsuarios from '@/components/ForoUsuarios.vue';
 export default{
 

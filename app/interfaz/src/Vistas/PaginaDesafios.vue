@@ -1,5 +1,12 @@
 <template>
+
   <div class="pagina-desafios-container">
+
+        <!--RENDERIZAR PARA ADAPTACION A NAVEGADOR-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!--FUNCION PARA TODA LA PAGINA O URL CORRESPONDIENTE A DESAFIOS-->
+
     <h2>Desafíos Activos Disponibles</h2>
 
     <div v-if="isLoading" class="loading-message">Cargando desafíos...</div>
@@ -8,7 +15,6 @@
       <div v-for="desafio in desafios" :key="desafio.id_desafio" class="desafio-card">
         <h3>{{ desafio.nombre_desafio }}</h3>
         <p class="descripcion">{{ desafio.descripcion_desafio }}</p>
-        <p class="meta">Estado: {{ desafio.estado }}</p>
         <p class="meta" v-if="desafio.nombre_usuario_emprendedor">
           Creado por: {{ desafio.nombre_usuario_emprendedor }}
         </p>
@@ -36,19 +42,20 @@ export default {
     };
   },
   async created() {
-    // Al crear el componente, automáticamente carga los desafíos
     await this.fetchDesafios();
   },
+
+  //FUNCION PARA CARGAR LOS DESAFIOS 
   methods: {
     async fetchDesafios() {
       this.isLoading = true;
-      this.errorMessage = ''; // Limpiar cualquier mensaje de error anterior
-      this.desafios = []; // Limpia desafíos anteriores
+      this.errorMessage = '';
+      this.desafios = [];
       try {
         const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
         if (!token) {
           this.errorMessage = 'No se encontró token de autenticación. Por favor, inicia sesión.';
-          this.$router.push({ name: 'Principal' }); // Redirigir a login
+          this.$router.push({ name: 'Principal' });
           return;
         }
 
@@ -69,7 +76,7 @@ export default {
         console.error('Error en la solicitud para obtener desafíos:', error);
         if (error.response && (error.response.status === 401 || error.response.status === 403)) {
           this.errorMessage = 'Tu sesión ha expirado o no tienes permisos. Por favor, inicia sesión.';
-          this.$router.push({ name: 'Principal' }); // Redirigir a login
+          this.$router.push({ name: 'Principal' });
         } else {
           this.errorMessage = 'Error de conexión con el servidor o al obtener desafíos.';
         }
@@ -78,7 +85,6 @@ export default {
       }
     },
     viewChallengeDetails(id) {
-      // Este método navegará a la página de detalles del desafío (Paso 3)
       console.log('Navegando a los detalles del desafío:', id);
       this.$router.push({ name: 'PaginaDetalleDesafio', params: { id: id } });
     }
@@ -151,7 +157,7 @@ h2 {
   font-size: 0.95em;
   line-height: 1.5;
   color: #555;
-  flex-grow: 1; /* Permite que la descripción ocupe el espacio disponible */
+  flex-grow: 1;
 }
 
 .desafio-card .meta {
@@ -165,7 +171,7 @@ h2 {
   width: 100%;
   padding: 10px 15px;
   margin-top: 15px;
-  background-color: #28a745; /* Green color for action */
+  background-color: #28a745;
   color: white;
   border: none;
   border-radius: 5px;

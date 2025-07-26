@@ -1,5 +1,10 @@
 <template>
   <div>
+
+    <!--RENDERIZAR PARA ADAPTACION A NAVEGADOR-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!--iMPORTACION DE COMPONENTES-->
     <ContenidoMenu :userRole="userProfileType" class="fixed-menu-button" />
 
     <BarraBusqueda @search="handleSearch" class="fixed-search-bar" />
@@ -70,7 +75,7 @@ import BarraBusqueda from "../components/BarraBusqueda.vue";
 import BotonesFiltro from "../components/BotonesFiltro.vue";
 import TarjetasPerfiles from "@/components/TarjetasPerfiles.vue";
 import VentanaSolicitud from "@/components/VentanaSolicitud.vue";
-import IconoNotificaciones from "@/components/IconoNotificaciones.vue"; // Importa IconoNotificaciones
+import IconoNotificaciones from "@/components/IconoNotificaciones.vue"; 
 
 export default {
   name: "PaginaCentral",
@@ -83,7 +88,7 @@ export default {
     BotonesFiltro,
     TarjetasPerfiles,
     VentanaSolicitud,
-    IconoNotificaciones, // Registra IconoNotificaciones
+    IconoNotificaciones, 
   },
   data() {
     return {
@@ -100,11 +105,11 @@ export default {
       showVentanaSolicitud: false,
       selectedProfileId: null,
       selectedProfileName: "",
-      // showChatbotModal: false, // ELIMINADO: Ya no usaremos este modal aquí
-      // receivedRequests: [], // ELIMINADO: Las solicitudes se gestionarán en la página de notificaciones
-      // hasNewRequests: false, // ELIMINADO: La cuenta de notificaciones la manejará IconoNotificaciones
+     
     };
   },
+
+  //FUNCIONES PARA MOSTRAR LAS TARJETAS DE LOS PERFILES Y LAS NOTIFICACIONES
   computed: {
     filteredProfiles() {
       let profilesToFilter = this.allProfiles;
@@ -131,7 +136,7 @@ export default {
   async created() {
     await this.fetchLoggedInUserProfile();
     await this.fetchAllProfiles();
-    // await this.fetchReceivedRequests(); // ELIMINADO: Ya no se carga aquí
+    
   },
   methods: {
     async fetchLoggedInUserProfile() {
@@ -309,8 +314,7 @@ export default {
             "Solicitud Enviada",
             "¡Tu solicitud de contacto ha sido enviada con éxito!"
           );
-          // Opcional: Podrías aquí refrescar las notificaciones del IconoNotificaciones
-          // this.$refs.iconoNotificaciones.fetchNotificationsCount();
+          
         } else {
           this.showErrorMessage(
             "Error al Enviar",
@@ -382,16 +386,11 @@ export default {
       };
       return new Date(dateString).toLocaleDateString("es-ES", options);
     },
-    // NUEVO MÉTODO: Navegar a la página de notificaciones
+  
     goToNotificationsPage() {
       this.$router.push({ name: "Notificaciones" });
     },
-    // ELIMINADO: Ya no necesitamos estos métodos de gestión de solicitudes en PaginaCentral
-    // toggleChatbotModal() { /* ... */ },
-    // fetchReceivedRequests() { /* ... */ },
-    // acceptRequest() { /* ... */ },
-    // rejectRequest() { /* ... */ },
-    // handleReceivedRequestNotification() { /* ... */ },
+
   },
 };
 </script>
@@ -399,7 +398,7 @@ export default {
 <style scoped>
 
 
-/* Contenedor para el botón de menú */
+
 .fixed-menu-button {
   position: fixed;
   top: 20px; 
@@ -407,35 +406,35 @@ export default {
   z-index: 1050; 
 }
 
-/* Contenedor para la barra de búsqueda */
+
 .fixed-search-bar {
   position: fixed;
-  top: 100px; /* Ajusta para que esté debajo del menú */
-  left: 20px; /* Ajusta para alineación */
-  z-index: 1040; /* Ligeramente menor que el menú */
+  top: 100px; 
+  left: 20px;
+  z-index: 1040;
 }
 
-/* Contenedor para la imagen de perfil */
+
 .fixed-profile-image-wrapper {
   position: fixed;
-  top: 20px; /* Ajusta para que esté arriba a la derecha */
-  right: 20px; /* Ajusta para que esté a la derecha */
-  z-index: 1030; /* Menor que los anteriores */
-  width: 80px; /* Tamaño del contenedor */
+  top: 20px;
+  right: 20px;
+  z-index: 1030; 
+  width: 80px; 
   height: 80px;
   border-radius: 50%;
-  overflow: hidden; /* Para que la imagen se recorte en círculo */
+  overflow: hidden; 
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   display: flex;
   justify-content: center;
   align-items: center;
 }
 .fixed-profile-image-wrapper > .imagen-perfil {
-  /* Si ImagenPerfil es la raíz, apuntamos a ella */
+  
   width: 100%;
   height: 100%;
 }
-/* Estilo para la imagen dentro de ImagenPerfil si no la gestiona ya */
+
 .fixed-profile-image-wrapper img {
   width: 100%;
   height: 100%;
@@ -443,19 +442,16 @@ export default {
   border-radius: 50%;
 }
 
-/* Contenedor para el icono de notificaciones */
+
 .fixed-notifications-icon-wrapper {
   position: fixed;
-  top: 20px; /* Ajusta para que esté cerca de la imagen de perfil o donde desees */
-  right: 120px; /* Ajusta su posición. Puedes alinearlo con la imagen de perfil o la barra de perfil */
-  z-index: 1035; /* Entre la imagen de perfil y la barra de búsqueda */
-  /* Añade estilos si quieres un fondo o forma específica para el icono de notificación */
+  top: 20px; 
+  right: 120px; 
+  z-index: 1035;
+  
 }
 
-/* Aquí puedes mantener los estilos que ya tenías para el resto del contenido
-   como TituloPerfiles, user-name-display-wrapper, etc.
-   Solo asegúrate de que no haya un `.content-card` que tenga `transform` o similar.
-*/
+
 .TituloPerfiles {
   font-family: "Times New Roman", serif;
   font-size: 2.5em;
@@ -479,7 +475,7 @@ export default {
     left: 15px;
   }
   .fixed-search-bar {
-    top: 80px; /* Ajusta para móvil */
+    top: 80px;
     left: 15px;
   }
   .fixed-profile-image-wrapper {
@@ -490,10 +486,10 @@ export default {
   }
   .fixed-notifications-icon-wrapper {
     top: 15px;
-    right: 90px; /* Ajusta para móvil */
+    right: 90px; 
   }
   .content-area-scrollable {
-    padding-top: 120px; /* Ajusta el padding para móvil */
+    padding-top: 120px; 
   }
 }
 
@@ -509,7 +505,7 @@ export default {
     left: 10px;
   }
   .fixed-search-bar {
-    top: 70px; /* Ajusta para móvil */
+    top: 70px; 
     left: 10px;
   }
   .fixed-profile-image-wrapper {
@@ -520,10 +516,10 @@ export default {
   }
   .fixed-notifications-icon-wrapper {
     top: 10px;
-    right: 70px; /* Ajusta para móvil */
+    right: 70px; 
   }
   .content-area-scrollable {
-    padding-top: 100px; /* Ajusta el padding para móvil muy pequeño */
+    padding-top: 100px; 
   }
 }
 
@@ -577,7 +573,7 @@ export default {
   }
 }
 
-/* Estilos para el mensaje "No se encontraron perfiles" */
+
 .no-profiles-message {
   text-align: center;
   font-style: italic;
@@ -586,7 +582,7 @@ export default {
   font-size: 1.1em;
 }
 
-/* Estilos para los modales */
+
 .message-modal-overlay {
   position: fixed;
   top: 0;
@@ -597,7 +593,7 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 2000; /* Asegura que esté por encima de todo */
+  z-index: 2000; 
 }
 
 .message-modal-content {
@@ -641,12 +637,12 @@ export default {
   background-color: #4a106e;
 }
 
-/* Margenes para componentes específicos (mantener si son necesarios para el layout de PaginaCentral) */
+
 .component-margin-bottom {
-  margin-bottom: 20px; /* Margen común para varios componentes */
+  margin-bottom: 20px; 
 }
 
 .buttons-filter-margin-bottom {
-  margin-bottom: 30px; /* Margen específico para BotonesFiltro */
+  margin-bottom: 30px; 
 }
 </style>

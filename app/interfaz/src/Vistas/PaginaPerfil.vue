@@ -1,5 +1,10 @@
 <template>
   <div>
+
+    <!--RENDERIZAR PARA ADAPTACION A NAVEGADOR-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!--Importacion de componentes-->
     <ContenidoMenu :userRole="userProfileType" class="fixed-menu-button" />
     
     <ImagenPerfil
@@ -60,7 +65,7 @@
 </template>
 
 <script>
-/* Importación de componentes de página de perfil */
+
 import ImagenPerfil from "../components/ImagenPerfil.vue";
 import IconoEditar from "@/components/IconoEditar.vue";
 import CrearDesafio from "@/components/CrearDesafio.vue";
@@ -88,8 +93,8 @@ export default {
       userDocuments: [],
       CrearDesafioNuevo: false,
       VerDesafiosCreados: false,
-      showDetalleDesafioModal: false, // Controla si ParticipantesDesafios está visible
-      selectedChallengeId: null,      // Almacena el ID del desafío seleccionado
+      showDetalleDesafioModal: false, 
+      selectedChallengeId: null,      
     };
   },
   components: {
@@ -110,6 +115,8 @@ export default {
     this.loadUserProfileData();
   },
   methods: {
+
+    //FUNCION PARA DATOS DE PERFIL DE USUARIO (NOMBRE DE PERFIL, TIPO DE PERFIL Y DESAFIOS SI ES EMPRENDEDOR)
     async loadUserProfileData() {
       try {
         const token = localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
@@ -129,7 +136,7 @@ export default {
           const profile = response.data;
           this.userId = profile.id_usuario;
           this.userName = profile.nombre_usuario;
-          // Esta línea ya debería recibir la URL completa desde el backend
+         
           this.profileImageSrc = profile.foto_perfil_url || require("../assets/Usuario.png");
           this.userProfile = profile.tipo_perfil;
           this.userDescription = profile.descripcion_perfil || "Aca va una breve descripcion";
@@ -188,9 +195,9 @@ export default {
         );
 
         if (response.status === 200) {
-          // *** ESTA ES LA LÍNEA MODIFICADA CLAVE ***
-          const newImageUrl = response.data.fullImageUrl; // ¡Ahora usa la URL completa!
-          // ***************************************
+          
+          const newImageUrl = response.data.fullImageUrl;
+          
           this.profileImageSrc = newImageUrl;
           alert("Foto de perfil actualizada exitosamente!");
           console.log("Foto de perfil actualizada a:", newImageUrl);
@@ -338,10 +345,10 @@ export default {
       }
     },
     MostrarRegistro(Todo) {
-      // Cierra todos los modales relacionados con desafíos antes de abrir el nuevo
+      
       this.CrearDesafioNuevo = false;
       this.VerDesafiosCreados = false;
-      this.showDetalleDesafioModal = false; // Asegura que el modal de detalle esté cerrado
+      this.showDetalleDesafioModal = false; 
 
       if (Todo === "DesafiosNuevos") {
         this.CrearDesafioNuevo = true;
@@ -362,11 +369,11 @@ export default {
             }
         });
     },
-    // MÉTODO AGREGADO: Maneja el evento 'verDetalle' emitido por VerDesafios
+    
     handleVerDetalleDesafio(id) {
-        this.selectedChallengeId = id;          // Guarda el ID del desafío
-        this.showDetalleDesafioModal = true;    // Abre el modal de detalle
-        this.VerDesafiosCreados = false;        // Cierra el modal de lista
+        this.selectedChallengeId = id;          
+        this.showDetalleDesafioModal = true;    
+        this.VerDesafiosCreados = false;        
     }
   },
 };
@@ -374,7 +381,7 @@ export default {
 
 <style scoped>
 
-/* Contenedor para el botón de menú */
+
 .fixed-menu-button {
   position: fixed;
   top: 20px; 

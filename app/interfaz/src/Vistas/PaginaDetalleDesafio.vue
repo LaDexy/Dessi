@@ -1,5 +1,9 @@
 <template>
   <div class="challenge-detail-container">
+    <!--RENDERIZAR PARA ADAPTACION A NAVEGADOR-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!--ESTAS FUNCIONES CORRESPONDEN A LOS DATOS EMITIDOS PARA LOS DESAFIOS ACTIVOS (FUNCION SOLO VISTA POR DISEÑADOR Y MARKETING)-->
     <button @click="goBack" class="back-button">
       <i class="fas fa-arrow-left mr-2"></i> Volver a Desafíos
     </button>
@@ -109,7 +113,7 @@ import axios from 'axios';
 
 export default {
   name: 'PaginaDetalleDesafio',
-  props: ['id'], // Recibe el ID del desafío como una prop de la ruta
+  props: ['id'],
   data() {
     return {
       challenge: null,
@@ -117,8 +121,8 @@ export default {
       errorMessage: '',
       showParticipateModal: false,
       proposalText: '',
-      imagenPropuesta: null, // Para el archivo de imagen seleccionado
-      imagenPropuestaPreview: null, // Para la URL de la vista previa de la imagen
+      imagenPropuesta: null,
+      imagenPropuestaPreview: null,
       showMessageModal: false,
       messageModalTitle: '',
       messageModalMessage: '',
@@ -128,15 +132,15 @@ export default {
     await this.fetchChallengeDetails();
   },
   computed: {
-    // La lógica simplificada: el botón "Participar" solo se muestra si el desafío está cargado y su estado es "Activo".
-    // Asumimos que la autorización de rol (Diseñador/Marketing) se maneja en el router de Vue o en el backend.
     canPropose() {
       return this.challenge && this.challenge.estado === 'Activo';
     }
   },
+
+  //FUNCION PARA MOSTRAR DESAFIOS ACTIVOS SOLO PAA PERFILES ESPECIFICOS
   methods: {
     goBack() {
-      this.$router.go(-1); // Vuelve a la página anterior (PaginaDesafios)
+      this.$router.go(-1);
     },
     async fetchChallengeDetails() {
       this.isLoading = true;
@@ -145,7 +149,7 @@ export default {
         const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
         if (!token) {
           this.errorMessage = 'No hay token de autenticación. Por favor, inicia sesión.';
-          this.$router.push({ name: 'Principal' }); // Redirige a la página principal si no hay token
+          this.$router.push({ name: 'Principal' });
           return;
         }
 
@@ -176,41 +180,38 @@ export default {
     },
     openParticipateModal() {
       this.showParticipateModal = true;
-      this.proposalText = ''; // Limpiar el texto de la propuesta al abrir
-      this.imagenPropuesta = null; // Limpiar la imagen seleccionada
-      this.imagenPropuestaPreview = null; // Limpiar la vista previa
+      this.proposalText = '';
+      this.imagenPropuesta = null;
+      this.imagenPropuestaPreview = null;
     },
     closeParticipateModal() {
       this.showParticipateModal = false;
-      this.proposalText = ''; // Limpiar el texto de la propuesta al cerrar
-      this.imagenPropuesta = null; // Limpiar la imagen seleccionada
-      this.imagenPropuestaPreview = null; // Limpiar la vista previa
+      this.proposalText = '';
+      this.imagenPropuesta = null;
+      this.imagenPropuestaPreview = null;
     },
 
-    // Manejar la selección de imagen
     handleImageChange(event) {
       const file = event.target.files[0];
       if (file) {
         this.imagenPropuesta = file;
-        this.imagenPropuestaPreview = URL.createObjectURL(file); // Crea una URL para la vista previa
+        this.imagenPropuestaPreview = URL.createObjectURL(file);
       } else {
         this.imagenPropuesta = null;
         this.imagenPropuestaPreview = null;
       }
     },
 
-    // Enviar la propuesta con imagen
     async submitProposal() {
-      // Validar que al menos haya texto o imagen
       if (!this.proposalText.trim() && !this.imagenPropuesta) {
         this.showErrorMessage('Error de Propuesta', 'Por favor, ingresa texto para tu propuesta o sube una imagen.');
         return;
       }
 
-      const formData = new FormData(); // Usamos FormData para enviar archivos
+      const formData = new FormData();
       formData.append('texto_propuesta', this.proposalText);
       if (this.imagenPropuesta) {
-        formData.append('imagenPropuesta', this.imagenPropuesta); // 'imagenPropuesta' debe coincidir con el nombre del campo en Multer del backend
+        formData.append('imagenPropuesta', this.imagenPropuesta);
       }
 
       const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
@@ -222,11 +223,11 @@ export default {
 
       try {
         const response = await axios.post(
-          `http://localhost:4000/api/desafios/${this.challenge.id_desafio}/proponer`, // ¡Revisa esta URL! En tu código Express era /propuestas, no /proponer
-          formData, // Enviamos el FormData
+          `http://localhost:4000/api/desafios/${this.challenge.id_desafio}/proponer`,
+          formData,
           {
             headers: {
-              'Content-Type': 'multipart/form-data', // MUY IMPORTANTE para enviar archivos
+              'Content-Type': 'multipart/form-data',
               'Authorization': `Bearer ${token}`
             }
           }
@@ -234,8 +235,7 @@ export default {
 
         if (response.status === 201) {
           this.showMessage('Propuesta Enviada', '¡Tu propuesta ha sido enviada con éxito! El emprendedor será notificado.');
-          this.closeParticipateModal(); // Cierra el modal de propuesta
-          // Limpiar el formulario después de un envío exitoso
+          this.closeParticipateModal();
           this.proposalText = '';
           this.imagenPropuesta = null;
           this.imagenPropuestaPreview = null;
@@ -246,9 +246,7 @@ export default {
         console.error('Error al enviar propuesta:', error);
         if (error.response) {
           this.showErrorMessage('Error al Enviar Propuesta', error.response.data.message || 'Error en el servidor al enviar propuesta.');
-          // Si tu backend devuelve 403 (Forbidden) por alguna razón, podrías manejarlo aquí
           if (error.response.status === 403) {
-            // Ejemplo: this.showErrorMessage('Acceso Denegado', 'No tienes permiso para enviar propuestas a este desafío.');
           }
         } else {
           this.showErrorMessage('Error de Conexión', 'No se pudo conectar con el servidor. Inténtalo de nuevo.');
@@ -280,49 +278,43 @@ export default {
 </script>
 
 <style scoped>
-/* Colores de referencia:
-   - hsl(300, 29%, 78%) se traduce aproximadamente a #d9bad9 (Rosa-morado pastel)
-   - #5e1c7d (Morado oscuro)
-*/
-
 .challenge-detail-container {
-  padding: 30px; /* Aumentar el padding para más espacio */
-  max-width: 900px; /* Ligeramente más ancho */
-  margin: 30px auto; /* Centrar y dar más margen vertical */
-  background-color: #ffffff; /* Fondo blanco puro */
-  border-radius: 18px; /* Bordes más redondeados */
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1); /* Sombra más pronunciada y suave */
+  padding: 30px;
+  max-width: 900px;
+  margin: 30px auto;
+  background-color: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
   color: #333;
-  font-family: 'Inter', sans-serif; /* Consistencia en la fuente */
+  font-family: 'Inter', sans-serif;
 }
 
 .back-button {
   display: inline-flex;
   align-items: center;
-  padding: 12px 20px; /* Más padding */
-  background-color: #d9bad9; /* Color pastel para el botón de volver */
-  color: #5e1c7d; /* Texto morado oscuro */
+  padding: 12px 20px;
+  background-color: #d9bad9;
+  color: #5e1c7d;
   border: none;
-  border-radius: 10px; /* Bordes redondeados */
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 1em; /* Un poco más grande */
-  font-weight: 600; /* Seminegrita */
+  font-size: 1em;
+  font-weight: 600;
   transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-  margin-bottom: 30px; /* Más espacio debajo */
+  margin-bottom: 30px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .back-button:hover {
-  background-color: #c0a8c0; /* Un poco más oscuro al pasar el ratón */
-  transform: translateY(-2px); /* Efecto de levantamiento */
+  background-color: #c0a8c0;
+  transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .back-button i {
-    margin-right: 8px; /* Espacio entre icono y texto */
+    margin-right: 8px;
 }
 
-/* Mensajes de estado (cargando, error, sin desafío) */
 .loading-message, .error-message, .no-challenge-message {
     text-align: center;
     padding: 25px;
@@ -333,39 +325,36 @@ export default {
 }
 
 .loading-message {
-    background-color: #f0f8ff; /* Azul muy claro */
-    color: #007bff; /* Azul */
+    background-color: #f0f8ff;
+    color: #007bff;
     border: 1px solid #cceeff;
 }
 
 .error-message, .no-challenge-message {
-    background-color: #ffebee; /* Rojo muy claro */
-    color: #d32f2f; /* Rojo oscuro */
+    background-color: #ffebee;
+    color: #d32f2f;
     border: 1px solid #ef9a9a;
 }
 
-
-/* Contenido del desafío */
 .challenge-content {
-  /* No se necesitan estilos directos aquí si los hijos ya están bien espaciados */
 }
 
 .challenge-title {
-  font-size: 2.8em; /* Título más grande */
-  color: #5e1c7d; /* Morado oscuro para el título principal */
+  font-size: 2.8em;
+  color: #5e1c7d;
   margin-bottom: 25px;
   text-align: center;
-  font-weight: 800; /* Extra bold */
+  font-weight: 800;
   line-height: 1.2;
 }
 
 .challenge-description {
-  font-size: 1.15em; /* Descripción un poco más grande */
+  font-size: 1.15em;
   line-height: 1.7;
-  color: #444; /* Gris oscuro para el texto */
-  margin-bottom: 40px; /* Más espacio */
+  color: #444;
+  margin-bottom: 40px;
   text-align: justify;
-  background-color: #f9f9f9; /* Fondo ligero para la descripción */
+  background-color: #f9f9f9;
   padding: 20px;
   border-radius: 10px;
   border: 1px solid #eee;
@@ -373,61 +362,61 @@ export default {
 
 .challenge-info-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* Columnas un poco más anchas */
-  gap: 20px; /* Más espacio entre tarjetas */
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
   margin-bottom: 40px;
 }
 
 .info-card {
-  background-color: #f2e6f2; /* Rosa-morado pastel muy suave */
-  border: 1px solid #d9bad9; /* Borde pastel */
-  border-radius: 12px; /* Más redondeado */
-  padding: 20px; /* Más padding */
+  background-color: #f2e6f2;
+  border: 1px solid #d9bad9;
+  border-radius: 12px;
+  padding: 20px;
   text-align: center;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); /* Sombra más definida */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .info-card:hover {
-  transform: translateY(-5px); /* Efecto de levantamiento al pasar el ratón */
+  transform: translateY(-5px);
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
 }
 
 .info-label {
-  font-size: 0.9em; /* Un poco más grande */
-  color: #6a5b70; /* Un gris-morado para las etiquetas */
-  margin-bottom: 8px; /* Más espacio */
+  font-size: 0.9em;
+  color: #6a5b70;
+  margin-bottom: 8px;
   font-weight: 600;
-  text-transform: uppercase; /* Mayúsculas para las etiquetas */
+  text-transform: uppercase;
 }
 
 .info-value {
-  font-size: 1.25em; /* Valor más grande y destacado */
-  color: #5e1c7d; /* Morado oscuro para los valores importantes */
+  font-size: 1.25em;
+  color: #5e1c7d;
   font-weight: bold;
 }
 
 .challenge-section {
-  background-color: #f8f8f8; /* Fondo suave para secciones */
+  background-color: #f8f8f8;
   border: 1px solid #eee;
   border-radius: 12px;
-  padding: 25px; /* Más padding */
-  margin-bottom: 35px; /* Más espacio */
+  padding: 25px;
+  margin-bottom: 35px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .section-title {
-  font-size: 1.8em; /* Título de sección más grande */
-  color: #5e1c7d; /* Morado oscuro para títulos de sección */
+  font-size: 1.8em;
+  color: #5e1c7d;
   margin-bottom: 20px;
-  font-weight: 700; /* Negrita */
-  border-bottom: 2px solid #d9bad9; /* Borde inferior pastel */
-  padding-bottom: 12px; /* Más padding inferior */
-  text-align: left; /* Alineación a la izquierda */
+  font-weight: 700;
+  border-bottom: 2px solid #d9bad9;
+  padding-bottom: 12px;
+  text-align: left;
 }
 
 .section-content {
-  font-size: 1.05em; /* Contenido ligeramente más grande */
+  font-size: 1.05em;
   line-height: 1.7;
   color: #444;
   text-align: justify;
@@ -440,32 +429,31 @@ export default {
 }
 
 .contact-info strong {
-    color: #5e1c7d; /* Morado oscuro para el "Email:" */
+    color: #5e1c7d;
     margin-right: 5px;
 }
-
 
 .participate-button {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  padding: 18px 25px; /* Botón más grande */
-  background-color: #8c52ff; /* Un morado vibrante para la acción principal */
+  padding: 18px 25px;
+  background-color: #8c52ff;
   color: white;
   border: none;
-  border-radius: 12px; /* Bordes consistentes */
+  border-radius: 12px;
   cursor: pointer;
-  font-size: 1.3em; /* Texto más grande */
+  font-size: 1.3em;
   font-weight: bold;
   transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
-  margin-top: 30px; /* Espacio superior */
+  margin-top: 30px;
 }
 
 .participate-button:hover {
-  background-color: #7a3fe0; /* Morado más oscuro al pasar el ratón */
-  transform: translateY(-3px); /* Efecto de levantamiento más pronunciado */
+  background-color: #7a3fe0;
+  transform: translateY(-3px);
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
 }
 
@@ -475,40 +463,37 @@ export default {
 }
 
 .participate-button i {
-    margin-right: 10px; /* Espacio entre icono y texto */
+    margin-right: 10px;
 }
 
-
-/* Estilos para el modal de propuesta */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.7); /* Fondo más oscuro para el overlay */
+  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 2000;
-  backdrop-filter: blur(4px); /* Suave desenfoque */
+  backdrop-filter: blur(4px);
 }
 
 .modal-content {
   background-color: white;
-  padding: 40px; /* Más padding */
-  border-radius: 20px; /* Más redondeado */
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4); /* Sombra más fuerte */
-  max-width: 650px; /* Un poco más ancho */
+  padding: 40px;
+  border-radius: 20px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+  max-width: 650px;
   width: 90%;
   text-align: center;
   position: relative;
-  animation: fadeInScale 0.3s ease-out forwards; /* Animación de entrada */
-  max-height: 90vh; /* Permite scroll si el contenido es muy largo */
-  overflow-y: auto; /* Habilitar scroll */
+  animation: fadeInScale 0.3s ease-out forwards;
+  max-height: 90vh;
+  overflow-y: auto;
 }
 
-/* Animación para modales (reutilizada) */
 @keyframes fadeInScale {
   from {
     opacity: 0;
@@ -522,25 +507,25 @@ export default {
 
 .modal-close-button {
   position: absolute;
-  top: 20px; /* Ajustar posición */
-  right: 25px; /* Ajustar posición */
+  top: 20px;
+  right: 25px;
   background: none;
   border: none;
-  font-size: 32px; /* Más grande */
+  font-size: 32px;
   cursor: pointer;
-  color: #666; /* Un gris más suave */
+  color: #666;
   transition: color 0.2s ease, transform 0.2s ease;
 }
 
 .modal-close-button:hover {
-  color: #ff3d00; /* Naranja rojizo para cerrar */
+  color: #ff3d00;
   transform: rotate(90deg);
 }
 
 .modal-title {
-  font-size: 2.2em; /* Título de modal más grande */
+  font-size: 2.2em;
   font-weight: bold;
-  color: #5e1c7d; /* Morado oscuro para títulos de modal */
+  color: #5e1c7d;
   margin-bottom: 20px;
   line-height: 1.3;
 }
@@ -551,11 +536,10 @@ export default {
   margin-bottom: 25px;
 }
 
-/* Estilos para el formulario dentro del modal */
 .proposal-form {
   display: flex;
   flex-direction: column;
-  gap: 20px; /* Más espacio entre grupos de formulario */
+  gap: 20px;
 }
 
 .form-group {
@@ -564,18 +548,18 @@ export default {
 
 .form-group label {
   display: block;
-  margin-bottom: 10px; /* Más espacio */
+  margin-bottom: 10px;
   font-weight: bold;
-  color: #5e1c7d; /* Morado oscuro para etiquetas del modal */
+  color: #5e1c7d;
   font-size: 1em;
 }
 
 .proposal-textarea {
   width: 100%;
-  min-height: 180px; /* Altura mínima mayor */
-  padding: 15px; /* Más padding */
-  border: 1px solid #d9bad9; /* Borde pastel */
-  border-radius: 10px; /* Más redondeado */
+  min-height: 180px;
+  padding: 15px;
+  border: 1px solid #d9bad9;
+  border-radius: 10px;
   font-size: 1.05em;
   resize: vertical;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -585,18 +569,18 @@ export default {
 
 .proposal-textarea:focus {
   outline: none;
-  border-color: #5e1c7d; /* Morado oscuro al enfocar */
-  box-shadow: 0 0 0 3px hsla(300, 29%, 78%, 0.6); /* Sombra de enfoque pastel */
+  border-color: #5e1c7d;
+  box-shadow: 0 0 0 3px hsla(300, 29%, 78%, 0.6);
 }
 
 .file-input {
   width: 100%;
-  padding: 12px; /* Más padding */
+  padding: 12px;
   border: 1px solid #d9bad9;
   border-radius: 10px;
-  background-color: #f2e6f2; /* Fondo pastel suave */
+  background-color: #f2e6f2;
   cursor: pointer;
-  color: #5e1c7d; /* Texto morado oscuro */
+  color: #5e1c7d;
   font-weight: 500;
   transition: background-color 0.2s ease, border-color 0.2s ease;
 }
@@ -607,9 +591,9 @@ export default {
 }
 
 .image-preview-container {
-  margin-top: 20px; /* Más espacio */
+  margin-top: 20px;
   text-align: center;
-  border: 2px dashed #d9bad9; /* Borde punteado pastel */
+  border: 2px dashed #d9bad9;
   padding: 15px;
   border-radius: 12px;
   background-color: #fdfdfd;
@@ -617,29 +601,29 @@ export default {
 
 .image-preview {
   max-width: 100%;
-  max-height: 250px; /* Altura máxima de la vista previa */
+  max-height: 250px;
   border: 1px solid #eee;
   border-radius: 10px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .submit-proposal-button {
-  background-color: #5e1c7d; /* Morado oscuro para el botón de enviar */
+  background-color: #5e1c7d;
   color: white;
-  padding: 16px 30px; /* Más padding */
-  border-radius: 12px; /* Más redondeado */
+  padding: 16px 30px;
+  border-radius: 12px;
   font-weight: bold;
-  font-size: 1.2em; /* Texto más grande */
+  font-size: 1.2em;
   transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
   cursor: pointer;
   border: none;
   width: 100%;
-  margin-top: 25px; /* Más espacio */
+  margin-top: 25px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
 
 .submit-proposal-button:hover:not(:disabled) {
-  background-color: #4a148c; /* Morado más oscuro al pasar el ratón */
+  background-color: #4a148c;
   transform: translateY(-2px);
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
 }
@@ -650,7 +634,6 @@ export default {
   box-shadow: none;
 }
 
-/* Estilos para el modal de mensaje genérico (reutilizados y actualizados) */
 .message-modal-overlay {
   position: fixed;
   top: 0;
@@ -667,10 +650,10 @@ export default {
 
 .message-modal-content {
   background-color: white;
-  padding: 30px; /* Más padding */
-  border-radius: 20px; /* Más redondeado */
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35); /* Sombra más fuerte */
-  max-width: 450px; /* Un poco más ancho */
+  padding: 30px;
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+  max-width: 450px;
   width: 90%;
   text-align: center;
   position: relative;
@@ -678,23 +661,23 @@ export default {
 }
 
 .message-modal-title {
-  font-size: 1.8rem; /* Título más grande */
+  font-size: 1.8rem;
   font-weight: bold;
-  color: #5e1c7d; /* Morado oscuro */
+  color: #5e1c7d;
   margin-bottom: 20px;
 }
 
 .message-modal-message {
-  font-size: 1.1rem; /* Mensaje más grande */
+  font-size: 1.1rem;
   color: #555;
   margin-bottom: 30px;
 }
 
 .message-modal-button-close {
-  background-color: #d9bad9; /* Pastel para el botón de cerrar */
-  color: #5e1c7d; /* Texto morado oscuro */
-  padding: 12px 25px; /* Más padding */
-  border-radius: 10px; /* Más redondeado */
+  background-color: #d9bad9;
+  color: #5e1c7d;
+  padding: 12px 25px;
+  border-radius: 10px;
   font-weight: 600;
   font-size: 1.05em;
   transition: background-color 0.2s ease-in-out, transform 0.1s ease;
@@ -704,7 +687,7 @@ export default {
 }
 
 .message-modal-button-close:hover {
-  background-color: #c0a8c0; /* Un poco más oscuro */
+  background-color: #c0a8c0;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }

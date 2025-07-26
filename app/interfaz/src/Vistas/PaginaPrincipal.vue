@@ -1,10 +1,10 @@
 <template>
   <div>
 
-    <!--Renderizar ancho de app en navegador-->
+    <!--RENDERIZAR PARA ADAPTACION A NAVEGADOR-->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- Este componente ahora solo muestra el contenido de la página de inicio -->
+    <!-- COMPONENTE IMPORTADOS -->
     <TituloInicial />
     <BotonesRegistro @MostrarRegistro="MostrarRegistro" />
     <TextoMotivador />
@@ -39,7 +39,7 @@
 </template>
 
 <script>
-/* Importacion de componentes de pagina principal */
+
 import OpcionesBarra from "../components/OpcionesBarra.vue";
 import BotonesRegistro from "../components/BotonesRegistro.vue";
 import CarruselImagenes from "../components/CarruselImagenes.vue";
@@ -63,10 +63,12 @@ export default {
       MostrarRegistroMar: false,
       MostrarInicioSes: false,
       MostrarClave: false,
-      // isLoggedIn ya no es necesario aquí, el router lo manejará
+  
     };
   },
   methods: {
+
+    //FUNCION PARA REGISTRO E INICIO DE SESION DE USUARIO
     MostrarRegistro(Tipo) {
       this.MostrarRegistroEmpre = false;
       this.MostrarRegistroDise = false;
@@ -82,14 +84,16 @@ export default {
         this.MostrarClave = true;
       } else if (Tipo == 'Iniciar') {
         this.MostrarInicioSes = true;
-      } else { // Asume que es 'Marketing' o cualquier otro caso por defecto
+      } else { 
         this.MostrarRegistroMar = true;
       }
     },
-    // Cuando el login es exitoso, navegamos a la ruta 'Central'
+   
+
+    //SI INICIA SESION SE REDIRIGIRA A PAGINACENTRAL
     handleLoginSuccess() {
       console.log('Login exitoso. Navegando a /central.');
-      this.$router.push({ name: 'Central' }); // Redirige a la ruta de PaginaCentral
+      this.$router.push({ name: 'Central' }); 
     },
   },
   components: {
@@ -106,11 +110,11 @@ export default {
     RegistroMarketing,
     InicioSesion,
     CrearContrasena,
-    // PaginaCentral ya no se importa ni se renderiza aquí
+    
   },
 };
 </script>
 
 <style>
-/* Puedes añadir estilos globales aquí si es necesario */
+
 </style>
