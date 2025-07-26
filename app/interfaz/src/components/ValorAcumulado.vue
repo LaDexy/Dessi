@@ -1,4 +1,6 @@
 <template>
+
+  <!--ESTE ES EL ICONO DE MEDALLA DE TARJETAS DE PERFIL QUE MAS ADELANTE SE IMPLEMENTARA COMO CONTADOR DE DESAFIOS PARTICIPADOS-->
   <div class="valor-acumulado-display">
     <i class="fa-solid fa-medal" style="color: #FFD43B;"></i>
     <span class="valor">{{ reputacion }}</span>
@@ -19,23 +21,20 @@ export default {
 </script>
 
 <style scoped>
-/* Estos estilos son para el componente ValorAcumulado.vue en sí */
 .valor-acumulado-display {
   display: flex;
   align-items: center;
-  /* Centrar horizontalmente si el contenedor padre es flex o grid */
-  justify-content: center; 
-  /* Puedes ajustar el espacio interior si lo necesitas */
-  padding: 3px 8px; 
-  background-color: #e6e6fa; /* Fondo suave para destacarlo */
+  justify-content: center;
+  padding: 3px 8px;
+  background-color: #e6e6fa;
   border-radius: 20px;
   border: 1px solid #dcdcdc;
-  gap: 5px; /* Espacio entre el icono y el número */
-  font-size: 0.9em; /* Reduce el tamaño para que encaje bien al lado del nombre */
+  gap: 5px;
+  font-size: 0.9em;
 }
 
 .icon-reputacion-medalla {
-  width: 20px; /* Tamaño más pequeño para el icono de la medalla */
+  width: 20px;
   height: 20px;
 }
 

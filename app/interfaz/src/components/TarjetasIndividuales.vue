@@ -1,5 +1,6 @@
-<!-- components/TarjetasIndividuales.vue -->
 <template>
+
+  <!--ESTA ES LA FUNCION DE GUARDAR TARJETA DE PERFILES DE MANERA INDIVIDUAL-->
   <div class="Exterior">
     <div class="Tarjeta">
       <header class="Inicio-Tarjeta">
@@ -22,9 +23,9 @@
         </div>
 
         <div class="buttons-container">
-          <!-- Botón de Solicitud: Emite un evento 'send-request' con el perfil actual -->
+          
           <button class="Interes" @click="sendRequest">Solicitud</button>
-          <!-- Botón de Ver perfil: Emite un evento 'view-profile' con el perfil actual -->
+          
           <button class="Interes" @click="viewProfile">Ver perfil</button>
         </div>
       </footer>
@@ -33,29 +34,29 @@
 </template>
 
 <script>
-// ¡IMPORTANTE! Estas importaciones deben estar aquí, en el componente de la tarjeta individual
+
 import ValorAcumulado from '@/components/ValorAcumulado.vue';
 import IconoInteraccion from '@/components/IconoInteraccion.vue';
 
 export default {
-  name: "TarjetasIndividuales", // <-- El nombre del componente es TarjetasIndividuales
+  name: "TarjetasIndividuales",
   components: {
     ValorAcumulado,
     IconoInteraccion
   },
   props: {
-    profile: { // <-- Recibe un ÚNICO objeto 'profile' como prop
+    profile: { 
       type: Object,
       required: true
     }
   },
   methods: {
     sendRequest() {
-      // Emite el evento 'send-request' con el objeto de perfil completo
+    
       this.$emit('send-request', this.profile);
     },
     viewProfile() {
-      // Emite el evento 'view-profile' con el objeto de perfil completo
+     
       this.$emit('view-profile', this.profile);
     }
   }
@@ -63,17 +64,7 @@ export default {
 </script>
 
 <style scoped>
-/*
-  ¡IMPORTANTE!
-  Aquí debes pegar TODOS los estilos CSS que tenías en TarjetasPerfiles.vue
-  que aplican directamente a una tarjeta individual.
-  Por ejemplo: .Exterior, .Tarjeta, .Inicio-Tarjeta, .Inicio-Tarjeta img,
-  .Interes, .Tarjeta footer, .Texto-Tarjeta, .Descripcion-Tarjeta,
-  .buttons-container, .Categoria-Tarjeta, .profile-name.
 
-  Asegúrate de que estos estilos estén aquí y NO en TarjetasPerfiles.vue (el contenedor).
-*/
-/* Ejemplo de estilos que deben ir aquí: */
 .Exterior {
   display: flex;
   align-items: stretch;

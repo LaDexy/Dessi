@@ -2,11 +2,11 @@
     
 <div>
 
-<!-- Barra de info de desarrollador-->
+<!-- BARRA DE PATENTE ABAJO DE PAGINA PRINCIPAL-->
 
     <footer class="bg-light text-dark py-4">
         <div class="container">
-            <p class="text-center">@Desarrollado por Ailebsy Dessire Gonzalez Molina</p>
+            <p class="text-center">2025 Convenio IUTA-LUZ @Desarrollado por Ailebsy Dessire Gonzalez Molina</p>
         </div>
     </footer>
 

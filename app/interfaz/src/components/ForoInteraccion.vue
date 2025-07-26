@@ -1,4 +1,6 @@
 <template>
+
+  <!---ESTA ES LA PARTE DE LA INTERACCION EN EL FORO-->
   <div class="foro-interaccion-container">
     <div v-if="loading" class="loading-message">Cargando tema...</div>
     <div v-if="error" class="error-message">{{ error }}</div>
@@ -45,7 +47,7 @@
 
 <script>
 import axios from 'axios';
-import IconoReaccion from '@/components/IconoReaccion.vue'; // Asegúrate de que esta ruta sea correcta
+import IconoReaccion from '@/components/IconoReaccion.vue';
 
 export default {
   name: 'ForoInteraccion',
@@ -60,7 +62,7 @@ export default {
   },
   data() {
     return {
-      thread: null, // Este objeto contendrá el tema y un array de respuestas
+      thread: null,
       loading: false,
       error: null,
       newReplyContent: '',
@@ -86,29 +88,22 @@ export default {
         const token = this.getToken();
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-        // CAMBIO CLAVE AQUÍ: UNA SOLA LLAMADA AL BACKEND
-        // Esta única llamada a /api/forum/threads/:id debe traer tanto el tema principal
-        // como un array de sus respuestas, tal como lo tienes en tu server.js actual.
         const response = await axios.get(`${this.API_BASE_URL}/forum/threads/${this.id}`, { headers });
         
-        let threadData = response.data; // La respuesta ahora contiene el tema y las respuestas
+        let threadData = response.data;
 
-        // Mapear las respuestas para asegurar la reactividad y nombres de propiedades consistentes
-        // NOTA: Los nombres de propiedades aquí deben coincidir exactamente con los que tu backend
-        // devuelve para CADA RESPUESTA dentro del array 'replies'.
-        // Tu backend los devuelve como: 'id', 'content', 'author', 'date', 'likesCount', 'likedByCurrentUser', 'reaccion_acumulada_autor'
         threadData.replies = threadData.replies.map(reply => ({
-          id_mensaje: reply.id, // Mapea 'id' del backend a 'id_mensaje' para Vue key y toggleLike
+          id_mensaje: reply.id,
           author: reply.author,
           date: reply.date,
           content: reply.content,
-          likesCount: reply.likesCount || 0, // Asegura que sea un número
-          likedByCurrentUser: reply.likedByCurrentUser || false, // Asegura que sea booleano
-          reaccion_acumulada_autor: reply.reaccion_acumulada_autor || 0, // Asegura que sea un número
-          author_profile_pic: reply.author_profile_pic || '' // Agregado para compatibilidad si el backend lo envía
+          likesCount: reply.likesCount || 0,
+          likedByCurrentUser: reply.likedByCurrentUser || false,
+          reaccion_acumulada_autor: reply.reaccion_acumulada_autor || 0,
+          author_profile_pic: reply.author_profile_pic || ''
         }));
 
-        this.thread = threadData; // Asigna los datos procesados a la propiedad 'thread'
+        this.thread = threadData;
         console.log('Detalles del tema y respuestas cargados:', this.thread);
 
       } catch (err) {
@@ -146,25 +141,21 @@ export default {
         );
 
         if (res.status === 200) {
-          // Desestructurar la nueva propiedad 'reaccion_acumulada_autor' que viene del backend
           const { newLikesCount, likedByCurrentUser, reaccion_acumulada_autor } = res.data; 
           
           const replyIndex = this.thread.replies.findIndex(r => r.id_mensaje === reply.id_mensaje);
 
           if (replyIndex !== -1) {
-            // SOLUCIÓN PARA this.$set is not a function y reactividad
             const updatedReply = {
-              ...this.thread.replies[replyIndex], // Copia todas las propiedades existentes
-              likesCount: newLikesCount,          // Sobrescribe likesCount
-              likedByCurrentUser: likedByCurrentUser, // Sobrescribe likedByCurrentUser
-              reaccion_acumulada_autor: reaccion_acumulada_autor // <--- ¡ESTE ES EL CAMBIO CLAVE!
+              ...this.thread.replies[replyIndex],
+              likesCount: newLikesCount,
+              likedByCurrentUser: likedByCurrentUser,
+              reaccion_acumulada_autor: reaccion_acumulada_autor
             };
 
-            // Reemplazar el objeto en el array, lo cual es reactivo en Vue 2
             this.thread.replies.splice(replyIndex, 1, updatedReply);
             
             console.log("Reply actualizada:", this.thread.replies[replyIndex]);
-            // alert(res.data.message); // Descomentar si quieres mostrar el mensaje de éxito del backend
           }
         }
       } catch (error) {
@@ -203,7 +194,6 @@ export default {
         );
         alert('Respuesta publicada exitosamente!');
         this.newReplyContent = '';
-        // Después de publicar una respuesta, recarga los detalles del tema para ver la nueva respuesta
         this.fetchThreadDetail();
         console.log('Respuesta enviada:', response.data);
       } catch (error) {
@@ -216,26 +206,17 @@ export default {
 </script>
 
 <style scoped>
-/* Tus estilos CSS existentes aquí */
-/* Colores de referencia de tu paleta:
-    - hsl(300, 29%, 78%) se traduce aproximadamente a #d9bad9 (Rosa-morado pastel)
-    - #5e1c7d (Morado oscuro principal)
-    - #e4a0d5 (Rosa vibrante)
-    - Otros tonos de morado y rosa para complementos.
-*/
-
 .foro-interaccion-container {
-    max-width: 900px; /* Un poco más ancho para el contenido del tema */
-    margin: 40px auto; /* Más margen superior/inferior para separarlo */
-    padding: 35px; /* Más padding interno */
-    background-color: #ffffff; /* Fondo blanco */
-    border-radius: 15px; /* Bordes más redondeados */
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); /* Sombra más pronunciada */
-    font-family: 'Inter', sans-serif; /* Fuente consistente */
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 35px;
+    background-color: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    font-family: 'Inter', sans-serif;
     box-sizing: border-box;
 }
 
-/* Mensajes de carga y error */
 .loading-message, .error-message {
     text-align: center;
     padding: 25px;
@@ -243,24 +224,23 @@ export default {
     font-weight: 500;
     border-radius: 12px;
     margin-top: 20px;
-    background-color: #f8f0ff; /* Fondo muy claro para carga */
+    background-color: #f8f0ff;
     color: #5e1c7d;
     border: 1px solid #d9bad9;
 }
 
 .error-message {
-    background-color: #ffebeb; /* Rojo muy claro para error */
-    color: #dc3545; /* Rojo oscuro para error */
+    background-color: #ffebeb;
+    color: #dc3545;
     border: 1px solid #f5c6cb;
 }
 
-
 .thread-detail h2 {
-    font-size: 2.5em; /* Título del tema más grande */
-    color: #5e1c7d; /* Morado oscuro para el título */
+    font-size: 2.5em;
+    color: #5e1c7d;
     margin-bottom: 15px;
     text-align: center;
-    font-weight: 800; /* Extra bold */
+    font-weight: 800;
     line-height: 1.3;
 }
 
@@ -271,51 +251,50 @@ export default {
     text-align: center;
     font-style: italic;
     padding-bottom: 15px;
-    border-bottom: 1px dashed #eee; /* Separador sutil */
+    border-bottom: 1px dashed #eee;
 }
 
 .author-info strong {
-    color: #5e1c7d; /* Destaca el nombre del autor */
+    color: #5e1c7d;
 }
 
 .thread-content {
-    background-color: #fcfcfc; /* Fondo casi blanco para el contenido */
+    background-color: #fcfcfc;
     padding: 25px;
     border-radius: 10px;
     margin-bottom: 30px;
-    line-height: 1.7; /* Mayor legibilidad */
+    line-height: 1.7;
     font-size: 1.05em;
     color: #333;
-    box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.05); /* Sombra interna sutil */
+    box-shadow: inset 0 1px 5px rgba(0, 0, 0, 0.05);
     border: 1px solid #f0f0f0;
-    white-space: pre-wrap; /* Mantiene saltos de línea y espacios */
+    white-space: pre-wrap;
 }
 
 hr {
     border: 0;
-    border-top: 2px solid #f2e6f2; /* Línea divisoria más gruesa y pastel */
-    margin: 40px 0; /* Más espacio */
+    border-top: 2px solid #f2e6f2;
+    margin: 40px 0;
 }
 
 h3 {
-    font-size: 2.1em; /* Título "Respuestas" más grande */
-    color: #5e1c7d; /* Morado oscuro */
+    font-size: 2.1em;
+    color: #5e1c7d;
     margin-bottom: 25px;
     text-align: center;
     font-weight: 700;
     padding-bottom: 10px;
-    border-bottom: 2px solid #d9bad9; /* Borde inferior pastel */
+    border-bottom: 2px solid #d9bad9;
 }
 
-/* Estilo para cada respuesta individual */
 .reply-item {
-    background-color: #fdfafc; /* Fondo muy suave para las respuestas */
+    background-color: #fdfafc;
     padding: 20px;
-    border-radius: 12px; /* Más redondeado */
-    margin-bottom: 20px; /* Espacio entre respuestas */
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Sombra suave pero visible */
-    border: 1px solid #d9bad9; /* Borde pastel */
-    position: relative; /* Para posicionamiento de elementos internos si es necesario */
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border: 1px solid #d9bad9;
+    position: relative;
 }
 
 .reply-author {
@@ -326,7 +305,7 @@ h3 {
 }
 
 .reply-author strong {
-    color: #5e1c7d; /* Morado oscuro para el autor de la respuesta */
+    color: #5e1c7d;
     margin-right: 5px;
 }
 
@@ -341,17 +320,17 @@ h3 {
 .likes-section {
     display: flex;
     align-items: center;
-    gap: 10px; /* Más espacio entre el icono y el contador */
+    gap: 10px;
     font-size: 0.9em;
     color: #888;
-    margin-top: 10px; /* Margen superior para separarlo del contenido */
+    margin-top: 10px;
     padding-top: 8px;
-    border-top: 1px dashed #f2e6f2; /* Separador para la sección de likes */
+    border-top: 1px dashed #f2e6f2;
 }
 
 .likes-section .likes-count {
     font-weight: bold;
-    color: #5e1c7d; /* Morado oscuro para el contador de likes */
+    color: #5e1c7d;
     font-size: 1em;
 }
 
@@ -361,12 +340,11 @@ h3 {
   margin-left: 15px;
 }
 
-/* Formulario para añadir respuesta */
 .reply-form {
     margin-top: 40px;
     padding-top: 30px;
-    border-top: 2px solid #d9bad9; /* Separador más robusto */
-    background-color: #f8f0ff; /* Fondo pastel para el formulario */
+    border-top: 2px solid #d9bad9;
+    background-color: #f8f0ff;
     padding: 30px;
     border-radius: 15px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
@@ -375,35 +353,35 @@ h3 {
 .reply-form h4 {
     font-size: 1.8em;
     margin-bottom: 20px;
-    color: #5e1c7d; /* Morado oscuro para el título del formulario */
+    color: #5e1c7d;
     text-align: center;
     font-weight: 700;
 }
 
 .reply-form textarea {
-    width: 100%; /* Ocupa todo el ancho disponible */
+    width: 100%;
     padding: 15px;
-    border: 1px solid #d9bad9; /* Borde pastel */
-    border-radius: 10px; /* Más redondeado */
+    border: 1px solid #d9bad9;
+    border-radius: 10px;
     font-size: 1em;
-    min-height: 120px; /* Altura mínima para el textarea */
+    min-height: 120px;
     margin-bottom: 20px;
     resize: vertical;
-    box-sizing: border-box; /* Incluye padding y border en el ancho */
+    box-sizing: border-box;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
     color: #333;
 }
 
 .reply-form textarea:focus {
     outline: none;
-    border-color: #e4a0d5; /* Rosa vibrante al enfocar */
-    box-shadow: 0 0 0 4px rgba(228, 160, 213, 0.25); /* Sombra de foco */
+    border-color: #e4a0d5;
+    box-shadow: 0 0 0 4px rgba(228, 160, 213, 0.25);
 }
 
 .reply-form button {
-    background-color: #e4a0d5; /* Rosa vibrante para el botón de acción */
+    background-color: #e4a0d5;
     color: white;
-    padding: 14px 28px; /* Más padding para un botón más grande */
+    padding: 14px 28px;
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -411,18 +389,17 @@ h3 {
     font-weight: bold;
     transition: background-color 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-    display: block; /* Ocupa todo el ancho si es un solo botón */
-    width: fit-content; /* Se ajusta al contenido */
-    margin: 0 auto; /* Centra el botón */
+    display: block;
+    width: fit-content;
+    margin: 0 auto;
 }
 
 .reply-form button:hover {
-    background-color: #d288c0; /* Rosa más oscuro al pasar el ratón */
+    background-color: #d288c0;
     transform: translateY(-3px);
     box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
 }
 
-/* Estilo para el caso de tema no encontrado */
 .foro-interaccion-container > p {
     text-align: center;
     padding: 20px;
@@ -432,8 +409,6 @@ h3 {
     font-style: italic;
 }
 
-
-/* Media Queries para responsividad */
 @media (max-width: 768px) {
     .foro-interaccion-container {
         padding: 25px;

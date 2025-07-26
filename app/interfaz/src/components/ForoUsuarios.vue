@@ -1,4 +1,6 @@
 <template>
+
+  <!--ESTA ES LA PARTE DONDE SE VEN LOS FOROS CREADOS-->
   <div class="RectanguloForo">
     <header class="forum-header">
       <h1 class="titulo-foro">Foro de la Comunidad</h1>
@@ -64,10 +66,10 @@
 
 <script>
 import axios from 'axios';
-import router from '@/Router'; // Asegúrate de que esta ruta sea correcta para tu router
+import router from '@/Router';
 
 export default {
-  name: 'ForoUsuarios', // El nombre del componente
+  name: 'ForoUsuarios',
   data() {
     return {
       threads: [],
@@ -79,21 +81,17 @@ export default {
         content: '',
       },
       creatingThread: false,
-      // URL base de tu API de Express
-      API_BASE_URL: 'http://localhost:4000/api/forum', // El puerto 4000 es el de tu backend Express
+      API_BASE_URL: 'http://localhost:4000/api/forum',
     };
   },
   created() {
     this.fetchThreads();
   },
   methods: {
-    // Método para obtener el token JWT del almacenamiento (localStorage o sessionStorage)
     getToken() {
-      // ESTA ES LA LÍNEA CLAVE QUE DEBES CAMBIAR
       return localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
     },
 
-    // Método para obtener todos los temas del foro
     async fetchThreads() {
       this.loading = true;
       this.error = null;
@@ -110,13 +108,11 @@ export default {
       }
     },
 
-    // Método para abrir el modal de creación de nuevo tema
     openNewThreadModal() {
       const token = this.getToken();
-      // console.log('Token en openNewThreadModal:', token); // Descomenta para depuración
       if (!token) {
         alert('Debes iniciar sesión para crear un nuevo tema.');
-        router.push('/login'); // Redirige a la página de login
+        router.push('/login');
         return;
       }
       this.newThread.title = '';
@@ -124,17 +120,14 @@ export default {
       this.showNewThreadModal = true;
     },
 
-    // Método para cerrar el modal de creación de nuevo tema
     closeNewThreadModal() {
       this.showNewThreadModal = false;
     },
 
-    // Método para crear un nuevo tema
     async createNewThread() {
       this.creatingThread = true;
       try {
         const token = this.getToken();
-        // console.log('Token en createNewThread:', token); // Descomenta para depuración
         if (!token) {
           alert('No estás autenticado. Por favor, inicia sesión.');
           router.push('/login');
@@ -153,7 +146,7 @@ export default {
         console.log('Tema creado exitosamente:', response.data.thread);
         alert('Tema creado exitosamente!');
         this.closeNewThreadModal();
-        this.fetchThreads(); // Recarga la lista de temas para mostrar el nuevo
+        this.fetchThreads();
       } catch (err) {
         console.error('Error al crear el tema:', err);
         const errorMessage = err.response?.data?.message || 'Error al crear el tema. Inténtalo de nuevo.';
@@ -163,7 +156,6 @@ export default {
       }
     },
 
-    // Método para truncar contenido (útil para la descripción del tema en la lista)
     truncateContent(text, maxLength) {
       if (!text) return '';
       if (text.length > maxLength) {
@@ -172,13 +164,11 @@ export default {
       return text;
     },
 
-    // Método para formatear la fecha
     formatDate(dateString) {
       const options = { year: 'numeric', month: 'long', day: 'numeric' };
       return new Date(dateString).toLocaleDateString(undefined, options);
     },
 
-    // Método para navegar a la página de detalles de un tema
     goToThreadDetail(threadId) {
       router.push({ name: 'ThreadDetail', params: { id: threadId } });
     },
@@ -187,86 +177,74 @@ export default {
 </script>
 
 <style scoped>
-/* Colores de referencia:
-   - hsl(300, 29%, 78%) se traduce aproximadamente a #d9bad9 (Rosa-morado pastel)
-   - #5e1c7d (Morado oscuro principal)
-   - Otros tonos de morado y rosa para complementos.
-*/
-
-/* Contenedor principal del foro */
 .RectanguloForo {
-    width: 100%; /* Ocupa el 100% del ancho disponible */
-    /* Eliminar height fijo si el contenido debe determinar la altura */
-    min-height: 230px; /* Asegura una altura mínima para la cabecera */
-    background-color: hsl(0, 0%, 100%); /* Rosa-morado pastel para la cabecera */
+    width: 100%;
+    min-height: 230px;
+    background-color: hsl(0, 0%, 100%);
     display: flex;
-    flex-direction: column; /* Apila el header y el main */
-    align-items: center; /* Centra el contenido horizontalmente */
-    padding: 0; /* Padding se manejará en los elementos internos */
-    margin: 0; /* Elimina márgenes externos */
-    font-family: 'Inter', sans-serif; /* Fuente consistente */
-    box-sizing: border-box; /* Incluye padding y border en el ancho/alto total */
-    position: relative; /* Necesario para posicionar el título si es absoluto */
+    flex-direction: column;
+    align-items: center;
+    padding: 0;
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    box-sizing: border-box;
+    position: relative;
 }
 
-/* Cabecera del foro */
 .forum-header {
     width: 100%;
-    padding: 60px 20px 40px; /* Más padding para el título */
-    background-color: #d9bad9; /* Morado oscuro para la cabecera, más imponente */
+    padding: 60px 20px 40px;
+    background-color: #d9bad9;
     color: white;
     text-align: center;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    margin-bottom: 30px; /* Espacio debajo de la cabecera */
+    margin-bottom: 30px;
 }
 
 .titulo-foro {
-    font-size: 3.5rem; /* Título más grande y dominante */
-    font-weight: 900; /* Extra Black */
-    color: #ffffff; /* Blanco puro */
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: #ffffff;
     margin: 0;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3); /* Sombra para realzar el texto */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* Contenido principal del foro (debajo de la cabecera) */
 .forum-content {
-    max-width: 1000px; /* Ancho máximo para el contenido del foro */
-    width: 95%; /* Se ajusta a la ventana */
-    margin: -80px auto 40px auto; /* Mueve el contenido hacia arriba para superponerse con la cabecera */
+    max-width: 1000px;
+    width: 95%;
+    margin: -80px auto 40px auto;
     padding: 30px;
-    background-color: #ffffff; /* Fondo blanco para el contenido */
+    background-color: #ffffff;
     border-radius: 15px;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); /* Sombra más pronunciada */
-    position: relative; /* Para el z-index */
-    z-index: 100; /* Asegura que esté sobre el RectanguloForo */
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    position: relative;
+    z-index: 100;
 }
 
-/* Sección de lista de temas */
 .ListaTemas {
     display: flex;
     flex-direction: column;
     gap: 20px;
 }
 
-/* Título "Temas Recientes" y botón "Crear Nuevo Tema" */
 .titulo-temas {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 20px;
     padding-bottom: 15px;
-    border-bottom: 1px solid #eee; /* Separador sutil */
+    border-bottom: 1px solid #eee;
 }
 
 .Seccion {
     font-size: 1.8em;
     font-weight: 700;
-    color: #5e1c7d; /* Morado oscuro para los títulos de sección */
+    color: #5e1c7d;
     margin: 0;
 }
 
 .NuevoTema {
-    background-color: #e4a0d5; /* Rosa vibrante */
+    background-color: #e4a0d5;
     color: white;
     padding: 12px 25px;
     border-radius: 8px;
@@ -278,19 +256,18 @@ export default {
 }
 
 .NuevoTema:hover {
-    background-color: #d288c0; /* Un poco más oscuro al pasar el ratón */
+    background-color: #d288c0;
     transform: translateY(-2px);
     box-shadow: 0 5px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Mensajes de carga, error y "no hay temas" */
 .loading-message, .error-message, .no-threads-message {
     text-align: center;
     padding: 25px;
     font-size: 1.1em;
     border-radius: 10px;
     margin-top: 20px;
-    background-color: #f8f0ff; /* Fondo muy claro para mensajes */
+    background-color: #f8f0ff;
    color: white;
     border: 1px solid #d9bad9;
 }
@@ -306,44 +283,42 @@ export default {
     color: #777;
 }
 
-/* Lista de tarjetas de temas */
 .TarjetasTemas {
-    list-style: none; /* Elimina los puntos de la lista */
+    list-style: none;
     padding: 0;
     margin: 0;
     display: flex;
     flex-direction: column;
-    gap: 15px; /* Espacio entre las tarjetas de tema */
+    gap: 15px;
 }
 
-/* Tarjeta de tema individual */
 .TarjetaIndividual {
-    background-color: #fdfdfd; /* Blanco casi puro para las tarjetas */
+    background-color: #fdfdfd;
     padding: 20px;
     border-radius: 10px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08); /* Sombra suave */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
-    border: 1px solid #eee; /* Borde sutil */
+    border: 1px solid #eee;
     display: flex;
     flex-direction: column;
 }
 
 .TarjetaIndividual:hover {
-    transform: translateY(-5px); /* Efecto de levantamiento al pasar el ratón */
+    transform: translateY(-5px);
     box-shadow: 0 6px 18px rgba(0, 0, 0, 0.15);
 }
 
 .TarjetaIndividual h3 {
     font-size: 1.5em;
     font-weight: 700;
-    color: #d288c0; /* Morado oscuro para el título del tema */
+    color: #d288c0;
     margin-bottom: 8px;
-    cursor: pointer; /* Indica que el título es clicable */
+    cursor: pointer;
     transition: color 0.2s ease;
 }
 
 .TarjetaIndividual h3:hover {
-    color: #8c2aae; /* Morado más claro al pasar el ratón */
+    color: #8c2aae;
     text-decoration: underline;
 }
 
@@ -355,22 +330,22 @@ export default {
 
 .author-name {
     font-weight: 600;
-    color: #5e1c7d; /* Morado oscuro para el nombre del autor */
+    color: #5e1c7d;
 }
 
 .reputacion-icono {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 25px; /* Ancho mínimo para números de 1 o 2 dígitos */
+    min-width: 25px;
     height: 25px;
     border-radius: 50%;
-    background-color: #fcd34d; /* Amarillo para reputación */
-    color: #92400e; /* Marrón oscuro para el texto */
+    background-color: #fcd34d;
+    color: #92400e;
     font-weight: bold;
     font-size: 0.8em;
     margin-left: 8px;
-    padding: 0 5px; /* Pequeño padding horizontal */
+    padding: 0 5px;
 }
 
 .thread-description {
@@ -383,33 +358,32 @@ export default {
 .thread-stats {
     font-size: 0.9em;
     color: #777;
-    margin-top: auto; /* Empuja las estadísticas hacia abajo */
+    margin-top: auto;
     text-align: right;
     padding-top: 10px;
-    border-top: 1px dashed #eee; /* Separador para las estadísticas */
+    border-top: 1px dashed #eee;
 }
 
 .view-thread-button {
-    background-color: #d9bad9; /* Rosa-morado pastel para el botón de ver */
-    color: white; /* Texto morado oscuro */
+    background-color: #d9bad9;
+    color: white;
     padding: 8px 18px;
     border-radius: 6px;
     border: none;
     font-weight: 600;
     cursor: pointer;
     transition: background-color 0.2s ease, transform 0.1s ease;
-    align-self: flex-end; /* Alinea el botón a la derecha */
+    align-self: flex-end;
     margin-top: 15px;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .view-thread-button:hover {
-    background-color: #c0a0c0; /* Un poco más oscuro al pasar el ratón */
+    background-color: #c0a0c0;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* Estilos para el modal (overlay y contenido) */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -420,7 +394,7 @@ export default {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 3000; /* Asegura que esté por encima de todo */
+    z-index: 3000;
     backdrop-filter: blur(5px);
     animation: fadeIn 0.3s ease-out forwards;
 }
@@ -463,19 +437,19 @@ export default {
     border: 1px solid #ccc;
     border-radius: 8px;
     font-size: 1em;
-    box-sizing: border-box; /* Asegura que padding no aumente el ancho */
+    box-sizing: border-box;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .form-group input[type="text"]:focus,
 .form-group textarea:focus {
     outline: none;
-    border-color: #e4a0d5; /* Color de foco rosa */
+    border-color: #e4a0d5;
     box-shadow: 0 0 0 3px rgba(228, 160, 213, 0.3);
 }
 
 .form-group textarea {
-    resize: vertical; /* Permite redimensionar verticalmente */
+    resize: vertical;
     min-height: 120px;
 }
 
@@ -498,12 +472,12 @@ export default {
 }
 
 .submit-button {
-    background-color: #d9bad9; /* Morado oscuro para acción principal */
+    background-color: #d9bad9;
     color: white;
 }
 
 .submit-button:hover:not(:disabled) {
-    background-color: #4a1766; /* Morado más oscuro al pasar el ratón */
+    background-color: #4a1766;
     transform: translateY(-2px);
     box-shadow: 0 5px 12px rgba(0, 0, 0, 0.2);
 }
@@ -515,17 +489,16 @@ export default {
 }
 
 .cancel-button {
-    background-color: #e0e0e0; /* Gris claro para cancelar */
+    background-color: #e0e0e0;
     color: #555;
 }
 
 .cancel-button:hover {
-    background-color: #c0c0c0; /* Gris más oscuro al pasar el ratón */
+    background-color: #c0c0c0;
     transform: translateY(-2px);
     box-shadow: 0 5px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* Animaciones (reutilizadas del componente anterior) */
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
@@ -542,7 +515,6 @@ export default {
     }
 }
 
-/* Media Queries para responsividad */
 @media (max-width: 768px) {
     .forum-header {
         padding: 40px 15px 30px;
@@ -556,12 +528,12 @@ export default {
         margin: -60px auto 30px auto;
     }
     .titulo-temas {
-        flex-direction: column; /* Apila el título y el botón */
+        flex-direction: column;
         align-items: flex-start;
         gap: 15px;
     }
     .NuevoTema {
-        width: 100%; /* Botón ocupa todo el ancho */
+        width: 100%;
         text-align: center;
     }
     .Seccion {

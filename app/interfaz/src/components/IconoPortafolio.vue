@@ -1,4 +1,6 @@
 <template>
+  <!--FUNCION EN VEREMOS... ESTABA DESTINADA A UN ICONO PARA QUE EL PERFIL DE DISEÑADOR O MARKETINF PUDIERAN SUBIR PDF
+  PERO NO SE HA AGREGADO FUNCIONALIDAD COMPLETA Y SE DESCARTO POR MOMENTO-->
   <div class="Portafolio" v-if="userProfile === 'Diseñador' || userProfile === 'Marketing'">
     <input 
       type="file" 
@@ -36,26 +38,21 @@ export default {
 }
 </script>
 
-<style scoped> /* Es buena práctica usar 'scoped' */
+<style scoped>
 .Portafolio {
-    /* Considera eliminar 'top' y 'left' si tu layout de PaginaPerfil es flex o grid */
-    /* position: relative; */
-    /* top: 287px; */
-    /* left: 370px; */
-
-    cursor: pointer; /* IMPRESCINDIBLE para la señal visual */
-    display: inline-block; /* O 'block' si lo quieres en su propia línea */
-    padding: 10px; /* Para hacer el área clickeable más grande */
-    border-radius: 50%;
-    transition: all 0.2s ease-in-out;
+  cursor: pointer;
+  display: inline-block;
+  padding: 10px;
+  border-radius: 50%;
+  transition: all 0.2s ease-in-out;
 }
 
 .Portafolio:hover {
-    background-color: rgba(0, 0, 0, 0.1);
-    transform: scale(1.1);
+  background-color: rgba(0, 0, 0, 0.1);
+  transform: scale(1.1);
 }
 
 .Portafolio i {
-    color: #555;
+  color: #555;
 }
 </style>

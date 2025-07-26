@@ -1,10 +1,11 @@
 <template>
   <div>
+    <!--ESTA ES LA PARTE DEL ICONO DE NOTIFICACIONES DE PAGINA CENTRAL-->
     <div class="Notificaciones" @click="goToNotificationsPage">
       <i class="fa-solid fa-bell" :class="{ 'has-new-notifications': newNotificationsCount > 0 }" style="color: #B197FC;"></i>
       <span v-if="newNotificationsCount > 0" class="notification-badge">{{ newNotificationsCount }}</span>
     </div>
-    </div>
+  </div>
 </template>
 
 <script>
@@ -14,9 +15,9 @@ export default {
   name: "IconoNotificaciones",
   data() {
     return {
-      newNotificationsCount: 0, // Solo necesitamos el contador de no leídas aquí
-      pollInterval: null,       // Para el polling
-      apiUrl: 'http://localhost:4000/api', // URL base de tu backend Express.js
+      newNotificationsCount: 0,
+      pollInterval: null,
+      apiUrl: 'http://localhost:4000/api',
     };
   },
   methods: {
@@ -24,7 +25,6 @@ export default {
       return localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
     },
 
-    // Solo para obtener el recuento de notificaciones no leídas
     async fetchUnreadNotificationsCount() {
       try {
         const token = this.getToken();
@@ -34,7 +34,7 @@ export default {
           return;
         }
 
-        const response = await axios.get(`${this.apiUrl}/notificaciones/unread-count`, { // NUEVA RUTA EN BACKEND
+        const response = await axios.get(`${this.apiUrl}/notificaciones/unread-count`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -46,23 +46,18 @@ export default {
         console.error('Error al obtener el recuento de notificaciones no leídas:', error);
         if (axios.isAxiosError(error) && error.response && (error.response.status === 401 || error.response.status === 403)) {
           console.error('Sesión expirada en IconoNotificaciones. Se necesita reautenticación.');
-          // Emitir un evento para que el componente padre (App.vue o similar) maneje la expiración de sesión
-          this.$emit('session-expired'); 
+          this.$emit('session-expired');
         }
         this.newNotificationsCount = 0;
       }
     },
 
-    // Redirige a la página de notificaciones completa
     goToNotificationsPage() {
-      this.$router.push({ name: 'Notificaciones' }); // Asegúrate de que 'PaginaNotificaciones' sea el nombre de tu ruta
-      // Opcional: una vez que el usuario va a la página, podríamos forzar un fetch de nuevo
-      // para que el badge se actualice más rápido al volver (si es que no se actualiza por polling)
-      // this.fetchUnreadNotificationsCount(); 
+      this.$router.push({ name: 'Notificaciones' });
     },
 
     startPolling() {
-      this.pollInterval = setInterval(this.fetchUnreadNotificationsCount, 30000); // Cada 30 segundos
+      this.pollInterval = setInterval(this.fetchUnreadNotificationsCount, 30000);
     },
 
     stopPolling() {
@@ -72,18 +67,16 @@ export default {
     }
   },
   mounted() {
-    this.fetchUnreadNotificationsCount(); // Obtener el recuento inicial
-    this.startPolling(); // Iniciar el polling
+    this.fetchUnreadNotificationsCount();
+    this.startPolling();
   },
   beforeUnmount() {
-    this.stopPolling(); // Detener el polling al desmontar el componente
+    this.stopPolling();
   }
 };
 </script>
 
 <style scoped>
-/* (El CSS es el mismo que el anterior para el icono y el badge) */
-/* Estilos para el icono de notificaciones */
 .Notificaciones {
   position: fixed;
   width: 50px;
@@ -91,28 +84,26 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 28px; 
+  font-size: 28px;
   cursor: pointer;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   transition: transform 0.2s ease-in-out;
-  border-radius: 50%; 
-  background-color: #f7f7f7; 
+  border-radius: 50%;
+  background-color: #f7f7f7;
   bottom: 0;
-  right: 20px; /* Ajusta la posición si es necesario */
-  z-index: 100; /* Asegúrate de que esté visible */
+  right: 20px;
+  z-index: 100;
 }
 
 .Notificaciones:hover {
   transform: scale(1.1);
 }
 
-/* Estilo para la campana cuando HAY nuevas notificaciones */
 .Notificaciones .fa-bell.has-new-notifications {
-  animation: shake 0.8s cubic-bezier(.36,.07,.19,.97) both infinite; 
+  animation: shake 0.8s cubic-bezier(.36,.07,.19,.97) both infinite;
   transform-origin: top center;
 }
 
-/* Animación de temblor para el icono */
 @keyframes shake {
   10%, 90% { transform: translate3d(-1px, 0, 0); }
   20%, 80% { transform: translate3d(2px, 0, 0); }
@@ -120,22 +111,19 @@ export default {
   40%, 60% { transform: translate3d(4px, 0, 0); }
 }
 
-/* Estilos para el badge de notificación */
 .notification-badge {
   position: absolute;
-  top: 0px; 
+  top: 0px;
   right: 5px;
   background-color: #793096;
   color: white;
   border-radius: 50%;
-  padding: 2px 7px; 
+  padding: 2px 7px;
   font-size: 0.7em;
   font-weight: bold;
   min-width: 15px;
   text-align: center;
-  line-height: 1; 
-  border: 1px solid white; 
+  line-height: 1;
+  border: 1px solid white;
 }
-
-/* El resto de estilos para el modal y los ítems de notificación deben ir en PaginaNotificaciones.vue */
 </style>

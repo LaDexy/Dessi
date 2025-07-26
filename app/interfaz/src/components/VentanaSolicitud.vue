@@ -1,5 +1,7 @@
-<!-- VentanaSolicitud.vue -->
+
 <template>
+
+  <!--ESTA ES LA PARTE DE LA VENTANA EMERGENTE AL QUERER ESTABLECER SOLICITUD CON OTRO USUARIO-->
   <div v-if="show" class="modal-overlay">
     <div class="modal-content">
       <h2>Compartir Datos de Contacto con {{ targetProfileName }}</h2>
@@ -41,11 +43,11 @@ export default {
       type: Boolean,
       default: false
     },
-    targetProfileId: { // ID del usuario al que se le envía la solicitud
+    targetProfileId: { 
       type: Number,
       required: true
     },
-    targetProfileName: { // Nombre del usuario al que se le envía la solicitud
+    targetProfileName: {
       type: String,
       default: ''
     }
@@ -63,19 +65,19 @@ export default {
   },
   methods: {
     submitRequest() {
-      // Emite un evento con los datos de contacto y el ID del receptor
+      
       this.$emit('send-contact-request', {
-        id_receptor: this.targetProfileId, // Usamos id_receptor para coincidir con la DB
+        id_receptor: this.targetProfileId, 
         contactDetails: this.contactInfo
       });
       this.resetForm();
     },
     cancelRequest() {
-      this.$emit('close'); // Emite un evento para que el padre cierre el modal
+      this.$emit('close'); 
       this.resetForm();
     },
     resetForm() {
-      // Resetea el formulario después de enviar o cancelar
+      
       this.contactInfo = {
         email: '',
         whatsapp: '',
@@ -89,7 +91,7 @@ export default {
 </script>
 
 <style scoped>
-/* Estilos básicos para el modal (puedes usar Bootstrap para un mejor look) */
+
 .modal-overlay {
   position: fixed;
   top: 0;

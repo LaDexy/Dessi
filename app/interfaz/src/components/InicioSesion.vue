@@ -1,16 +1,11 @@
 <template>
+  <!--ESTA ES LA PARTE DE LA VENTANA EMERGENTE PARA INCIIAR SESION-->
   <div id="Iniciar">
-    <!--Clase que denomina todos los requisitos-->
-
-    
     <div class="TodoCuatro">
-      <!--Requisitos para el registro-->
-
       <div class="Boton">
         <div class="form-box login">
           <h2>Iniciar Sesion</h2>
           <form @submit.prevent="submitLogin">
-            <!--Icono de Cerrar-->
             <div class="Cerrar" @click="$emit('cerrar')">
               <span class="icon-close">
                 <i
@@ -20,22 +15,18 @@
               </span>
             </div>
 
-            <!-- Opcion de Nombre de usuario-->
-
             <div class="input-box">
               <span class="icon"> </span>
               <input type="Email" v-model="correo_electronico" required />
               <label>Correo electronico</label>
             </div>
 
-            <!--OPcion de contraseña-->
             <div class="input-box">
               <span class="icon"> </span>
               <input type="password" v-model="contrasena" required />
               <label>Password</label>
             </div>
 
-            <!--Opcion para recordar contraseña-->
             <div class="remember-forgot">
               <label
                 ><input type="checkbox" v-model="recordar_contrasena" />
@@ -44,20 +35,16 @@
               >
             </div>
 
-            <!--Olvido de contraseña-->
             <div class="remember-forgot">
               <div>
                 <a href="#">Olvide contraseña</a>
               </div>
             </div>
 
-            <!--Boton para registrar datos-->
-
             <button type="submit" class="Registro">Iniciar</button>
           </form>
         </div>
 
-        <!--Cierre de requisitos-->
       </div>
     </div>
   </div>
@@ -71,17 +58,16 @@ export default {
     return {
       correo_electronico: '',
       contrasena: '',
-      recordar_contrasena: false // Para el checkbox de recordar contraseña
+      recordar_contrasena: false
     };
   },
   methods: {
     async submitLogin() {
-      console.log('Método submitLogin iniciado.'); // LOG: Método llamado
+      console.log('Método submitLogin iniciado.');
       console.log('Datos a enviar al backend:', {
         correo_electronico: this.correo_electronico,
-        // No loguear la contraseña en producción, solo para depuración
-        contrasena: this.contrasena.replace(/./g, '*') // Ocultar contraseña en log
-      }); // LOG: Datos a enviar
+        contrasena: this.contrasena.replace(/./g, '*')
+      });
 
       try {
         const response = await axios.post('http://localhost:4000/api/login', {
@@ -89,13 +75,11 @@ export default {
           contrasena: this.contrasena
         });
 
-        console.log('Respuesta del backend recibida:', response.status, response.data); // LOG: Respuesta del backend
+        console.log('Respuesta del backend recibida:', response.status, response.data);
 
         if (response.status === 200) {
           const { token, tipo_perfil, id_usuario, nombre_usuario } = response.data;
 
-          // Almacenar el token y la información del usuario
-          // Usar localStorage si recordar_contrasena es true, de lo contrario sessionStorage
           const storage = this.recordar_contrasena ? localStorage : sessionStorage;
           storage.setItem('userToken', token);
           storage.setItem('userProfile', tipo_perfil);
@@ -103,9 +87,8 @@ export default {
           storage.setItem('userName', nombre_usuario);
 
           alert('¡Inicio de sesión exitoso!');
-          this.$emit('cerrar'); // Cerrar el modal de login
+          this.$emit('cerrar');
 
-          // Emitir un evento para que PaginaPrincipal.vue sepa que el login fue exitoso
           this.$emit('loginExitoso');
           console.log('Usuario logueado y datos almacenados:', response.data);
 
@@ -113,9 +96,9 @@ export default {
           alert('Error desconocido al iniciar sesión.');
         }
       } catch (error) {
-        console.error('Error al iniciar sesión (catch):', error); // LOG: Error en la solicitud
+        console.error('Error al iniciar sesión (catch):', error);
         if (error.response) {
-          console.error('Respuesta de error del servidor:', error.response.status, error.response.data); // LOG
+          console.error('Respuesta de error del servidor:', error.response.status, error.response.data);
           if (error.response.status === 401) {
             alert('Credenciales inválidas. Por favor, verifica tu correo y contraseña.');
           } else if (error.response.status === 400) {
@@ -124,10 +107,10 @@ export default {
             alert('Error en el servidor: ' + (error.response.data.message || 'Error desconocido'));
           }
         } else if (error.request) {
-          console.error('No se recibió respuesta del servidor. ¿Está corriendo el backend?', error.request); // LOG
+          console.error('No se recibió respuesta del servidor. ¿Está corriendo el backend?', error.request);
           alert('No se pudo conectar con el servidor. Asegúrate de que el servidor Express esté corriendo en http://localhost:4000.');
         } else {
-          console.error('Error de configuración de la solicitud:', error.message); // LOG
+          console.error('Error de configuración de la solicitud:', error.message);
           alert('Error desconocido al iniciar sesión: ' + error.message);
         }
       }
@@ -137,23 +120,20 @@ export default {
 </script>
 
 <style>
-/*centrar los requisitos*/
 .TodoCuatro {
- 
-
   top: 50px;
   padding: 40px;
   font-family: "Times New Roman", serif;
-    position: fixed;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.7); /* Fondo más oscuro */
+  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 2500; /* Asegura que esté por encima de otros modales */
+  z-index: 2500;
 }
 
 .Boton {

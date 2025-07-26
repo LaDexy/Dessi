@@ -1,15 +1,12 @@
 <template>
+
+  <!--ESTA ES LA PARTE DONDE SE DESPLIEGA LA VENTANITA PARA CREACION DE CONTRASEÑA PAA PODER INICIAR-->
   <div id="Contraseña">
-    <!--Clase que denomina todos los requisitos-->
-
     <div class="Clave">
-      <!--Requisitos para el registro-->
-
       <div class="General">
         <div class="form-box login">
           <h2>Creacion de contraseña</h2>
           <form @submit.prevent="submitCreacionContrasena">
-            <!--Icono de Cerrar-->
             <div class="Cerrar" @click="$emit('cerrar')">
               <span class="icon-close">
                 <i
@@ -19,27 +16,22 @@
               </span>
             </div>
 
-            <!--OPcion de crear contraseña-->
             <div class="input-box">
               <span class="icon"> </span>
               <input type="password" v-model="contrasena" required />
               <label>Contraseña</label>
             </div>
 
-            <!--OPcion de comprobar contraseña -->
             <div class="input-box">
               <span class="icon"> </span>
               <input type="password" v-model="validar_contrasena" required />
               <label>Validar contraseña</label>
             </div>
 
-            <!--Boton para registrar datos-->
-
             <button type="submit" class="Registro">Iniciar</button>
           </form>
         </div>
 
-        <!--Cierre de requisitos-->
       </div>
     </div>
   </div>
@@ -53,16 +45,15 @@ export default {
     return {
       contrasena: '',
       validar_contrasena: '',
-      registroTempData: null // Para almacenar los datos del registro inicial
+      registroTempData: null
     };
   },
   mounted() {
-    console.log('CrearContrasena.vue montado.'); // LOG: Componente montado
-    // Recuperar los datos temporales al montar el componente
+    console.log('CrearContrasena.vue montado.');
     const temp = localStorage.getItem('registroTempData');
     if (temp) {
       this.registroTempData = JSON.parse(temp);
-      console.log('Datos temporales de registro recuperados:', this.registroTempData); // LOG: Datos recuperados
+      console.log('Datos temporales de registro recuperados:', this.registroTempData);
     } else {
       console.warn('No se encontraron datos de registro temporales. El usuario debería empezar por el formulario de perfil.');
       this.$emit('MostrarRegistro', null);
@@ -70,17 +61,17 @@ export default {
   },
   methods: {
     async submitCreacionContrasena() {
-      console.log('Método submitCreacionContrasena iniciado.'); // LOG: Método llamado
+      console.log('Método submitCreacionContrasena iniciado.');
 
       if (this.contrasena !== this.validar_contrasena) {
         alert('Las contraseñas no coinciden. Por favor, inténtalo de nuevo.');
-        console.log('Error: Contraseñas no coinciden.'); // LOG
+        console.log('Error: Contraseñas no coinciden.');
         return;
       }
 
       if (!this.registroTempData) {
         alert('Error: Datos de registro incompletos. Por favor, comienza el registro de nuevo.');
-        console.log('Error: Datos temporales de registro faltantes.'); // LOG
+        console.log('Error: Datos temporales de registro faltantes.');
         this.$emit('MostrarRegistro', null);
         return;
       }
@@ -90,25 +81,25 @@ export default {
         contrasena: this.contrasena
       };
 
-      console.log('Enviando datos de registro al backend:', userData); // LOG: Datos a enviar
+      console.log('Enviando datos de registro al backend:', userData);
 
       try {
         const response = await axios.post('http://localhost:4000/api/register', userData);
-        console.log('Respuesta del backend recibida:', response.status, response.data); // LOG: Respuesta del backend
+        console.log('Respuesta del backend recibida:', response.status, response.data);
 
         if (response.status === 201) {
           alert('¡Registro exitoso! Ya puedes iniciar sesión.');
           localStorage.removeItem('registroTempData');
           this.$emit('cerrar');
-          console.log('Registro exitoso y datos temporales eliminados.'); // LOG
+          console.log('Registro exitoso y datos temporales eliminados.');
         } else {
           alert('Hubo un error al registrar el usuario: ' + (response.data.message || 'Error desconocido'));
-          console.error('Error de registro (respuesta no 201):', response.data); // LOG
+          console.error('Error de registro (respuesta no 201):', response.data);
         }
       } catch (error) {
-        console.error('Error al enviar el registro (catch):', error); // LOG: Error en la solicitud
+        console.error('Error al enviar el registro (catch):', error);
         if (error.response) {
-          console.error('Respuesta de error del servidor:', error.response.status, error.response.data); // LOG
+          console.error('Respuesta de error del servidor:', error.response.status, error.response.data);
           if (error.response.status === 409) {
             alert('El correo electrónico ya está registrado. Por favor, usa otro o inicia sesión.');
           } else if (error.response.status === 400) {
@@ -117,10 +108,10 @@ export default {
             alert('Error en el servidor: ' + (error.response.data.message || 'Error desconocido'));
           }
         } else if (error.request) {
-          console.error('No se recibió respuesta del servidor. ¿Está corriendo el backend?', error.request); // LOG
+          console.error('No se recibió respuesta del servidor. ¿Está corriendo el backend?', error.request);
           alert('No se pudo conectar con el servidor. Asegúrate de que el servidor Express esté corriendo en http://localhost:4000.');
         } else {
-          console.error('Error de configuración de la solicitud:', error.message); // LOG
+          console.error('Error de configuración de la solicitud:', error.message);
           alert('Error desconocido al registrar: ' + error.message);
         }
       }
@@ -130,7 +121,6 @@ export default {
 </script>
 
 <style>
-/*centrar los requisitos*/
 .Clave {
   position: absolute;
   left: 500px;

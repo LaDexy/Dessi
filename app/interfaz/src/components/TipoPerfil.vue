@@ -1,9 +1,11 @@
 <template>
+
+  <!--ESTO ES LA PARTE QUE TIENE EL TIPO DE PERFIL DE LOS USUARIOS Y LA PARTE PARA LA DESCRIPCION-->
   <div class="tipo-perfil-container">
     <h2>{{ profileType }}</h2>
     <div class="Descripcion-editable-wrapper">
       <h3 v-if="!isEditing">
-        {{ description || 'Aca va una breve descripcion' }}
+        {{ description || 'Escribe una descripcion para tu perfil' }}
       </h3>
       <textarea
         v-else
@@ -11,10 +13,10 @@
         class="description-textarea"
         ref="descriptionInput"
       ></textarea>
-      
+
       <div class="CambioDescripcion">
-      <IconoEditar v-if="!isEditing" @click="startEditing" class="edit-description-icon-position" />
-        </div>
+        <IconoEditar v-if="!isEditing" @click="startEditing" class="edit-description-icon-position" />
+      </div>
 
       <div v-if="isEditing" class="edit-actions">
         <button @click="saveDescription">Guardar</button>
@@ -25,7 +27,7 @@
 </template>
 
 <script>
-import IconoEditar from './IconoEditar.vue'; 
+import IconoEditar from './IconoEditar.vue';
 
 export default {
   name: "TipoPerfil",
@@ -35,7 +37,7 @@ export default {
   props: {
     profileType: {
       type: String,
-      default: "Tipo de Perfil", // Valor por defecto si no se pasa la prop
+      default: "Tipo de Perfil",
     },
     description: {
       type: String,
@@ -72,24 +74,19 @@ export default {
 };
 </script>
 
-<style scoped> 
-
-.CambioDescripcion{
-
+<style scoped>
+.CambioDescripcion {
   position: relative;
-
 }
 
 .tipo-perfil-container {
-
   flex-direction: column;
-  align-items: center; /* Centra el contenido horizontalmente */
+  align-items: center;
   width: 100%;
   margin-top: 20px;
   margin-bottom: 20px;
 }
 
-/* Selector corregido para el h2 y eliminación de posicionamiento absoluto */
 .tipo-perfil-container h2 {
   color: #6a1b9a;
   font-size: 1.8em;
@@ -98,16 +95,14 @@ export default {
   align-items: center;
 }
 
-/* Selector corregido para el h3 y eliminación de posicionamiento absoluto */
 .Descripcion-editable-wrapper h3 {
   color: #555;
   font-size: 1.5em;
   text-align: center;
-  max-width: 100%; 
+  max-width: 100%;
   line-height: 1.1;
-  padding-right: 30px; 
+  padding-right: 30px;
   align-items: center;
- 
 }
 
 .description-textarea {

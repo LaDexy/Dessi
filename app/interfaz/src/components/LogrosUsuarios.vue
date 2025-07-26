@@ -1,4 +1,6 @@
 <template>
+
+  <!--ESTA ES LA PARTE DE LOS TEXTOS DE LOGROS DE PAGINA PRINCIPAL-->
   <section class="logros-section">
     <div class="logros-title-container">
       <h1>Logros</h1>
@@ -27,63 +29,56 @@ export default {
 </script>
 
 <style scoped>
-/* Contenedor principal de la sección de logros */
 .logros-section {
   width: 100%;
-  padding: 40px 20px; /* Padding interno para espacio */
+  padding: 40px 20px;
   box-sizing: border-box;
-  text-align: center; /* Centra el título y puede influir en otros elementos */
-  background-color: #f8f8f8; /* Un fondo muy ligero para diferenciar la sección */
-  margin-top: 30px; /* Espacio superior para separar del carrusel */
+  text-align: center;
+  background-color: #f8f8f8;
+  margin-top: 30px;
 }
 
-/* Contenedor del título "Logros" */
 .logros-title-container h1 {
-  font-size: 2.8rem; /* Tamaño de fuente grande para el título principal */
+  font-size: 2.8rem;
   color: #333;
-  margin-bottom: 30px; /* Espacio debajo del título */
+  margin-bottom: 30px;
   font-weight: bold;
 }
 
-/* Contenedor de los textos motivadores (la clave para el layout) */
 .logros-text-container {
-  display: flex; /* Usamos Flexbox para alinear los textos */
-  flex-wrap: wrap; /* Permite que los textos salten a la siguiente línea en pantallas pequeñas */
-  justify-content: center; /* Centra los textos horizontalmente */
-  gap: 30px; /* Espacio entre los textos (horizontal y vertical) */
-  max-width: 1200px; /* Limita el ancho máximo del contenedor de textos */
-  margin: 0 auto; /* Centra el contenedor de textos en la página */
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-/* Estilos para cada texto motivador individual */
 .emprendedor-text,
 .disenador-text,
 .marketing-text {
-  flex: 1 1 300px; /* Flex-grow, flex-shrink, flex-basis. Cada uno intentará tener 300px, pero se encogerá o crecerá */
-  max-width: 380px; /* Ancho máximo para cada tarjeta de texto */
+  flex: 1 1 300px;
+  max-width: 380px;
   padding: 20px;
-  background-color: #ffffff; /* Fondo blanco para cada caja de texto */
-  border-radius: 8px; /* Bordes redondeados */
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08); /* Sombra suave */
-  text-align: center; /* Centra el texto dentro de cada caja */
-  min-height: 120px; /* Asegura una altura mínima para la consistencia visual */
-  display: flex; /* Para centrar el h4 verticalmente si es necesario */
-  align-items: center; /* Centra verticalmente el contenido */
-  justify-content: center; /* Centra horizontalmente el contenido */
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .emprendedor-text h4,
 .disenador-text h4,
 .marketing-text h4 {
-  font-size: 1.3rem; /* Tamaño de fuente para los textos */
+  font-size: 1.3rem;
   color: #555;
   line-height: 1.4;
-  margin: 0; /* Elimina márgenes por defecto del h4 */
+  margin: 0;
 }
 
-/* Media Queries para Responsividad */
-
-/* Para pantallas medianas (ej. tablets, 768px y abajo) */
 @media (max-width: 768px) {
   .logros-section {
     padding: 30px 15px;
@@ -95,21 +90,19 @@ export default {
   }
 
   .logros-text-container {
-    gap: 20px; /* Reduce el espacio entre textos */
-    /* Aquí los textos podrían pasar de 3 a 2 por fila */
+    gap: 20px;
   }
 
   .emprendedor-text,
   .disenador-text,
   .marketing-text {
-    flex: 1 1 calc(50% - 20px); /* Dos columnas: 50% menos el gap */
-    max-width: calc(50% - 20px); /* Ajusta max-width */
+    flex: 1 1 calc(50% - 20px);
+    max-width: calc(50% - 20px);
     padding: 15px;
     min-height: 100px;
   }
 }
 
-/* Para pantallas pequeñas (ej. móviles, 480px y abajo) */
 @media (max-width: 480px) {
   .logros-section {
     padding: 20px 10px;
@@ -121,22 +114,22 @@ export default {
   }
 
   .logros-text-container {
-    gap: 15px; /* Reduce aún más el espacio */
+    gap: 15px;
   }
 
   .emprendedor-text,
   .disenador-text,
   .marketing-text {
-    flex: 1 1 100%; /* Una sola columna en móviles */
-    max-width: 100%; /* Ocupa todo el ancho disponible */
+    flex: 1 1 100%;
+    max-width: 100%;
     padding: 15px;
-    min-height: unset; /* Deja que la altura se ajuste al contenido */
+    min-height: unset;
   }
 
   .emprendedor-text h4,
   .disenador-text h4,
   .marketing-text h4 {
-    font-size: 1.1rem; /* Reduce el tamaño de fuente para móviles */
+    font-size: 1.1rem;
   }
 }
 </style>
