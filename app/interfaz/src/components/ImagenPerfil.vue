@@ -1,6 +1,6 @@
 <template>
   <div>
-    <!--ESTA ES EL CIRCULO DE LA IMAGEN DE PERFIL-->
+    <!--IMAGEN DE PERFIL-->
     <div class="Perfil">
       <div class="circulo">
         <img :src="profileImageSrc || require('../assets/Usuario.png')" alt="Foto de perfil">

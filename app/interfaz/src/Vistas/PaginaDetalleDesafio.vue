@@ -246,8 +246,6 @@ export default {
         console.error('Error al enviar propuesta:', error);
         if (error.response) {
           this.showErrorMessage('Error al Enviar Propuesta', error.response.data.message || 'Error en el servidor al enviar propuesta.');
-          if (error.response.status === 403) {
-          }
         } else {
           this.showErrorMessage('Error de Conexión', 'No se pudo conectar con el servidor. Inténtalo de nuevo.');
         }
@@ -334,9 +332,6 @@ export default {
     background-color: #ffebee;
     color: #d32f2f;
     border: 1px solid #ef9a9a;
-}
-
-.challenge-content {
 }
 
 .challenge-title {
