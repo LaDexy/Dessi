@@ -444,8 +444,8 @@ h2 {
 }
 
 .notification-card.unread {
-  background-color: #f7eff7;
-  border-left: 6px solid #5e1c7d;
+  background-color: #f7eff7; 
+  border-left: 6px solid #5e1c7d; 
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 0 0 1px #5e1c7d;
 }
 
