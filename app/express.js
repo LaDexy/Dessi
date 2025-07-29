@@ -1906,6 +1906,7 @@ app.get("/api/profiles", authenticateToken, async (req, res) => {
         descripcion_perfil: description,
         profession: profession,
         location: location, 
+        foto_perfil_url: fullImageUrl,
       };
     });
     res.status(200).json(formattedProfiles);
