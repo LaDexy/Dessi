@@ -1,10 +1,7 @@
 <template>
   <div>
-
-    <!--RENDERIZAR PARA ADAPTACION A NAVEGADOR-->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!--iMPORTACION DE COMPONENTES-->
     <ContenidoMenu :userRole="userProfileType" class="fixed-menu-button" />
 
     <BarraBusqueda @search="handleSearch" class="fixed-search-bar" />
@@ -15,7 +12,11 @@
       @imageSelected="handleImageSelected"
     />
 
-    <IconoNotificaciones @click="goToNotificationsPage" />
+    <IconoNotificaciones
+      :count="unreadNotificationsCount"
+      @click="goToNotificationsPage"
+      @notification-read="handleNotificationRead"
+    />
 
     <BarraPerfil :userName="userName" />
 
@@ -75,7 +76,7 @@ import BarraBusqueda from "../components/BarraBusqueda.vue";
 import BotonesFiltro from "../components/BotonesFiltro.vue";
 import TarjetasPerfiles from "@/components/TarjetasPerfiles.vue";
 import VentanaSolicitud from "@/components/VentanaSolicitud.vue";
-import IconoNotificaciones from "@/components/IconoNotificaciones.vue"; 
+import IconoNotificaciones from "@/components/IconoNotificaciones.vue";
 
 export default {
   name: "PaginaCentral",
@@ -88,7 +89,7 @@ export default {
     BotonesFiltro,
     TarjetasPerfiles,
     VentanaSolicitud,
-    IconoNotificaciones, 
+    IconoNotificaciones,
   },
   data() {
     return {
@@ -105,11 +106,10 @@ export default {
       showVentanaSolicitud: false,
       selectedProfileId: null,
       selectedProfileName: "",
-     
+      unreadNotificationsCount: 0, 
     };
   },
 
-  //FUNCIONES PARA MOSTRAR LAS TARJETAS DE LOS PERFILES Y LAS NOTIFICACIONES
   computed: {
     filteredProfiles() {
       let profilesToFilter = this.allProfiles;
@@ -133,11 +133,13 @@ export default {
       );
     },
   },
+
   async created() {
     await this.fetchLoggedInUserProfile();
     await this.fetchAllProfiles();
-    
+    await this.fetchUnreadNotificationsCount(); 
   },
+
   methods: {
     async fetchLoggedInUserProfile() {
       try {
@@ -248,6 +250,41 @@ export default {
       }
     },
 
+    async fetchUnreadNotificationsCount() {
+      try {
+        const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+        if (!token) {
+          this.unreadNotificationsCount = 0;
+          return;
+        }
+        const response = await axios.get('http://localhost:4000/api/notificaciones/unread-count', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (response.status === 200) {
+          this.unreadNotificationsCount = response.data.count;
+          console.log('Notificaciones no leídas:', this.unreadNotificationsCount);
+        } else {
+          console.error('Error al obtener el recuento de notificaciones no leídas:', response.status, response.data);
+          this.unreadNotificationsCount = 0;
+        }
+      } catch (error) {
+        console.error('Error en la solicitud para obtener el recuento de notificaciones no leídas:', error);
+        this.unreadNotificationsCount = 0;
+      }
+    },
+
+    goToNotificationsPage() {
+      this.$router.push({ name: "Notificaciones" });
+    },
+
+    handleNotificationRead() {
+      if (this.unreadNotificationsCount > 0) {
+        this.unreadNotificationsCount--;
+      }
+      
+       this.fetchUnreadNotificationsCount();
+    },
+
     handleSearch(term) {
       this.searchTerm = term;
       console.log("Término de búsqueda recibido en PaginaCentral:", term);
@@ -314,7 +351,8 @@ export default {
             "Solicitud Enviada",
             "¡Tu solicitud de contacto ha sido enviada con éxito!"
           );
-          
+        
+           this.fetchUnreadNotificationsCount();
         } else {
           this.showErrorMessage(
             "Error al Enviar",
@@ -386,11 +424,6 @@ export default {
       };
       return new Date(dateString).toLocaleDateString("es-ES", options);
     },
-  
-    goToNotificationsPage() {
-      this.$router.push({ name: "Notificaciones" });
-    },
-
   },
 };
 </script>

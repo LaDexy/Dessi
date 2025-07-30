@@ -121,12 +121,12 @@
         </div>
 
         <!--ESTA FUNCION ESTA AGREGADA PERO REQUIERE DE FINALIZACION EN EXPRESS. ES DECIR, ESTA EN ESTATUS DE PENDIENTE-->
-        <!--
+       
         <div class="message-modal-actions">
           <button @click="acceptContactRequestFromModal(selectedNewRequest)" class="btn-accept">Aceptar</button>
           <button @click="rejectContactRequestFromModal(selectedNewRequest)" class="btn-reject">Rechazar</button>
         </div>
-      -->
+   
       </div>
     </div>
   </div>
