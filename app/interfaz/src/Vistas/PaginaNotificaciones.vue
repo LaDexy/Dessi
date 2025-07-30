@@ -119,8 +119,6 @@
             <p v-if="selectedNewRequest.emisor_tiktok"><strong>TikTok:</strong> {{ selectedNewRequest.emisor_tiktok }}</p>
             <p v-if="selectedNewRequest.emisor_facebook"><strong>Facebook:</strong> {{ selectedNewRequest.emisor_facebook }}</p>
         </div>
-
-        <!--ESTA FUNCION ESTA AGREGADA PERO REQUIERE DE FINALIZACION EN EXPRESS. ES DECIR, ESTA EN ESTATUS DE PENDIENTE-->
        
         <div class="message-modal-actions">
           <button @click="acceptContactRequestFromModal(selectedNewRequest)" class="btn-accept">Aceptar</button>
