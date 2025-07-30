@@ -946,7 +946,7 @@ app.get("/api/notificaciones", authenticateToken, async (req, res) => {
                 n.titulo,           
                 n.url_redireccion,  
                 n.creado_fecha AS fecha_creacion, 
-                n.leida AS leido,   
+                n.leida,   
                 n.id_referencia,
                 -- Datos de la solicitud de contacto si aplica
                 sc.email AS email_emisor,

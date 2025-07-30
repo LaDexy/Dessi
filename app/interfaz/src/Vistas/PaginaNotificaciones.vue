@@ -222,12 +222,12 @@ export default {
         });
         const index = this.notifications.findIndex(n => n.id_notificacion === id_notificacion);
         if (index !== -1) {
-          this.notifications[index].leida = 1; 
+          this.notifications[index].leida = true; 
         }
         if (this.selectedNotification && this.selectedNotification.id_notificacion === id_notificacion) {
-            this.selectedNotification.leida = 1;
+            this.selectedNotification.leida = true;
         }
-        await this.fetchNotifications(); 
+        this.$emit('notification-read');
       } catch (error) {
         console.error('Error al marcar notificación como leída:', error);
       }
