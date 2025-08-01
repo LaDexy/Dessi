@@ -1,6 +1,4 @@
 <template>
-
-  <!--ESTO ES LO QUE SE EMITE AL PRESIONAR BOTON DE VER DESAFIOS (SOLO PARA EMPRENDEDORES)-->
   <div class="VerDesafios">
     <div class="modal-overlay" @click.self="cerrarModal">
       <div class="modal-content">
@@ -17,15 +15,17 @@
         </div>
 
         <div v-else class="challenges-list">
-          <div v-for="challenge in challenges" :key="challenge.id_desafio"
-            class="challenge-card"
-            @click="emitirVerDetalle(challenge.id_desafio)">
+          <div v-for="challenge in challenges" :key="challenge.id_desafio" class="challenge-card">
             <h3>{{ challenge.nombre_desafio }}</h3>
             <p><strong>Descripción:</strong> {{ challenge.descripcion_desafio }}</p>
             <p v-if="challenge.beneficios"><strong>Beneficios:</strong> {{ challenge.beneficios }}</p>
             <p><strong>Duración:</strong> {{ challenge.dias_duracion }} días</p>
             <p><strong>Creado el:</strong> {{ formatDate(challenge.fecha_creacion) }}</p>
             <p><strong>Fecha Fin:</strong> {{ formatDate(challenge.fecha_fin) }}</p>
+
+            <button @click="emitirVerDetalle(challenge.id_desafio)" class="view-proposals-button">
+              Ver Propuestas
+            </button>
           </div>
         </div>
       </div>
@@ -239,4 +239,26 @@ export default {
   text-overflow: ellipsis;
   margin-bottom: 10px;
 }
+
+.view-proposals-button {
+  display: block;
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 1rem;
+  background-color: #6a0dad;
+  color: #ffffff;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+
+.view-proposals-button:hover {
+  background-color: #55008c; 
+}
+
+
+
 </style>

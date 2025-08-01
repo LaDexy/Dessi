@@ -1919,6 +1919,77 @@ app.get("/api/profiles", authenticateToken, async (req, res) => {
   }
 });
 
+
+// RUTA PARA OBTENER EL PERFIL Y PROYECTOS DE CUALQUIER USUARIO POR SU ID
+app.get("/api/profiles/:id", authenticateToken, async (req, res) => {
+  const userId = req.params.id;
+  console.log(
+    `Solicitud GET /api/profiles/${userId} recibida para usuario logueado: ${req.user.id_usuario}`
+  );
+
+  try {
+    let profileData = {};
+    const [users] = await pool.query(
+      "SELECT id_usuario, nombre_usuario, correo_electronico, tipo_perfil, foto_perfil_url, descripcion_perfil, reputacion FROM usuarios WHERE id_usuario = ?",
+      [userId]
+    );
+
+    if (users.length === 0) {
+      console.log("Error 404: Perfil de usuario no encontrado para ID:", userId);
+      return res.status(404).json({ message: "Perfil de usuario no encontrado." });
+    }
+    profileData = users[0];
+    profileData.reputacion = profileData.reputacion || 0;
+    
+    if (profileData.foto_perfil_url) {
+      profileData.foto_perfil_url = `${req.protocol}://${req.get("host")}${
+        profileData.foto_perfil_url
+      }`;
+    } else {
+      profileData.foto_perfil_url = "";
+    }
+
+    // Consulta para obtener los proyectos y fotos del usuario
+    console.log("Consultando proyectos y fotos del usuario...");
+    const [projects] = await pool.query(
+      "SELECT p.id_proyecto, p.titulo_proyecto, p.descripcion_proyecto, p.fecha_creacion, p.estado, i.id_imagen, i.url_imagen, i.descripcion_imagen FROM proyecto p LEFT JOIN imagen i ON p.id_proyecto = i.id_proyecto WHERE p.id_usuario = ? ORDER BY p.fecha_creacion DESC, i.orden ASC",
+      [userId]
+    );
+    console.log("Proyectos y fotos obtenidos. Agrupando...");
+
+    const groupedProjects = projects.reduce((acc, row) => {
+      if (!acc[row.id_proyecto]) {
+        acc[row.id_proyecto] = {
+          id_proyecto: row.id_proyecto,
+          titulo_proyecto: row.titulo_proyecto,
+          descripcion_proyecto: row.descripcion_proyecto,
+          fecha_creacion: row.fecha_creacion,
+          estado: row.estado,
+          imagenes: [],
+        };
+      }
+      if (row.id_imagen) {
+        acc[row.id_proyecto].imagenes.push({
+          id_imagen: row.id_imagen,
+          url_imagen: `${req.protocol}://${req.get("host")}${row.url_imagen}`,
+          descripcion_imagen: row.descripcion_imagen,
+        });
+      }
+      return acc;
+    }, {});
+
+    profileData.proyectos = Object.values(groupedProjects);
+    console.log("Perfil completo con proyectos enviado al frontend.");
+    res.status(200).json(profileData);
+  } catch (error) {
+    console.error("Error al obtener el perfil del usuario:", error);
+    res.status(500).json({
+      message: "Error interno del servidor",
+      error: error.message,
+    });
+  }
+});
+
 // RUTAS PARA EL FORO
 
 // 1. RUTA PARA OBTENER TODOS LOS FOROS EN GENERAL

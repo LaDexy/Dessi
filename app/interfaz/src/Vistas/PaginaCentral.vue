@@ -34,6 +34,13 @@
 
     <h2 class="TituloPerfiles">Perfiles de Usuarios</h2>
 
+     <AlbumPerfil
+      :show="showAlbumModal"
+      :profileName="selectedProfileName"
+      :album="selectedProfileAlbum"
+      @close="showAlbumModal = false"
+    />
+
     <TarjetasPerfiles
       :profiles="filteredProfiles"
       @send-request="openVentanaSolicitud"
@@ -77,6 +84,7 @@ import BotonesFiltro from "../components/BotonesFiltro.vue";
 import TarjetasPerfiles from "@/components/TarjetasPerfiles.vue";
 import VentanaSolicitud from "@/components/VentanaSolicitud.vue";
 import IconoNotificaciones from "@/components/IconoNotificaciones.vue";
+import AlbumPerfil from "@/components/AlbumPerfil.vue";
 
 export default {
   name: "PaginaCentral",
@@ -90,6 +98,7 @@ export default {
     TarjetasPerfiles,
     VentanaSolicitud,
     IconoNotificaciones,
+    AlbumPerfil,
   },
   data() {
     return {
@@ -107,6 +116,8 @@ export default {
       selectedProfileId: null,
       selectedProfileName: "",
       unreadNotificationsCount: 0, 
+      showAlbumModal: false,
+      selectedProfileAlbum: [],
     };
   },
 
@@ -391,13 +402,43 @@ export default {
       }
     },
 
-    handleViewProfile(profile) {
-      console.log("Navegando a la PaginaPerfil para:", profile.nombre_usuario);
-      this.$router.push({
-        name: "PaginaPerfil",
-        params: { id: profile.id_usuario },
-      });
+    async handleViewProfile(profile) {
+      console.log("Preparando para abrir álbum de fotos de:", profile.nombre_usuario);
+      
+      this.selectedProfileName = "Cargando...";
+      this.selectedProfileAlbum = [];
+      this.showAlbumModal = true;
+      
+      try {
+        const token = localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
+        if (!token) {
+          throw new Error("No hay token de autenticación.");
+        }
+        
+        const response = await axios.get(`http://localhost:4000/api/profiles/${profile.id_usuario}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        if (response.status === 200) {
+          const profileWithAlbum = response.data;
+          console.log("Álbum de fotos obtenido con éxito:", profileWithAlbum.proyectos);
+          
+          this.selectedProfileName = profileWithAlbum.nombre_usuario;
+          
+          this.selectedProfileAlbum = profileWithAlbum.proyectos.flatMap(p => p.imagenes);
+        } else {
+          console.error("Error al obtener el álbum:", response.status, response.data);
+          this.selectedProfileName = profile.nombre_usuario;
+          this.selectedProfileAlbum = [];
+        }
+      } catch (error) {
+        console.error("Error en la solicitud para obtener el álbum:", error);
+        this.selectedProfileName = profile.nombre_usuario;
+        this.selectedProfileAlbum = [];
+        this.showMessageModal("Error", "No se pudo cargar el álbum de fotos.");
+      }
     },
+
 
     showErrorMessage(title, message) {
       this.messageModalTitle = title;
