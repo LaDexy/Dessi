@@ -47,7 +47,7 @@
             </div>
 
             <div>
-              <button type="submit" class="Registro">Siguiente (Crear Contraseña)</button>
+              <button type="submit" class="Registro">Siguiente</button>
             </div>
           </form>
         </div>

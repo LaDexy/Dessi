@@ -1,7 +1,5 @@
 <template>
-
-  <!--ESTA ES LA PARTE DONDE SE DESPLIEGA LA VENTANITA PARA CREACION DE CONTRASEÑA PAA PODER INICIAR-->
-  <div id="Contraseña">
+  <div class="modal-overlay">
     <div class="Clave">
       <div class="General">
         <div class="form-box login">
@@ -31,7 +29,6 @@
             <button type="submit" class="Registro">Iniciar</button>
           </form>
         </div>
-
       </div>
     </div>
   </div>
@@ -120,11 +117,24 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6); 
+  display: flex; 
+  justify-content: center; 
+  align-items: center;
+  z-index: 1000; 
+}
+
+
 .Clave {
-  position: absolute;
-  left: 500px;
-  top: 50px;
+ 
   padding: 40px;
   font-family: "Times New Roman", serif;
 }
@@ -149,7 +159,6 @@ export default {
   width: 100%;
   padding: 40px;
 }
-
 .General .icon-close {
   position: absolute;
   top: 18px;
@@ -163,13 +172,11 @@ export default {
   border-bottom-left-radius: 100px;
   cursor: pointer;
 }
-
 .form-box h2 {
   font-size: 3em;
   color: #000000;
   text-align: center;
 }
-
 .input-box {
   position: relative;
   width: 100%;
@@ -177,7 +184,6 @@ export default {
   border-bottom: 2px solid #000000;
   margin: 30px 0;
 }
-
 .input-box label {
   position: absolute;
   top: 50%;
@@ -189,12 +195,10 @@ export default {
   pointer-events: none;
   transition: 0.5s;
 }
-
 .input-box input:focus ~ label,
 .input-box input:valid ~ label {
   top: -5px;
 }
-
 .input-box input {
   width: 100%;
   height: 100%;
@@ -206,7 +210,6 @@ export default {
   font-weight: 600;
   padding: 0 35px 0 5px;
 }
-
 .remember-forgot {
   font-size: 1em;
   color: #000000;
@@ -215,25 +218,21 @@ export default {
   display: flex;
   justify-content: space-between;
 }
-
 .remember-forgot label input {
   accent-color: #861c78;
   margin-right: 3px;
 }
-
 .remember-forgot a {
   color: #000000;
   text-decoration: none;
 }
-
 .remember-forgot a:hover {
   text-decoration: underline;
 }
-
 .Registro {
   width: 100%;
   height: 45px;
-  background: #440857;
+  background: hsl(300, 29%, 78%);
   border: none;
   outline: none;
   border-radius: 6px;
