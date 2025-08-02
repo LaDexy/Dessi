@@ -2,6 +2,8 @@
 
   <div class="pagina-desafios-container">
 
+    <ContenidoMenu/>
+
         <!--RENDERIZAR PARA ADAPTACION A NAVEGADOR-->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
@@ -31,9 +33,14 @@
 
 <script>
 import axios from 'axios';
+import ContenidoMenu from '@/components/ContenidoMenu.vue';
 
 export default {
   name: 'PaginaDesafios',
+  components: {
+    ContenidoMenu,
+    
+  },
   data() {
     return {
       desafios: [],
@@ -105,7 +112,7 @@ export default {
 
 h2 {
   text-align: center;
-  color: #0056b3;
+  color: hsl(300, 29%, 78%);
   margin-bottom: 30px;
 }
 
@@ -171,7 +178,7 @@ h2 {
   width: 100%;
   padding: 10px 15px;
   margin-top: 15px;
-  background-color: #28a745;
+  background-color: hsl(300, 29%, 78%);
   color: white;
   border: none;
   border-radius: 5px;
@@ -182,6 +189,6 @@ h2 {
 }
 
 .btn-detalles:hover {
-  background-color: #218838;
+  background-color: hsl(300, 46%, 73%);
 }
 </style>

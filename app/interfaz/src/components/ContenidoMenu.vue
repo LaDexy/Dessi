@@ -1,7 +1,5 @@
 <template>
   <div>
-
-    <!--ESTA ES LA PARTE DEL BOTON DE LAS 3 RAYITAS QUE DESPLIEGA BARRA LATERAL DERECHA DE BOOTSTRAP -->
     <div class="Lateral">
       <div class="offcanvas-header">
         <button
@@ -26,6 +24,7 @@
             <p>
               <a
                 class="btn btn-primary"
+                @click="goToPaginaCentral"
                 role="button"
                 aria-expanded="false"
                 aria-controls="collapseExample"
@@ -101,6 +100,15 @@ export default {
     };
   },
   methods: {
+    
+    goToPaginaCentral() {
+      this.$router.push({ name: 'Central' }).catch((err) => {
+        if (err.name !== 'NavigationDuplicated') {
+          console.error('Error de navegación a PaginaCentral:', err);
+        }
+      });
+      console.log('Intentando navegar a PaginaCentral...');
+    },
     goToForo() {
       this.$router.push({ name: "Foro" }).catch((err) => {
         if (err.name !== "NavigationDuplicated") {
@@ -126,7 +134,6 @@ export default {
   position: fixed;
   z-index: 1050;
 }
-
 .Lateral .btn.btn-primary {
   background-color: transparent !important;
   border-color: transparent !important;
@@ -134,14 +141,12 @@ export default {
   box-shadow: none !important;
   transition: none !important;
 }
-
 .Lateral .btn.btn-primary:hover {
   background-color: transparent !important;
   border-color: transparent !important;
   transform: none !important;
   box-shadow: none !important;
 }
-
 .Rayas {
   display: flex;
   justify-content: center;
@@ -154,17 +159,14 @@ export default {
   transition: all 0.3s ease;
   cursor: pointer;
 }
-
 .Rayas:hover {
   background-color: #5e1c7d;
   transform: translateY(-1px);
   box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2);
 }
-
 .Lateral .Rayas .fa-bars {
   color: #ffffff !important;
 }
-
 .offcanvas {
   background-color: #fcf8fc !important;
   box-shadow: -8px 0 20px rgba(0, 0, 0, 0.2);
@@ -172,20 +174,17 @@ export default {
   max-width: 80%;
   font-family: "Times New Roman", serif;
 }
-
 .offcanvas-header {
   border-bottom: 1px solid #eee !important;
   background-color: #f0f0f0 !important;
   color: #333 !important;
   border-radius: 20%;
 }
-
 .offcanvas-header .offcanvas-title {
   font-weight: bold;
   font-size: 1.5em;
   color: #444;
 }
-
 .offcanvas-header .btn-close {
   color: #555 !important;
   font-size: 1.1em !important;
@@ -194,14 +193,12 @@ export default {
 .offcanvas-header .btn-close:hover {
   transform: rotate(90deg);
 }
-
 .offcanvas-body {
   padding: 1.5rem 1rem !important;
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
-
 .offcanvas a.btn.btn-primary {
   display: block !important;
   width: auto !important;
@@ -216,7 +213,6 @@ export default {
   transition: background-color 0.2s ease, color 0.2s ease, transform 0.1s ease;
   text-decoration: none !important;
 }
-
 .offcanvas a.btn.btn-primary:hover,
 .offcanvas a.btn.btn-primary:focus {
   background-color: #f5e7f7 !important;
@@ -225,7 +221,6 @@ export default {
   box-shadow: none !important;
   transform: translateX(5px);
 }
-
 .offcanvas .card.card-body {
   background-color: #f0f0f0 !important;
   border: 1px solid #ddd !important;
@@ -236,7 +231,6 @@ export default {
   font-size: 0.95em;
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
 }
-
 @media (max-width: 576px) {
   .offcanvas {
     width: 250px !important;
