@@ -1,47 +1,61 @@
 <template>
   <div>
-    <!--ESTA ES LA PARTE DEL ICONO DE INTERROGACION DE PAGINA PRINCIPAL DONDE SE AGREGARA COMO UN INSTRUCTIVO DE USUARIO
-    DE LO QUE SE PUEDA HACER EN LA APP (MAS QUE TODO INFORMATIVO PARA EL CONVENIO) AUN NO ESTA TERMINADA-->
+
     <div class="Menu">
-      <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom" aria-controls="offcanvasBottom">
+      <button class="btn btn-primary" type="button" @click="toggleOffcanvas">
         <i class="fa-regular fa-circle-question fa-2xl" style="color: #ffffff;"></i>
       </button>
 
-      <div class="offcanvas offcanvas-bottom" tabindex="-1" id="offcanvasBottom" aria-labelledby="offcanvasBottomLabel">
+    
+      <div class="offcanvas offcanvas-bottom" :class="{ 'show': showOffcanvas }" tabindex="-1" id="offcanvasBottom" aria-labelledby="offcanvasBottomLabel">
         <div class="offcanvas-header">
-          <p>
-            <a class="btn btn-primary" data-bs-toggle="collapse" href="#collapseExample" role="button" aria-expanded="false" aria-controls="collapseExample">
-              Instructivo
-            </a>
-          </p>
+    
+          <button class="btn btn-primary" @click="showInstructivoModal = true">
+            Instructivo
+          </button>
+          
+    
+          <button class="btn btn-primary" @click="showAcercaDeModal = true">
+            Acerca De
+          </button>
 
-          <div class="collapse" id="collapseExample">
-            <div class="card card-body">
-              Aca dira como se inicia sesion y se registra
-            </div>
-          </div>
-
-          <p>
-            <a class="btn btn-primary" data-bs-toggle="collapse" href="#collapseExample2" role="button" aria-expanded="false" aria-controls="collapseExample2">
-              Acerca De
-            </a>
-          </p>
-
-          <div class="collapse" id="collapseExample2">
-            <div class="card card-body">
-              Aca dira informacion sobre la app web
-            </div>
-          </div>
+ 
+          <button type="button" class="btn-close text-reset" @click="toggleOffcanvas" aria-label="Close"></button>
         </div>
       </div>
     </div>
+
+ 
+    <InstructivoModal :show="showInstructivoModal" @close="showInstructivoModal = false" />
+    
+ 
+    <AcercaDeModal :show="showAcercaDeModal" @close="showAcercaDeModal = false" />
   </div>
 </template>
 
 <script>
+import InstructivoModal from './InstructivoModal.vue';
+import AcercaDeModal from './AcercaDeModal.vue';
+
 export default {
-  name: "OpcionesBarra"
-}
+  name: "OpcionesBarra",
+  components: {
+    InstructivoModal,
+    AcercaDeModal
+  },
+  data() {
+    return {
+      showOffcanvas: false, 
+      showInstructivoModal: false, 
+      showAcercaDeModal: false 
+    };
+  },
+  methods: {
+    toggleOffcanvas() {
+      this.showOffcanvas = !this.showOffcanvas;
+    }
+  }
+};
 </script>
 
 <style scoped>
