@@ -7,7 +7,7 @@
         <h3 class="modal-title">Guía de Uso</h3>
         
         <div class="modal-message">
-          <p>Para aprovechar al máximo nuestra plataforma, sigue estos sencillos pasos:</p>
+          <p>Para aprovechar al máximo nuestro gestor web, sigue estos sencillos pasos:</p>
           
           <h4>1. Registro e Inicio de Sesión</h4>
           <ul>
