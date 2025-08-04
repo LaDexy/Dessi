@@ -2,6 +2,8 @@
   <div>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <BotonSalida/>
+
    <ContenidoMenu 
       :userRole="userProfileType" 
       class="fixed-menu-button" 
@@ -98,6 +100,7 @@ import VentanaSolicitud from "@/components/VentanaSolicitud.vue";
 import IconoNotificaciones from "@/components/IconoNotificaciones.vue";
 import AlbumPerfil from "@/components/AlbumPerfil.vue";
 import MisConveniosModal from "@/components/MisConveniosModal.vue";
+import BotonSalida from "@/components/BotonSalida.vue";
 
 export default {
   name: "PaginaCentral",
@@ -113,6 +116,7 @@ export default {
     IconoNotificaciones,
     AlbumPerfil,
     MisConveniosModal,
+    BotonSalida,
   },
   data() {
     return {
