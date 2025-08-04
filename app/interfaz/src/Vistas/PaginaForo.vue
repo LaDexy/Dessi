@@ -4,7 +4,7 @@
      <!--RENDERIZAR PARA ADAPTACION A NAVEGADOR-->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <ContenidoMenu/>
+   
     <ForoUsuarios/>
   
 
@@ -15,7 +15,6 @@
 
 
 import ForoUsuarios from '@/components/ForoUsuarios.vue';
-import ContenidoMenu from '@/components/ContenidoMenu.vue';
 
 export default{
 
@@ -23,8 +22,7 @@ export default{
 
     components: {
 
-        ForoUsuarios,
-        ContenidoMenu,      
+        ForoUsuarios,  
     
   }
 

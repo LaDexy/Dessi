@@ -20,20 +20,7 @@
           id="offcanvasRight"
           aria-labelledby="offcanvasRightLabel"
         >
-          <div class="InicioVolver">
-            <p>
-              <a
-                class="btn btn-primary"
-                @click="goToPaginaCentral"
-                role="button"
-                aria-expanded="false"
-                aria-controls="collapseExample"
-              >
-                Inicio
-              </a>
-            </p>
-          </div>
-
+          
           <div class="Foro">
             <p>
               <a
@@ -64,15 +51,15 @@
 
           <div class="Convenio">
             <p>
-              <a
-                class="btn btn-primary"
-                @click="openConveniosModal"
-                role="button"
-                aria-expanded="false"
-                aria-controls="MisConveniosModal"
-              >
-                Mis convenios
-              </a>
+             <a
+  class="btn btn-primary"
+  @click="openConveniosModal"
+  role="button"
+  aria-expanded="false"
+  aria-controls="MisConveniosModal"
+>
+  Mis convenios
+</a>
             </p>
             </div>
         </div>
@@ -96,12 +83,10 @@ export default {
   },
   methods: {
  
-    openConveniosModal() {
-    
-      
-      this.$emit('show-mis-convenios-modal');
-      console.log('Emitiendo evento para mostrar el modal de convenios.');
-    },
+     openConveniosModal() {
+    console.log('El botón de Mis convenios fue clickeado.');
+    this.$emit('show-mis-convenios-modal');
+  },
     
     goToPaginaCentral() {
       this.$router.push({ name: 'Central' }).catch((err) => {

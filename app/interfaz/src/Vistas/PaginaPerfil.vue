@@ -4,8 +4,7 @@
     <!--RENDERIZAR PARA ADAPTACION A NAVEGADOR-->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!--Importacion de componentes-->
-    <ContenidoMenu :userRole="userProfileType" class="fixed-menu-button" />
+
     
     <ImagenPerfil
       ref="imagenPerfilComponent"
@@ -77,7 +76,6 @@ import BotonesDesafios from "../components/BotonesDesafios.vue";
 import IconoCamara from "@/components/IconoCamara.vue";
 import IconoPortafolio from "@/components/IconoPortafolio.vue";
 import ParticipantesDesafios from "@/components/ParticipantesDesafios.vue";
-import ContenidoMenu from "@/components/ContenidoMenu.vue";
 import axios from "axios";
 
 export default {
@@ -109,14 +107,13 @@ export default {
     IconoCamara,
     IconoPortafolio,
     ParticipantesDesafios,
-    ContenidoMenu,
   },
   mounted() {
     this.loadUserProfileData();
   },
   methods: {
 
-    //FUNCION PARA DATOS DE PERFIL DE USUARIO (NOMBRE DE PERFIL, TIPO DE PERFIL Y DESAFIOS SI ES EMPRENDEDOR)
+ 
     async loadUserProfileData() {
       try {
         const token = localStorage.getItem("userToken") || sessionStorage.getItem("userToken");

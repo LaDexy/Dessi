@@ -2,7 +2,11 @@
   <div>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <ContenidoMenu :userRole="userProfileType" class="fixed-menu-button" />
+   <ContenidoMenu 
+      :userRole="userProfileType" 
+      class="fixed-menu-button" 
+      @show-mis-convenios-modal="handleShowMisConveniosModal" 
+    />
 
     <BarraBusqueda @search="handleSearch" class="fixed-search-bar" />
 
@@ -165,18 +169,17 @@ export default {
   },
 
   methods: {
-    // NUEVO MÉTODO: Maneja el evento y abre el modal
+    
     handleShowMisConveniosModal() {
       console.log('Evento de menú recibido. Abriendo modal de convenios.');
       this.showMisConveniosModal = true;
-      // Llama a la función que cargará los datos cuando se abra el modal
+     
       this.fetchMisConvenios(); 
     },
-    
-    // NUEVO MÉTODO: Obtiene los datos de los convenios aceptados
+
     async fetchMisConvenios() {
       this.isLoadingConvenios = true;
-      this.misConvenios = []; // Limpia los convenios anteriores
+      this.misConvenios = []; 
 
       try {
         const token = localStorage.getItem("userToken") || sessionStorage.getItem("userToken");

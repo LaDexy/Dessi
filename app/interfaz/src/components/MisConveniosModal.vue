@@ -1,50 +1,50 @@
 <template>
+
   <div v-if="show" class="modal-overlay">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content">
+    
         <div class="modal-header">
           <h5 class="modal-title">Mis Convenios Aceptados</h5>
+    
           <button type="button" class="btn-close" @click="$emit('close')" aria-label="Close"></button>
         </div>
 
+    
         <div class="modal-body">
+      
           <div v-if="isLoading" class="text-center">
             <div class="spinner-border text-primary" role="status">
               <span class="visually-hidden">Cargando...</span>
             </div>
             <p class="mt-2">Cargando tus convenios...</p>
           </div>
-          
+      
           <div v-else>
+    
             <div v-if="convenios.length === 0" class="text-center">
               <p>No tienes convenios aceptados actualmente.</p>
             </div>
 
             <div v-else class="list-group">
-              <div v-for="convenio in convenios" :key="convenio.id_convenio" class="list-group-item list-group-item-action mb-2">
+             
+              <div v-for="convenio in convenios" :key="convenio.id_solicitud" class="list-group-item list-group-item-action mb-2">
                 <div class="d-flex w-100 justify-content-between">
-                  <h5 class="mb-1">{{ convenio.nombre_socio }}</h5>
-                  <small>{{ convenio.estado }}</small>
+            
+                  <h5 class="mb-1">{{ convenio.nombre_otra_persona }}</h5>
+                
+                  <small>{{ convenio.tipo_convenio }}</small>
                 </div>
                 <p class="mb-1">
-                  <strong>Fecha de Convenio:</strong> {{ formatDate(convenio.fecha_creacion) }}
+                  
+                  <strong>Fecha de Convenio:</strong> {{ formatDate(convenio.fecha_respuesta) }}
                 </p>
-                <div class="info-contacto">
-                  <small class="d-block">
-                    <i class="fa-solid fa-envelope"></i> {{ convenio.email_socio }}
-                  </small>
-                  <small class="d-block">
-                    <i class="fa-solid fa-phone"></i> {{ convenio.telefono_socio }}
-                  </small>
-                </div>
+               
               </div>
             </div>
           </div>
         </div>
 
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" @click="$emit('close')">Cerrar</button>
-        </div>
       </div>
     </div>
   </div>
@@ -68,9 +68,25 @@ export default {
     },
   },
   methods: {
+   
     formatDate(dateString) {
-      const options = { year: 'numeric', month: 'long', day: 'numeric' };
-      return new Date(dateString).toLocaleDateString('es-ES', options);
+      if (!dateString) return 'Fecha no disponible';
+      try {
+      
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) {
+         
+            const [datePart, timePart] = dateString.split('T');
+            const [year, month, day] = datePart.split('-').map(Number);
+            const [hour, minute, second] = timePart.split('.')[0].split(':').map(Number);
+            return `${day}/${month}/${year} ${hour}:${minute}:${second}`;
+        }
+        const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+        return date.toLocaleDateString('es-ES', options);
+      } catch (e) {
+        console.error("Error al formatear la fecha:", e);
+        return 'Fecha inválida';
+      }
     },
   },
 };
@@ -89,7 +105,7 @@ export default {
   justify-content: center;
   align-items: center;
   z-index: 1050; 
-  overflow-y: auto;
+  overflow-y: auto; 
 }
 
 
@@ -103,7 +119,7 @@ export default {
 
 .modal-header {
   border-bottom: 1px solid #dee2e6;
-  background-color: #e9ecef;
+  background-color: hsl(300, 29%, 78%);
   color: #343a40;
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
@@ -134,11 +150,4 @@ export default {
   font-size: 0.9rem;
 }
 
-.modal-footer {
-  border-top: 1px solid #dee2e6;
-  padding: 1rem;
-  background-color: #e9ecef;
-  border-bottom-left-radius: 8px;
-  border-bottom-right-radius: 8px;
-}
 </style>

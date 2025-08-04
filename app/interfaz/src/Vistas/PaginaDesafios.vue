@@ -2,7 +2,7 @@
 
   <div class="pagina-desafios-container">
 
-    <ContenidoMenu/>
+  
 
         <!--RENDERIZAR PARA ADAPTACION A NAVEGADOR-->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -33,13 +33,10 @@
 
 <script>
 import axios from 'axios';
-import ContenidoMenu from '@/components/ContenidoMenu.vue';
 
 export default {
   name: 'PaginaDesafios',
   components: {
-    ContenidoMenu,
-    
   },
   data() {
     return {
