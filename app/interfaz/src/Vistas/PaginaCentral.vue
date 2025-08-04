@@ -70,6 +70,14 @@
       @close="showVentanaSolicitud = false"
       @send-contact-request="handleSendContactRequest"
     />
+
+     <MisConveniosModal 
+      :show="showMisConveniosModal"
+      :convenios="misConvenios"
+      :isLoading="isLoadingConvenios"
+      @close="showMisConveniosModal = false"
+    />
+
   </div>
 </template>
 
@@ -85,6 +93,7 @@ import TarjetasPerfiles from "@/components/TarjetasPerfiles.vue";
 import VentanaSolicitud from "@/components/VentanaSolicitud.vue";
 import IconoNotificaciones from "@/components/IconoNotificaciones.vue";
 import AlbumPerfil from "@/components/AlbumPerfil.vue";
+import MisConveniosModal from "@/components/MisConveniosModal.vue";
 
 export default {
   name: "PaginaCentral",
@@ -99,6 +108,7 @@ export default {
     VentanaSolicitud,
     IconoNotificaciones,
     AlbumPerfil,
+    MisConveniosModal,
   },
   data() {
     return {
@@ -118,10 +128,13 @@ export default {
       unreadNotificationsCount: 0, 
       showAlbumModal: false,
       selectedProfileAlbum: [],
+      showMisConveniosModal: false,
+      misConvenios: [],
+      isLoadingConvenios: false,
     };
   },
 
-  computed: {
+    computed: {
     filteredProfiles() {
       let profilesToFilter = this.allProfiles;
 
@@ -152,6 +165,42 @@ export default {
   },
 
   methods: {
+    // NUEVO MÉTODO: Maneja el evento y abre el modal
+    handleShowMisConveniosModal() {
+      console.log('Evento de menú recibido. Abriendo modal de convenios.');
+      this.showMisConveniosModal = true;
+      // Llama a la función que cargará los datos cuando se abra el modal
+      this.fetchMisConvenios(); 
+    },
+    
+    // NUEVO MÉTODO: Obtiene los datos de los convenios aceptados
+    async fetchMisConvenios() {
+      this.isLoadingConvenios = true;
+      this.misConvenios = []; // Limpia los convenios anteriores
+
+      try {
+        const token = localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
+        if (!token) {
+          throw new Error("No hay token de autenticación.");
+        }
+        
+        const response = await axios.get("http://localhost:4000/api/mis-convenios", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        this.misConvenios = response.data;
+        console.log("Convenios cargados con éxito:", this.misConvenios);
+      } catch (error) {
+        console.error("Error al obtener los convenios:", error);
+        this.showErrorMessage(
+          "Error de Carga",
+          "No se pudieron cargar tus convenios. Inténtalo de nuevo más tarde."
+        );
+      } finally {
+        this.isLoadingConvenios = false;
+      }
+    },
+    
     async fetchLoggedInUserProfile() {
       try {
         const token =
@@ -293,7 +342,7 @@ export default {
         this.unreadNotificationsCount--;
       }
       
-       this.fetchUnreadNotificationsCount();
+        this.fetchUnreadNotificationsCount();
     },
 
     handleSearch(term) {
@@ -363,7 +412,7 @@ export default {
             "¡Tu solicitud de contacto ha sido enviada con éxito!"
           );
         
-           this.fetchUnreadNotificationsCount();
+          this.fetchUnreadNotificationsCount();
         } else {
           this.showErrorMessage(
             "Error al Enviar",
@@ -438,7 +487,6 @@ export default {
         this.showMessageModal("Error", "No se pudo cargar el álbum de fotos.");
       }
     },
-
 
     showErrorMessage(title, message) {
       this.messageModalTitle = title;

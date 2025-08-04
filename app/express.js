@@ -909,6 +909,65 @@ app.patch(
     }
 );
 
+// NUEVA RUTA: OBTENER CONVENIOS ACEPTADOS DEL USUARIO
+app.get("/api/mis-convenios", authenticateToken, async (req, res) => {
+    const userId = req.user.id_usuario; 
+    console.log(
+        "Petición recibida para obtener convenios aceptados del usuario:",
+        userId
+    );
+
+    try {
+        
+        const query = `
+            SELECT 
+                s.id_solicitud,
+                s.fecha_respuesta,
+                'enviada' AS tipo_convenio,
+                u.id_usuario AS id_otra_persona,
+                u.nombre_usuario AS nombre_otra_persona,
+                u.foto_perfil_url AS foto_otra_persona_url
+            FROM solicitudes_contacto s
+            JOIN usuarios u ON s.id_receptor = u.id_usuario
+            WHERE s.id_emisor = ? AND s.estatus = 'Aceptada'
+            
+            UNION
+            
+            SELECT 
+                s.id_solicitud,
+                s.fecha_respuesta,
+                'recibida' AS tipo_convenio,
+                u.id_usuario AS id_otra_persona,
+                u.nombre_usuario AS nombre_otra_persona,
+                u.foto_perfil_url AS foto_otra_persona_url
+            FROM solicitudes_contacto s
+            JOIN usuarios u ON s.id_emisor = u.id_usuario
+            WHERE s.id_receptor = ? AND s.estatus = 'Aceptada'
+            
+            ORDER BY fecha_respuesta DESC;
+        `;
+        
+        const [rows] = await pool.query(query, [userId, userId]);
+        
+        const convenios = rows.map((convenio) => {
+            if (convenio.foto_otra_persona_url) {
+                convenio.foto_otra_persona_url = `${req.protocol}://${req.get("host")}${convenio.foto_otra_persona_url}`;
+            }
+            return convenio;
+        });
+
+        console.log(`Se encontraron ${convenios.length} convenios aceptados.`);
+        res.json(convenios);
+
+    } catch (error) {
+        console.error("Error al obtener convenios aceptados:", error);
+        res.status(500).json({
+            message: "Error interno del servidor al obtener convenios aceptados.",
+            error: error.message,
+        });
+    }
+});
+
 
  // RUTA PARA LAS NOTIFICACIONES NO LEIDAS (FUNCION AUN EN REVISION)
 app.get('/api/notificaciones/unread-count', authenticateToken, async (req, res) => {

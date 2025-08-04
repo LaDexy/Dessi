@@ -66,20 +66,15 @@
             <p>
               <a
                 class="btn btn-primary"
-                data-bs-toggle="collapse"
-                href="#collapseExample3"
+                @click="openConveniosModal"
                 role="button"
                 aria-expanded="false"
-                aria-controls="collapseExample"
+                aria-controls="MisConveniosModal"
               >
                 Mis convenios
               </a>
             </p>
-
-            <div class="collapse" id="collapseExample3">
-              <div class="card card-body">Aca saldran los convenios</div>
             </div>
-          </div>
         </div>
       </div>
     </div>
@@ -100,6 +95,13 @@ export default {
     };
   },
   methods: {
+ 
+    openConveniosModal() {
+    
+      
+      this.$emit('show-mis-convenios-modal');
+      console.log('Emitiendo evento para mostrar el modal de convenios.');
+    },
     
     goToPaginaCentral() {
       this.$router.push({ name: 'Central' }).catch((err) => {
@@ -130,6 +132,7 @@ export default {
 </script>
 
 <style scoped>
+
 .Lateral {
   position: fixed;
   z-index: 1050;
