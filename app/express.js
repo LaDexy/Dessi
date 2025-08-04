@@ -2412,6 +2412,38 @@ app.post("/api/replies/:replyId/like", authenticateToken, async (req, res) => {
   }
 });
 
+// NUEVA RUTA: OBTENER REACCION ACUMULADA DE UN USUARIO ESPECÍFICO
+app.get("/api/users/:userId/reaccion-acumulada", async (req, res) => {
+  const { userId } = req.params;
+
+  console.log(`Petición recibida para reaccion-acumulada del usuario: ${userId}`);
+
+  try {
+    const [rows] = await pool.query(
+      `SELECT reaccion_acumulada FROM usuarios WHERE id_usuario = ?`,
+      [userId]
+    );
+
+    if (rows.length === 0) {
+      console.log(`Usuario con ID ${userId} no encontrado.`);
+      return res.status(404).json({ message: "Usuario no encontrado." });
+    }
+
+    const reaccionAcumulada = rows[0].reaccion_acumulada || 0;
+    
+    console.log(`Reacción acumulada para el usuario ${userId}: ${reaccionAcumulada}`);
+
+    res.json({ reaccion_acumulada: reaccionAcumulada });
+
+  } catch (error) {
+    console.error("Error al obtener la reacción acumulada del usuario:", error);
+    res.status(500).json({
+      message: "Error interno del servidor al obtener la reacción acumulada.",
+      error: error.message,
+    });
+  }
+});
+
 // 6. RUTA PARA OBTENER TODOS LOS PERFILES
 app.get("/api/profiles", async (req, res) => {
   try {

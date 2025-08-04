@@ -4,10 +4,10 @@
 
     <BotonSalida/>
 
-   <ContenidoMenu 
-      :userRole="userProfileType" 
-      class="fixed-menu-button" 
-      @show-mis-convenios-modal="handleShowMisConveniosModal" 
+    <ContenidoMenu
+      :userRole="userProfileType"
+      class="fixed-menu-button"
+      @show-mis-convenios-modal="handleShowMisConveniosModal"
     />
 
     <BarraBusqueda @search="handleSearch" class="fixed-search-bar" />
@@ -40,13 +40,14 @@
 
     <h2 class="TituloPerfiles">Perfiles de Usuarios</h2>
 
-     <AlbumPerfil
+    <AlbumPerfil
       :show="showAlbumModal"
       :profileName="selectedProfileName"
       :album="selectedProfileAlbum"
       @close="showAlbumModal = false"
     />
 
+    <!-- Este componente recibe la lista de perfiles, que ahora incluye el contador de likes -->
     <TarjetasPerfiles
       :profiles="filteredProfiles"
       @send-request="openVentanaSolicitud"
@@ -77,7 +78,7 @@
       @send-contact-request="handleSendContactRequest"
     />
 
-     <MisConveniosModal 
+    <MisConveniosModal
       :show="showMisConveniosModal"
       :convenios="misConvenios"
       :isLoading="isLoadingConvenios"
@@ -133,7 +134,7 @@ export default {
       showVentanaSolicitud: false,
       selectedProfileId: null,
       selectedProfileName: "",
-      unreadNotificationsCount: 0, 
+      unreadNotificationsCount: 0,
       showAlbumModal: false,
       selectedProfileAlbum: [],
       showMisConveniosModal: false,
@@ -142,7 +143,7 @@ export default {
     };
   },
 
-    computed: {
+  computed: {
     filteredProfiles() {
       let profilesToFilter = this.allProfiles;
 
@@ -169,32 +170,32 @@ export default {
   async created() {
     await this.fetchLoggedInUserProfile();
     await this.fetchAllProfiles();
-    await this.fetchUnreadNotificationsCount(); 
+    await this.fetchUnreadNotificationsCount();
   },
 
   methods: {
-    
+
     handleShowMisConveniosModal() {
       console.log('Evento de menú recibido. Abriendo modal de convenios.');
       this.showMisConveniosModal = true;
-     
-      this.fetchMisConvenios(); 
+
+      this.fetchMisConvenios();
     },
 
     async fetchMisConvenios() {
       this.isLoadingConvenios = true;
-      this.misConvenios = []; 
+      this.misConvenios = [];
 
       try {
         const token = localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
         if (!token) {
           throw new Error("No hay token de autenticación.");
         }
-        
+
         const response = await axios.get("http://localhost:4000/api/mis-convenios", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        
+
         this.misConvenios = response.data;
         console.log("Convenios cargados con éxito:", this.misConvenios);
       } catch (error) {
@@ -207,7 +208,7 @@ export default {
         this.isLoadingConvenios = false;
       }
     },
-    
+
     async fetchLoggedInUserProfile() {
       try {
         const token =
@@ -294,7 +295,15 @@ export default {
             Authorization: `Bearer ${token}`,
           },
         });
-        this.allProfiles = response.data;
+        
+        // MODIFICACIÓN IMPORTANTE: Aseguramos que cada perfil tenga el contador de likes.
+        // Si tu API ya devuelve este dato, este paso es para validarlo.
+        // Si no lo devuelve, tendrías que modificar el backend para incluirlo.
+        this.allProfiles = response.data.map(profile => ({
+          ...profile,
+          reaccion_acumulada: profile.reaccion_acumulada || 0 // Si no existe, se establece en 0 por defecto.
+        }));
+
         console.log("Perfiles de otros usuarios cargados:", this.allProfiles);
       } catch (error) {
         console.error("Error al obtener todos los perfiles:", error);
@@ -348,8 +357,8 @@ export default {
       if (this.unreadNotificationsCount > 0) {
         this.unreadNotificationsCount--;
       }
-      
-        this.fetchUnreadNotificationsCount();
+
+      this.fetchUnreadNotificationsCount();
     },
 
     handleSearch(term) {
@@ -418,7 +427,7 @@ export default {
             "Solicitud Enviada",
             "¡Tu solicitud de contacto ha sido enviada con éxito!"
           );
-        
+
           this.fetchUnreadNotificationsCount();
         } else {
           this.showErrorMessage(
@@ -460,27 +469,27 @@ export default {
 
     async handleViewProfile(profile) {
       console.log("Preparando para abrir álbum de fotos de:", profile.nombre_usuario);
-      
+
       this.selectedProfileName = "Cargando...";
       this.selectedProfileAlbum = [];
       this.showAlbumModal = true;
-      
+
       try {
         const token = localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
         if (!token) {
           throw new Error("No hay token de autenticación.");
         }
-        
+
         const response = await axios.get(`http://localhost:4000/api/profiles/${profile.id_usuario}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        
+
         if (response.status === 200) {
           const profileWithAlbum = response.data;
           console.log("Álbum de fotos obtenido con éxito:", profileWithAlbum.proyectos);
-          
+
           this.selectedProfileName = profileWithAlbum.nombre_usuario;
-          
+
           this.selectedProfileAlbum = profileWithAlbum.proyectos.flatMap(p => p.imagenes);
         } else {
           console.error("Error al obtener el álbum:", response.status, response.data);
