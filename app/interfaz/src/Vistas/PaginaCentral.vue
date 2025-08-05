@@ -296,12 +296,9 @@ export default {
           },
         });
         
-        // MODIFICACIÓN IMPORTANTE: Aseguramos que cada perfil tenga el contador de likes.
-        // Si tu API ya devuelve este dato, este paso es para validarlo.
-        // Si no lo devuelve, tendrías que modificar el backend para incluirlo.
-        this.allProfiles = response.data.map(profile => ({
+              this.allProfiles = response.data.map(profile => ({
           ...profile,
-          reaccion_acumulada: profile.reaccion_acumulada || 0 // Si no existe, se establece en 0 por defecto.
+          reaccion_acumulada: profile.reaccion_acumulada || 0 
         }));
 
         console.log("Perfiles de otros usuarios cargados:", this.allProfiles);

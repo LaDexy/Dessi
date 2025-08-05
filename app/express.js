@@ -1897,18 +1897,13 @@ app.post(
   }
 );
 
-// RUTA PARA OBTENER DE BD TODOS LOS PERFILES REGISTRADOS (FUNCIONA PARA LA PAGINACENTRAL Y VERIFICAR LAS TARJETAS DE PERFILES)
+// RUTA PARA OBTENER DE BD TODOS LOS PERFILES REGISTRADOS
 app.get("/api/profiles", authenticateToken, async (req, res) => {
-  console.log(
-    "Solicitud GET /api/profiles recibida para usuario:",
-    req.user.id_usuario
-  );
-  const currentUserId = req.user.id_usuario;
+    const currentUserId = req.user.id_usuario;
 
-  try {
-   
-    const [allProfiles] = await pool.query(
-      `SELECT
+    try {
+        const [allProfiles] = await pool.query(
+            `SELECT
                 u.id_usuario,
                 u.nombre_usuario,
                 u.tipo_perfil,
@@ -1918,7 +1913,13 @@ app.get("/api/profiles", authenticateToken, async (req, res) => {
                 e.localidad AS emprendedor_localidad,
                 e.tipo_negocio,
                 dm.localidad AS dm_localidad,
-                dm.modalidad_trabajo
+                dm.modalidad_trabajo,
+                (
+                    SELECT COUNT(fr.id_reaccion)
+                    FROM foro_mensaje fm
+                    JOIN foro_reaccion fr ON fm.id_mensaje = fr.id_mensaje
+                    WHERE fm.id_usuario = u.id_usuario AND fr.tipo_reaccion = 'like'
+                ) AS reaccion_acumulada
             FROM
                 usuarios u
             LEFT JOIN
@@ -1927,55 +1928,48 @@ app.get("/api/profiles", authenticateToken, async (req, res) => {
                 disenador_marketing dm ON u.id_usuario = dm.id_usuario
             WHERE
                 u.id_usuario != ?`, 
-      [currentUserId]
-    );
+            [currentUserId]
+        );
 
-    console.log(
-      `Perfiles obtenidos (excluyendo el actual): ${allProfiles.length}`
-    );
+        const formattedProfiles = allProfiles.map((profile) => {
+            let profession = profile.tipo_perfil;
+            let location = "";
+            let description = profile.descripcion_perfil || "Aún no ha añadido una descripción."; 
 
-   
-    const formattedProfiles = allProfiles.map((profile) => {
-      let profession = profile.tipo_perfil;
-      let location = "";
-      let description =
-        profile.descripcion_perfil || "Aún no ha añadido una descripción."; 
+            if (profile.tipo_perfil === "Emprendedor") {
+                profession = profile.nombre_negocio || "Emprendedor";
+                location = profile.emprendedor_localidad || "";
+            } else if (profile.tipo_perfil === "Diseñador") {
+                profession = "Diseñador";
+                location = profile.dm_localidad || "";
+            } else if (profile.tipo_perfil === "Marketing") {
+                profession = "Especialista en Marketing";
+                location = profile.dm_localidad || "";
+            }
+            
+            const fullImageUrl = profile.foto_perfil_url
+                ? `${req.protocol}://${req.get("host")}${profile.foto_perfil_url}`
+                : "";
 
-     
-      if (profile.tipo_perfil === "Emprendedor") {
-        profession = profile.nombre_negocio || "Emprendedor";
-        location = profile.emprendedor_localidad || "";
-      } else if (profile.tipo_perfil === "Diseñador") {
-        profession = "Diseñador";
-        location = profile.dm_localidad || "";
-      } else if (profile.tipo_perfil === "Marketing") {
-        profession = "Especialista en Marketing";
-        location = profile.dm_localidad || "";
-      }
-
-      
-      const fullImageUrl = profile.foto_perfil_url
-        ? `${req.protocol}://${req.get("host")}${profile.foto_perfil_url}`
-        : "";
-
-      return {
-        id_usuario: profile.id_usuario,
-        nombre_usuario: profile.nombre_usuario,
-        tipo_perfil: profile.tipo_perfil, 
-        descripcion_perfil: description,
-        profession: profession,
-        location: location, 
-        foto_perfil_url: fullImageUrl,
-      };
-    });
-    res.status(200).json(formattedProfiles);
-  } catch (error) {
-    console.error("Error al obtener todos los perfiles:", error);
-    res.status(500).json({
-      message: "Error interno del servidor al obtener perfiles.",
-      error: error.message,
-    });
-  }
+            return {
+                id_usuario: profile.id_usuario,
+                nombre_usuario: profile.nombre_usuario,
+                tipo_perfil: profile.tipo_perfil, 
+                descripcion_perfil: description,
+                profession: profession,
+                location: location, 
+                foto_perfil_url: fullImageUrl,
+                reaccion_acumulada: profile.reaccion_acumulada,
+            };
+        });
+        res.status(200).json(formattedProfiles);
+    } catch (error) {
+        console.error("Error al obtener todos los perfiles:", error);
+        res.status(500).json({
+            message: "Error interno del servidor al obtener perfiles.",
+            error: error.message,
+        });
+    }
 });
 
 
@@ -2051,7 +2045,7 @@ app.get("/api/profiles/:id", authenticateToken, async (req, res) => {
 
 // RUTAS PARA EL FORO
 
-// 1. RUTA PARA OBTENER TODOS LOS FOROS EN GENERAL
+// 1. RUTA PARA OBTENER TODOS LOS FOROS EN GENERAL 
 app.get("/api/forum/threads", async (req, res) => {
   try {
     const [threads] = await pool.query(`
@@ -2122,29 +2116,28 @@ app.post("/api/forum/threads", authenticateToken, async (req, res) => {
   }
 });
 
-// 3. RUTA PARA OBTENER UN FORO A LA VEZ. ES DECIR, UN FORO DE MANERA INDIVIDUAL
+// RUTA PARA OBTENER UN FORO A LA VEZ.
 app.get("/api/forum/threads/:id", authenticateToken, async (req, res) => {
-  const threadId = req.params.id;
-  const userId = req.user ? req.user.id_usuario : null; 
+    const threadId = req.params.id;
+    const userId = req.user ? req.user.id_usuario : null; 
 
-  console.log(
-    `Solicitud GET /api/forum/threads/${threadId} recibida. Usuario autenticado: ${
-      userId || "No"
-    }`
-  );
-
-  try {
-    
-    const [threads] = await pool.query(
-      `
+    try {
+        
+        const [threads] = await pool.query(
+            `
             SELECT
                 f.id_foro AS id,
                 f.titulo AS title,
                 f.descripcion AS content,
                 u.nombre_usuario AS author,
                 f.fecha_creacion AS date,
-                u.reaccion_acumulada AS author_reputation,
-                u.foto_perfil_url AS author_profile_pic
+                u.foto_perfil_url AS author_profile_pic,
+                (
+                    SELECT COUNT(fr.id_reaccion)
+                    FROM foro_mensaje fm
+                    JOIN foro_reaccion fr ON fm.id_mensaje = fr.id_mensaje
+                    WHERE fm.id_usuario = u.id_usuario AND fr.tipo_reaccion = 'like'
+                ) AS author_reputation
             FROM
                 foro f
             JOIN
@@ -2152,34 +2145,36 @@ app.get("/api/forum/threads/:id", authenticateToken, async (req, res) => {
             WHERE
                 f.id_foro = ?
             `,
-      [threadId]
-    );
+            [threadId]
+        );
 
-    if (threads.length === 0) {
-      console.log(`Tema con ID ${threadId} no encontrado.`);
-      return res.status(404).json({ message: "Tema del foro no encontrado." });
-    }
+        if (threads.length === 0) {
+            return res.status(404).json({ message: "Tema del foro no encontrado." });
+        }
 
-    const thread = threads[0];
-    
-    if (thread.author_profile_pic) {
-      thread.author_profile_pic = `${req.protocol}://${req.get("host")}${
-        thread.author_profile_pic
-      }`;
-    } else {
-      thread.author_profile_pic = ""; 
-    }
+        const thread = threads[0];
+        if (thread.author_profile_pic) {
+            thread.author_profile_pic = `${req.protocol}://${req.get("host")}${thread.author_profile_pic}`;
+        } else {
+            thread.author_profile_pic = ""; 
+        }
 
-   // RUTA PARA LAS RESPUESTAS DE ESE FORO
-    const [replies] = await pool.query(
-      `
+        // RUTA PARA LAS RESPUESTAS DE ESE FORO
+        const [replies] = await pool.query(
+            `
             SELECT
                 fm.id_mensaje AS id,
                 fm.contenido AS content,
                 u.nombre_usuario AS author,
+                u.id_usuario AS id_autor,
                 fm.fecha_publicacion AS date,
-                u.reaccion_acumulada AS reaccion_acumulada_autor,
-                u.foto_perfil_url AS author_profile_pic
+                u.foto_perfil_url AS author_profile_pic,
+                (
+                    SELECT COUNT(fr.id_reaccion)
+                    FROM foro_mensaje fm2
+                    JOIN foro_reaccion fr ON fm2.id_mensaje = fr.id_mensaje
+                    WHERE fm2.id_usuario = u.id_usuario AND fr.tipo_reaccion = 'like'
+                ) AS reaccion_acumulada_autor
             FROM
                 foro_mensaje fm
             JOIN
@@ -2189,61 +2184,50 @@ app.get("/api/forum/threads/:id", authenticateToken, async (req, res) => {
             ORDER BY
                 fm.fecha_publicacion ASC
             `,
-      [threadId]
-    );
-
-    // RUTA PARA OBTENER LAS REACCIONES DE LOS USUARIOS CON LOS LIKES
-    for (const reply of replies) {
-     
-      if (reply.author_profile_pic) {
-        reply.author_profile_pic = `${req.protocol}://${req.get("host")}${
-          reply.author_profile_pic
-        }`;
-      } else {
-        reply.author_profile_pic = "";
-      }
-
-      // FUNCION PARA CONTEO DE LOS LIKES
-      const [likesResult] = await pool.query(
-        `SELECT COUNT(*) AS likesCount
-                FROM foro_reaccion
-                WHERE id_mensaje = ? AND tipo_reaccion = 'like'`,
-        [reply.id]
-      );
-      reply.likesCount = likesResult[0].likesCount;
-
-      // FUNCION PARA VERIFICAR SI EL USUARIO QUE INCIO SESION SE AUTO REACCIONA
-      if (userId) {
-        const [userLikeResult] = await pool.query(
-          `SELECT COUNT(*) AS isLiked
-                    FROM foro_reaccion
-                    WHERE id_mensaje = ? AND id_usuario = ? AND tipo_reaccion = 'like'`,
-          [reply.id, userId]
+            [threadId]
         );
-        reply.likedByCurrentUser = userLikeResult[0].isLiked > 0;
-      } else {
-        reply.likedByCurrentUser = false;
-      }
+        
+      
+        for (const reply of replies) {
+            if (reply.author_profile_pic) {
+                reply.author_profile_pic = `${req.protocol}://${req.get("host")}${reply.author_profile_pic}`;
+            } else {
+                reply.author_profile_pic = "";
+            }
+
+            const [likesResult] = await pool.query(
+                `SELECT COUNT(*) AS likesCount
+                 FROM foro_reaccion
+                 WHERE id_mensaje = ? AND tipo_reaccion = 'like'`,
+                [reply.id]
+            );
+            reply.likesCount = likesResult[0].likesCount;
+
+            if (userId) {
+                const [userLikeResult] = await pool.query(
+                    `SELECT COUNT(*) AS isLiked
+                     FROM foro_reaccion
+                     WHERE id_mensaje = ? AND id_usuario = ? AND tipo_reaccion = 'like'`,
+                    [reply.id, userId]
+                );
+                reply.likedByCurrentUser = userLikeResult[0].isLiked > 0;
+            } else {
+                reply.likedByCurrentUser = false;
+            }
+        }
+        
+        thread.replies = replies;
+        res.status(200).json(thread);
+    } catch (error) {
+        console.error(`Error al obtener el tema ${threadId} o sus respuestas:`, error);
+        res.status(500).json({
+            message: "Error interno del servidor al obtener el tema del foro.",
+            error: error.message,
+        });
     }
-
-   
-    thread.replies = replies;
-
-    console.log(`Detalles del tema ${threadId} y sus respuestas obtenidos.`);
-    res.status(200).json(thread);
-  } catch (error) {
-    console.error(
-      `Error al obtener el tema ${threadId} o sus respuestas:`,
-      error
-    );
-    res.status(500).json({
-      message: "Error interno del servidor al obtener el tema del foro.",
-      error: error.message,
-    });
-  }
 });
 
-// 4. RUTA PARA AÑADIR RESPUESTA A UN TEMA DE FORO
+// 4. RUTA PARA AÑADIR RESPUESTA A UN TEMA DE FORO 
 app.post(
   "/api/forum/threads/:id/replies",
   authenticateToken,
@@ -2300,120 +2284,96 @@ app.post(
   }
 );
 
-// 5. RUTA PARA VERIFICAR LAS REACCIONES POR INDIVIDUAL (FUNCION QUE MAS ADELANTE UTILIZARE PARA ICONO DE CONFIABILIDAD DE PERFIL POR REACCION)
+// RUTA PARA VERIFICAR LAS REACCIONES POR INDIVIDUAL 
 app.post("/api/replies/:replyId/like", authenticateToken, async (req, res) => {
-  if (!req.user) {
-    return res
-      .status(401)
-      .json({
-        message: 'No autenticado. Debes iniciar sesión para dar "me gusta".',
-      });
-  }
-  const replyId = req.params.replyId;
-  const userId = req.user.id_usuario;
-
-  let connection;
-  try {
-    connection = await pool.getConnection();
-    await connection.beginTransaction();
-
-    const [messageDetails] = await connection.query(
-      `SELECT id_mensaje, id_usuario FROM foro_mensaje WHERE id_mensaje = ?`,
-      [replyId]
-    );
-    if (messageDetails.length === 0) {
-      await connection.rollback();
-      return res
-        .status(404)
-        .json({ message: "Mensaje (respuesta) no encontrado." });
+    if (!req.user) {
+        return res.status(401).json({ message: 'No autenticado. Debes iniciar sesión para dar "me gusta".' });
     }
+    const replyId = req.params.replyId;
+    const userId = req.user.id_usuario;
 
-    const replyAuthorId = messageDetails[0].id_usuario;
+    let connection;
+    try {
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
 
-    if (userId === replyAuthorId) {
-      await connection.rollback();
-      return res
-        .status(403)
-        .json({ message: "No puedes reaccionar a tu propia respuesta." });
+        const [messageDetails] = await connection.query(
+            `SELECT id_mensaje, id_usuario FROM foro_mensaje WHERE id_mensaje = ?`,
+            [replyId]
+        );
+        if (messageDetails.length === 0) {
+            await connection.rollback();
+            return res.status(404).json({ message: "Mensaje (respuesta) no encontrado." });
+        }
+        const replyAuthorId = messageDetails[0].id_usuario;
+
+        if (userId === replyAuthorId) {
+            await connection.rollback();
+            return res.status(403).json({ message: "No puedes reaccionar a tu propia respuesta." });
+        }
+
+        const [existingReaction] = await connection.query(
+            `SELECT id_reaccion FROM foro_reaccion WHERE id_mensaje = ? AND id_usuario = ? AND tipo_reaccion = 'like'`,
+            [replyId, userId]
+        );
+
+        let action = "";
+        if (existingReaction.length > 0) {
+            await connection.query(
+                `DELETE FROM foro_reaccion WHERE id_reaccion = ?`,
+                [existingReaction[0].id_reaccion]
+            );
+            action = "unliked";
+        } else {
+            await connection.query(
+                `INSERT INTO foro_reaccion (id_mensaje, id_usuario, tipo_reaccion, fecha_reaccion) VALUES (?, ?, ?, NOW())`,
+                [replyId, userId, "like"]
+            );
+            action = "liked";
+        }
+        
+        // Obtenemos el nuevo conteo de likes para la respuesta
+        const [newLikesCountResult] = await connection.query(
+            `SELECT COUNT(*) AS newLikesCount FROM foro_reaccion WHERE id_mensaje = ? AND tipo_reaccion = 'like'`,
+            [replyId]
+        );
+        const newLikesCount = newLikesCountResult[0].newLikesCount;
+
+        // Y obtenemos el conteo total de likes para el autor
+        const [newAuthorReputationResult] = await connection.query(
+            `SELECT COUNT(fr.id_reaccion) AS total_likes
+             FROM foro_mensaje fm
+             JOIN foro_reaccion fr ON fm.id_mensaje = fr.id_mensaje
+             WHERE fm.id_usuario = ? AND fr.tipo_reaccion = 'like'`,
+            [replyAuthorId]
+        );
+        const reaccion_acumulada_autor = newAuthorReputationResult[0].total_likes;
+
+        await connection.commit();
+        
+        res.json({
+            success: true,
+            message: `Mensaje ${action} exitosamente.`,
+            newLikesCount: newLikesCount,
+            likedByCurrentUser: action === "liked",
+            reaccion_acumulada_autor: reaccion_acumulada_autor,
+        });
+
+    } catch (err) {
+        if (connection) {
+            await connection.rollback();
+        }
+        console.error("Error al procesar el like:", err);
+        res.status(500).json({ message: "Error interno del servidor al procesar la reacción." });
+    } finally {
+        if (connection) {
+            connection.release();
+        }
     }
-
-    const [existingReaction] = await connection.query(
-      `SELECT id_reaccion FROM foro_reaccion WHERE id_mensaje = ? AND id_usuario = ? AND tipo_reaccion = 'like'`,
-      [replyId, userId]
-    );
-
-    let action = "";
-    let reputationChange = 0; 
-
-    if (existingReaction.length > 0) {
-      // Quitar Like
-      await connection.query(
-        `DELETE FROM foro_reaccion WHERE id_reaccion = ?`,
-        [existingReaction[0].id_reaccion]
-      );
-      action = "unliked";
-      reputationChange = -1; 
-      console.log(
-        `Usuario ${userId} ha quitado el like del mensaje ${replyId}.`
-      );
-    } else {
-      // Dar Like
-      await connection.query(
-        `INSERT INTO foro_reaccion (id_mensaje, id_usuario, tipo_reaccion, fecha_reaccion) VALUES (?, ?, ?, NOW())`,
-        [replyId, userId, "like"]
-      );
-      action = "liked";
-      reputationChange = 1; 
-      console.log(`Usuario ${userId} ha dado like al mensaje ${replyId}.`);
-    }
-
-    // RUTA DE REACCION ACUMULADAS (FUNCION NO AÑADIDA A LA INTERFAZ)
-    // RUTA PARA ACTUALIZAR REACCIONES EN TOTAL DE UN SOLO USUARIO
-    await connection.query(
-      `UPDATE usuarios SET reaccion_acumulada = reaccion_acumulada + ? WHERE id_usuario = ?`,
-      [reputationChange, replyAuthorId]
-    );
-
-    // FUNCION PARA OBTENER RACCIONES DE UN PERFIL
-    const [newAuthorReputationResult] = await connection.query(
-      `SELECT reaccion_acumulada FROM usuarios WHERE id_usuario = ?`,
-      [replyAuthorId]
-    );
-    const reaccion_acumulada_autor =
-      newAuthorReputationResult[0].reaccion_acumulada;
-
-    const [newLikesCountResult] = await connection.query(
-      `SELECT COUNT(*) AS newLikesCount FROM foro_reaccion WHERE id_mensaje = ? AND tipo_reaccion = 'like'`,
-      [replyId]
-    );
-    const newLikesCount = newLikesCountResult[0].newLikesCount;
-
-    await connection.commit();
-
-    res.json({
-      success: true,
-      message: `Mensaje ${action} exitosamente.`,
-      newLikesCount: newLikesCount,
-      likedByCurrentUser: action === "liked",
-      reaccion_acumulada_autor: reaccion_acumulada_autor, 
-    });
-  } catch (err) {
-    if (connection) {
-      await connection.rollback();
-    }
-    console.error("Error al procesar el like:", err);
-    res
-      .status(500)
-      .json({ message: "Error interno del servidor al procesar la reacción." });
-  } finally {
-    if (connection) {
-      connection.release();
-    }
-  }
 });
 
-// NUEVA RUTA: OBTENER REACCION ACUMULADA DE UN USUARIO ESPECÍFICO
-app.get("/api/users/:userId/reaccion-acumulada", async (req, res) => {
+// RUTA OBTENER REACCION ACUMULADA DE UN USUARIO ESPECÍFICO 
+app.get("/api/users/:userId/reaccion-acumulada", authenticateToken, async (req, res) => {
   const { userId } = req.params;
 
   console.log(`Petición recibida para reaccion-acumulada del usuario: ${userId}`);
@@ -2435,10 +2395,10 @@ app.get("/api/users/:userId/reaccion-acumulada", async (req, res) => {
 
     res.json({ reaccion_acumulada: reaccionAcumulada });
 
-  } catch (error) {
-    console.error("Error al obtener la reacción acumulada del usuario:", error);
+   } catch (error) {
+    console.error("Error al obtener todos los perfiles:", error); 
     res.status(500).json({
-      message: "Error interno del servidor al obtener la reacción acumulada.",
+      message: "Error interno del servidor al obtener perfiles.",
       error: error.message,
     });
   }
@@ -2487,6 +2447,7 @@ app.get("/api/profiles", async (req, res) => {
     });
   }
 });
+
 // RUTA DE PRUEBA 
 app.get("/", (req, res) => {
   res.send("API de Convenio de Emprendimiento funcionando!");
