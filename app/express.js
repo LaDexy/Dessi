@@ -1038,7 +1038,7 @@ app.get("/api/notificaciones", authenticateToken, async (req, res) => {
     }
 });
 
-// RUTA PARA MARCAR LAS NOTIFICACIONES COMO LEIDAS (FUNCION EN REVISION)
+// RUTA PARA MARCAR LAS NOTIFICACIONES COMO LEIDAS
 app.patch(
     "/api/notificaciones/:id/marcar-leida",
     authenticateToken,
@@ -1123,7 +1123,7 @@ app.patch("/api/profile/description", authenticateToken, async (req, res) => {
   }
 });
 
-// RUTA PARA SUBIR VARIAS IMÁGENES AL PORTAFOLIO (FUNCION EN REVISION YA QUE A VECES SE PRESENTAN EVENTUALIDADES)
+// RUTA PARA SUBIR VARIAS IMÁGENES AL PORTAFOLIO 
 app.post(
  
   "/api/upload-portafolio-images", 
