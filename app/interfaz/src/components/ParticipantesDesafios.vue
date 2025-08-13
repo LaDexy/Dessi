@@ -1,6 +1,6 @@
 <template>
-
-  <!--ESTA ES LA PARTE QUE SE CARGA AL DARLE CLIC A LOS DATOS BASICOS DEL DESAFIO -->
+  <div>
+  <!-- ESTA ES LA PARTE QUE SE CARGA AL DARLE CLIC A LOS DATOS BASICOS DEL DESAFIO -->
   <div class="modal-overlay" @click.self="cerrarModalDetalle">
     <div class="modal-content-detail">
       <div v-if="isLoadingDetail" class="loading-message-detail">Cargando detalles del desafío y participantes...</div>
@@ -26,22 +26,55 @@
         </div>
         <div v-else class="proposals-list">
           <div v-for="proposal in proposals" :key="proposal.id_propuesta" class="proposal-card">
-            <p><strong>De:</strong> {{ proposal.nombre_usuario }}</p> <p>{{ proposal.texto_propuesta }}</p>
-            <div v-if="proposal.imagen_url" class="proposal-image-container"> <img :src="`http://localhost:4000${proposal.imagen_url}`" alt="Propuesta del participante" class="proposal-image"/>
+            <p><strong>De:</strong> {{ proposal.nombre_usuario }}</p> 
+            <p>{{ proposal.texto_propuesta }}</p>
+            <div v-if="proposal.imagen_url" class="proposal-image-container"> 
+              <img :src="`http://localhost:4000${proposal.imagen_url}`" alt="Propuesta del participante" class="proposal-image"/>
             </div>
             <p class="proposal-date">Enviado el: {{ formatDate(proposal.fecha_envio) }}</p>
-            </div>
+
+            <!-- Ícono de trofeo: visible si el desafío ha terminado y no hay ganador aún -->
+            <button 
+              v-if="challengeHasEnded && challengeDetail.usuario_ganador === null" 
+              @click="openSelectWinnerModal(proposal)" 
+              class="select-winner-icon"
+              title="Seleccionar esta propuesta como ganadora"
+            >
+              <i class="fa-solid fa-trophy fa-lg" style="color: #f2bc00;"></i>
+            </button>
+            <!-- Muestra el badge "Ganador" si esta es la propuesta ganadora -->
+            <span v-if="challengeDetail.usuario_ganador === proposal.id_usuario_proponente" class="winner-badge">
+              🏆 GANADOR
+            </span>
+          </div>
         </div>
       </div>
     </div>
   </div>
+
+  
+  <ModalSeleccionarGanador
+    v-if="showSelectWinnerModal"
+    :idDesafio="idDesafio"
+    :idPropuestaGanadora="selectedProposal ? selectedProposal.id_propuesta : null"
+    :nombreDesafio="challengeDetail ? challengeDetail.nombre_desafio : ''"
+    @cerrar="showSelectWinnerModal = false"
+    @ganadorSeleccionado="handleWinnerSelected"
+  />
+</div>
+
 </template>
 
 <script>
 import axios from 'axios';
+// Importa el nuevo componente de modal
+import ModalSeleccionarGanador from './ModalSeleccionarGanador.vue'; 
 
 export default {
   name: "ParticipantesDesafios",
+  components: {
+    ModalSeleccionarGanador 
+  },
   props: {
     idDesafio: {
       type: [Number, String],
@@ -55,7 +88,21 @@ export default {
       isLoadingDetail: false,
       isLoadingProposals: false,
       detailErrorMessage: '',
+      showSelectWinnerModal: false, 
+      selectedProposal: null, 
     };
+  },
+  computed: {
+
+    challengeHasEnded() {
+      if (!this.challengeDetail || !this.challengeDetail.fecha_fin) {
+        return false;
+      }
+      const today = new Date();
+      const endDate = new Date(this.challengeDetail.fecha_fin);
+    
+      return today.setHours(0,0,0,0) > endDate.setHours(0,0,0,0);
+    }
   },
   watch: {
     idDesafio: {
@@ -73,13 +120,19 @@ export default {
     }
   },
   methods: {
+    cerrarModalDetalle() {
+      this.$emit('cerrarDetalle'); 
+    },
     async fetchChallengeDetails(id) {
       this.isLoadingDetail = true;
       this.detailErrorMessage = '';
       try {
         const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
         if (!token) {
-          throw new Error('No hay token de autenticación.');
+         
+          this.detailErrorMessage = 'No estás autenticado. Por favor, inicia sesión.';
+         
+          return;
         }
 
         const response = await axios.get(`http://localhost:4000/api/desafios/${id}`, {
@@ -96,7 +149,8 @@ export default {
         console.error('Error al cargar los detalles del desafío para el emprendedor:', error);
         this.detailErrorMessage = 'Error al cargar los detalles del desafío: ' + (error.message || 'Error de conexión.');
         if (error.response && error.response.status === 403) {
-           this.detailErrorMessage = 'No tienes permiso para ver este desafío.';
+           this.detailErrorMessage = 'No tienes permiso para ver este desafío o tu sesión ha expirado.';
+           
         }
       } finally {
         this.isLoadingDetail = false;
@@ -107,7 +161,7 @@ export default {
       try {
         const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
         if (!token) {
-          throw new Error('No hay token de autenticación.');
+           return;
         }
 
         const response = await axios.get(`http://localhost:4000/api/desafios/${id}/propuestas`, {
@@ -122,6 +176,7 @@ export default {
         }
       } catch (error) {
         console.error('Error al cargar las propuestas:', error);
+       
       } finally {
         this.isLoadingProposals = false;
       }
@@ -131,19 +186,30 @@ export default {
       const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
       return new Date(dateString).toLocaleDateString('es-ES', options);
     },
+    openSelectWinnerModal(proposal) {
+      this.selectedProposal = proposal;
+      this.showSelectWinnerModal = true;
+    },
+    handleWinnerSelected() {
+     
+      console.log('Ganador seleccionado. Refrescando detalles del desafío y propuestas.');
+      this.showSelectWinnerModal = false; 
+     
+      this.fetchChallengeDetails(this.idDesafio); 
+      
+    },
     editChallenge() {
       alert('Funcionalidad de editar desafío (próximamente...)');
     },
     closeChallenge() {
-      alert('Funcionalidad de cerrar desafío (próximamente...)');
+       alert('Funcionalidad de cerrar desafío (próximamente...)');
     }
   }
 }
 </script>
 
----
-
 <style scoped>
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -307,7 +373,7 @@ hr {
   padding: 25px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  position: relative;
+  position: relative; 
 }
 
 .proposal-card:hover {
@@ -357,6 +423,38 @@ hr {
   text-align: right;
   margin-top: 15px;
   font-style: italic;
+}
+
+
+.select-winner-icon {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  font-size: 2em; 
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  padding: 5px; 
+  z-index: 10;
+}
+
+.select-winner-icon:hover {
+  transform: scale(1.2);
+}
+
+
+.winner-badge {
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+  background-color: #ffcc00; 
+  color: #333;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-weight: bold;
+  font-size: 0.9em;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .action-button {
