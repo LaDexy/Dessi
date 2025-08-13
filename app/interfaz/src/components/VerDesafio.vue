@@ -245,7 +245,7 @@ export default {
   width: 100%;
   padding: 0.75rem;
   margin-top: 1rem;
-  background-color: #6a0dad;
+  background-color: hsl(300, 29%, 78%);
   color: #ffffff;
   border: none;
   border-radius: 0.5rem;
@@ -256,7 +256,7 @@ export default {
 
 
 .view-proposals-button:hover {
-  background-color: #55008c; 
+  background-color: hsl(300, 40%, 74%); 
 }
 
 

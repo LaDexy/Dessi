@@ -1897,6 +1897,156 @@ app.post(
   }
 );
 
+// RUTA PARA SELECCIONAR UN GANADOR PARA UN DESAFÍO (SOLO PARA PERFIL DE EMPRENDEDOR)
+app.put(
+  "/api/challenges/:id/select-winner",
+  authenticateToken,
+  authorizeEntrepreneur, 
+  async (req, res) => {
+    console.log(
+      `Solicitud PUT /api/challenges/${req.params.id}/select-winner recibida por usuario:`,
+      req.user.id_usuario
+    );
+    const id_desafio = req.params.id;
+    const { id_propuesta_ganadora, redes_sociales_emprendedor } = req.body;
+    const id_emprendedor_sesion = req.user.id_usuario; 
+
+    // 1. Validar los datos de entrada
+    if (!id_propuesta_ganadora || !redes_sociales_emprendedor) {
+      console.warn("Error 400: Campos de selección de ganador incompletos.");
+      return res
+        .status(400)
+        .json({
+          message:
+            "Se requiere la ID de la propuesta ganadora y las redes sociales del emprendedor.",
+        });
+    }
+
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      await connection.beginTransaction(); 
+
+      // 2. Verificar que el desafío existe, pertenece al emprendedor autenticado y ha finalizado
+      console.log(`Verificando desafío ${id_desafio} y su estado.`);
+      const [desafioResult] = await connection.query(
+        "SELECT id_desafio, id_emprendedor, fecha_fin, usuario_ganador, nombre_desafio FROM desafios WHERE id_desafio = ?",
+        [id_desafio]
+      );
+
+      if (desafioResult.length === 0) {
+        console.warn(`Error 404: Desafío con ID ${id_desafio} no encontrado.`);
+        await connection.rollback();
+        return res.status(404).json({ message: "Desafío no encontrado." });
+      }
+
+      const desafio = desafioResult[0];
+
+      // Verificar que el desafío pertenece al emprendedor que intenta seleccionar
+      const [emprendedorUserIdResult] = await connection.query(
+        "SELECT id_usuario FROM emprendedor WHERE id_emprendedor = ?",
+        [desafio.id_emprendedor]
+      );
+
+      if (emprendedorUserIdResult.length === 0 || emprendedorUserIdResult[0].id_usuario !== id_emprendedor_sesion) {
+        console.warn(`Error 403: El usuario ${id_emprendedor_sesion} no es el propietario del desafío ${id_desafio}.`);
+        await connection.rollback();
+        return res.status(403).json({ message: "No tienes permiso para seleccionar un ganador para este desafío." });
+      }
+
+      // Verificar que el desafío ya haya terminado
+      const fechaFinDesafio = new Date(desafio.fecha_fin);
+      const fechaActual = new Date();
+      if (fechaActual < fechaFinDesafio) {
+        console.warn(`Error 400: El desafío ${id_desafio} aún no ha finalizado.`);
+        await connection.rollback();
+        return res
+          .status(400)
+          .json({ message: "El desafío aún no ha terminado. No se puede seleccionar un ganador." });
+      }
+
+      // Verificar si ya se ha seleccionado un ganador para este desafío
+      if (desafio.usuario_ganador !== null) {
+        console.warn(`Error 409: El desafío ${id_desafio} ya tiene un ganador seleccionado.`);
+        await connection.rollback();
+        return res.status(409).json({ message: "Este desafío ya tiene un ganador seleccionado." });
+      }
+
+      // 3. Obtener el ID del usuario proponente de la propuesta ganadora
+      console.log(`Buscando usuario proponente para propuesta ${id_propuesta_ganadora}.`);
+      const [propuestaResult] = await connection.query(
+        "SELECT id_usuario_proponente FROM propuestas_desafio WHERE id_propuesta = ? AND id_desafio = ?",
+        [id_propuesta_ganadora, id_desafio]
+      );
+
+      if (propuestaResult.length === 0) {
+        console.warn(`Error 404: Propuesta con ID ${id_propuesta_ganadora} no encontrada para el desafío ${id_desafio}.`);
+        await connection.rollback();
+        return res.status(404).json({ message: "Propuesta ganadora no encontrada para este desafío." });
+      }
+
+      const id_usuario_ganador = propuestaResult[0].id_usuario_proponente;
+      console.log(`Usuario ganador identificado: ${id_usuario_ganador}`);
+
+      // 4. Actualizar el desafío con el ganador y los datos de contacto
+      console.log(`Actualizando desafío ${id_desafio} con ganador ${id_usuario_ganador} y contacto.`);
+      
+      await connection.query(
+        "UPDATE desafios SET usuario_ganador = ?, contacto_emprendedor = ?, estado = 'Finalizado' WHERE id_desafio = ?",
+        [id_usuario_ganador, JSON.stringify(redes_sociales_emprendedor), id_desafio]
+      );
+      console.log(`Desafío ${id_desafio} actualizado correctamente.`);
+
+      // 5. Notificar al usuario ganador
+      console.log(`Preparando notificación para el ganador ${id_usuario_ganador}.`);
+      const [ganadorInfo] = await connection.query(
+        "SELECT nombre_usuario, correo_electronico FROM usuarios WHERE id_usuario = ?",
+        [id_usuario_ganador]
+      );
+
+      if (ganadorInfo.length === 0) {
+        console.warn(`Advertencia: No se encontró información del usuario ganador ${id_usuario_ganador}. La notificación no se enviará.`);
+      } else {
+        const tituloNotificacionGanador = `¡Felicidades, has ganado el desafío "${desafio.nombre_desafio}"!`;
+        const mensajeNotificacionGanador = `¡Tu propuesta ha sido seleccionada como ganadora para el desafío "${desafio.nombre_desafio}"! El emprendedor se pondrá en contacto contigo.`;
+        
+        const urlRedireccionGanador = `/mis-desafios/${id_desafio}/ganador`; 
+
+        await connection.query(
+          `INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida, creado_fecha) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP())`,
+          [
+            id_usuario_ganador,
+            "desafio_ganado",
+            tituloNotificacionGanador,
+            mensajeNotificacionGanador,
+            urlRedireccionGanador,
+            id_desafio,
+            false,
+          ]
+        );
+        console.log(`Notificación de victoria enviada a usuario ${id_usuario_ganador}.`);
+      }
+
+      await connection.commit(); 
+      res.status(200).json({ message: "Ganador seleccionado y notificado exitosamente." });
+    } catch (error) {
+      if (connection) {
+        await connection.rollback(); 
+      }
+      console.error("Error al seleccionar ganador del desafío:", error);
+      res.status(500).json({
+        message: "Error interno del servidor al seleccionar el ganador.",
+        error: error.message,
+      });
+    } finally {
+      if (connection) {
+        connection.release(); 
+      }
+    }
+  }
+);
+
+
 // RUTA PARA OBTENER DE BD TODOS LOS PERFILES REGISTRADOS
 app.get("/api/profiles", authenticateToken, async (req, res) => {
     const currentUserId = req.user.id_usuario;

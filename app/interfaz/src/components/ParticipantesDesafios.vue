@@ -1,6 +1,6 @@
 <template>
 
-  <!--ESTA ES LA PARTE QUE SE CARGA AL DARLE CLIC A LOS DATOS BASICOS DEL DESAFIO (HAY QUE MEJORAR ESA FUNCION PARA QUE SEA PAS INTUITIVA)-->
+  <!--ESTA ES LA PARTE QUE SE CARGA AL DARLE CLIC A LOS DATOS BASICOS DEL DESAFIO -->
   <div class="modal-overlay" @click.self="cerrarModalDetalle">
     <div class="modal-content-detail">
       <div v-if="isLoadingDetail" class="loading-message-detail">Cargando detalles del desafío y participantes...</div>
