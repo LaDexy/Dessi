@@ -21,8 +21,8 @@ const app = express();
 app.use(
   cors({
     origin: "http://localhost:8080", // Ruta de origen de mi interfaz Vue.js
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], 
-    allowedHeaders: ["Content-Type", "Authorization"], 
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization"],
     credentials: true, // Permite el envío de cookies (aunque aun no esta aplicado, lo agregue para funcionalidad adicional)
   })
 );
@@ -47,7 +47,8 @@ const dbConfig = {
 const pool = mysql.createPool(dbConfig);
 
 // Esta sera mi clave secreta para firmar los JWT
-const JWT_SECRET = "H0l4c0m03st4squ13r0qu3s3p4squ33st03sun4cl4v3sup3rd1f1c1lh3ch4p0rm1"; 
+const JWT_SECRET =
+  "H0l4c0m03st4squ13r0qu3s3p4squ33st03sun4cl4v3sup3rd1f1c1lh3ch4p0rm1";
 
 // --- CONFIGURACIÓN DE MULTER ---
 
@@ -56,7 +57,7 @@ const JWT_SECRET = "H0l4c0m03st4squ13r0qu3s3p4squ33st03sun4cl4v3sup3rd1f1c1lh3ch
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadDir = path.join(__dirname, "uploads");
-    
+
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
     }
@@ -66,21 +67,20 @@ const storage = multer.diskStorage({
     cb(null, `${Date.now()}-${file.originalname}`);
   },
 });
-const upload = multer({ storage: storage }); 
+const upload = multer({ storage: storage });
 
 // 2. Configuración de Multer que se enfoca especificamente e subir archivos para participar en desafios (funcion todavia en observacion)
 
 const proposalsStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     const uploadPath = path.join(__dirname, "uploads", "proposals");
-    
+
     if (!fs.existsSync(uploadPath)) {
       fs.mkdirSync(uploadPath, { recursive: true });
     }
     cb(null, uploadPath);
   },
   filename: (req, file, cb) => {
-    
     cb(
       null,
       `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`
@@ -138,7 +138,6 @@ const authenticateToken = (req, res, next) => {
 };
 
 const authorizeEntrepreneur = (req, res, next) => {
-  
   if (req.user && req.user.tipo_perfil === "Emprendedor") {
     next();
   } else {
@@ -167,7 +166,7 @@ const authorizeDesignerMarketing = (req, res, next) => {
     );
     res.status(403).json({
       message:
-        "Acceso denegado. Solo Diseñadores y Marketing pueden realizar esta acción.", 
+        "Acceso denegado. Solo Diseñadores y Marketing pueden realizar esta acción.",
     });
   }
 };
@@ -180,7 +179,6 @@ app.post(
   authenticateToken,
   upload.single("profileImage"),
   async (req, res) => {
-    
     console.log(
       "Solicitud POST /api/upload-profile-image recibida para usuario:",
       req.user.id_usuario
@@ -194,7 +192,7 @@ app.post(
     }
 
     const userId = req.user.id_usuario;
-    const imageUrl = `/uploads/${req.file.filename}`; 
+    const imageUrl = `/uploads/${req.file.filename}`;
 
     let connection;
     try {
@@ -221,12 +219,10 @@ app.post(
               err
             );
         });
-        return res
-          .status(404)
-          .json({
-            message:
-              "Usuario no encontrado o no se pudo actualizar la imagen de perfil.",
-          });
+        return res.status(404).json({
+          message:
+            "Usuario no encontrado o no se pudo actualizar la imagen de perfil.",
+        });
       }
 
       await connection.commit();
@@ -235,12 +231,12 @@ app.post(
       );
       res.status(200).json({
         message: "Imagen de perfil subida y actualizada correctamente",
-        imageUrl: imageUrl, 
-        fullImageUrl: `${req.protocol}://${req.get("host")}${imageUrl}`, 
+        imageUrl: imageUrl,
+        fullImageUrl: `${req.protocol}://${req.get("host")}${imageUrl}`,
       });
     } catch (error) {
       if (connection) await connection.rollback();
-      
+
       if (req.file) {
         fs.unlink(req.file.path, (err) => {
           if (err)
@@ -311,8 +307,7 @@ app.post("/api/register", async (req, res) => {
       console.log("Insertando usuario principal...");
       const [userResult] = await connection.query(
         
-       // SE AÑADE EN LISTA COLUMNA DE REACCION ACUMULADA YA QUE ES UN FUNCION PENDIENTE POR AÑADIR
-        "INSERT INTO usuarios (nombre_usuario, correo_electronico, contrasena_hash, tipo_perfil, fecha_registro, foto_perfil_url, descripcion_perfil, reputacion, reaccion_acumulada) VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, ?)",
+        "INSERT INTO usuarios (nombre_usuario, correo_electronico, contrasena_hash, tipo_perfil, fecha_registro, foto_perfil_url, descripcion_perfil, reputacion, desafios_ganados) VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, ?)",
         [
           nombre_usuario,
           correo_electronico,
@@ -476,7 +471,7 @@ app.get("/api/profile/me", authenticateToken, async (req, res) => {
     let profileData = {};
     console.log("Consultando datos de usuario principal...");
     const [users] = await pool.query(
-      "SELECT id_usuario, nombre_usuario, correo_electronico, tipo_perfil, foto_perfil_url, descripcion_perfil, reputacion FROM usuarios WHERE id_usuario = ?", // <-- ¡AQUÍ ESTÁ EL CAMBIO! Se agregó 'reputacion'
+      "SELECT id_usuario, nombre_usuario, correo_electronico, tipo_perfil, foto_perfil_url, descripcion_perfil, reputacion, desafios_ganados FROM usuarios WHERE id_usuario = ?",
       [userId]
     );
 
@@ -489,8 +484,8 @@ app.get("/api/profile/me", authenticateToken, async (req, res) => {
         .status(404)
         .json({ message: "Perfil de usuario no encontrado." });
     }
-    profileData = users[0]; 
-        profileData.reputacion = profileData.reputacion || 0;
+    profileData = users[0];
+    profileData.reputacion = profileData.reputacion || 0;
     console.log(
       "Datos de usuario principal obtenidos:",
       profileData.nombre_usuario
@@ -501,10 +496,9 @@ app.get("/api/profile/me", authenticateToken, async (req, res) => {
         profileData.foto_perfil_url
       }`;
     } else {
-      profileData.foto_perfil_url = ""; 
+      profileData.foto_perfil_url = "";
+    }
 
-    } 
-    
     // CONSULTA PARA LOS DATOS DE LOS PERFILES POR SEPARADOS (EMPRENDEDOR, DISEÑADOR Y ARKETING)
 
     if (userProfileType === "Emprendedor") {
@@ -571,55 +565,54 @@ app.get("/api/profile/me", authenticateToken, async (req, res) => {
 
 // RUTAS PARA NOTIFICACIONES Y SOLICITUDES DE CONTACTO CUANDO SE DESEE CONTACTAR A USUARIO
 
-
 // 1. RUTA PARA ENVIAR SOLICITUD DESDE LAS TARJETAS DE PERFILES
 app.post("/api/solicitudes-contacto", authenticateToken, async (req, res) => {
-    console.log("Solicitud de contacto recibida. Datos:", req.body);
-    const { id_receptor, email, whatsapp, instagram, tiktok, facebook } =
-        req.body;
-    const id_emisor = req.user.id_usuario; 
+  console.log("Solicitud de contacto recibida. Datos:", req.body);
+  const { id_receptor, email, whatsapp, instagram, tiktok, facebook } =
+    req.body;
+  const id_emisor = req.user.id_usuario;
 
-    if (!id_emisor || !id_receptor) {
-        return res
-            .status(400)
-            .json({ message: "ID del emisor y receptor son requeridos." });
+  if (!id_emisor || !id_receptor) {
+    return res
+      .status(400)
+      .json({ message: "ID del emisor y receptor son requeridos." });
+  }
+  if (id_emisor === id_receptor) {
+    return res.status(400).json({
+      message: "No puedes enviarte una solicitud de contacto a ti mismo.",
+    });
+  }
+
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    // VERIFICACION DE SOLICITUD EXISTENTE
+    const [existingRequests] = await connection.query(
+      "SELECT * FROM solicitudes_contacto WHERE id_emisor = ? AND id_receptor = ? AND estatus = ?",
+      [id_emisor, id_receptor, "Pendiente"]
+    );
+
+    if (existingRequests.length > 0) {
+      await connection.rollback();
+      return res.status(409).json({
+        message: "Ya existe una solicitud pendiente para este usuario.",
+      });
     }
-    if (id_emisor === id_receptor) {
-        return res.status(400).json({
-            message: "No puedes enviarte una solicitud de contacto a ti mismo.",
-        });
-    }
 
-    let connection; 
-    try {
-        connection = await pool.getConnection();
-        await connection.beginTransaction(); 
+    // OBTENER NOMBRE DE QUIEN ENVIA SOLICITUD (EN COLUMNA DE TABLA DE BD SE LLAMA id_emisor)
+    const [emisorProfile] = await connection.query(
+      "SELECT nombre_usuario FROM usuarios WHERE id_usuario = ?",
+      [id_emisor]
+    );
+    const emisor_nombre =
+      emisorProfile.length > 0
+        ? emisorProfile[0].nombre_usuario
+        : "Usuario Desconocido";
 
-        // VERIFICACION DE SOLICITUD EXISTENTE
-        const [existingRequests] = await connection.query(
-            "SELECT * FROM solicitudes_contacto WHERE id_emisor = ? AND id_receptor = ? AND estatus = ?",
-            [id_emisor, id_receptor, "Pendiente"]
-        );
-
-        if (existingRequests.length > 0) {
-            await connection.rollback(); 
-            return res.status(409).json({
-                message: "Ya existe una solicitud pendiente para este usuario.",
-            });
-        }
-
-        // OBTENER NOMBRE DE QUIEN ENVIA SOLICITUD (EN COLUMNA DE TABLA DE BD SE LLAMA id_emisor)
-        const [emisorProfile] = await connection.query(
-            "SELECT nombre_usuario FROM usuarios WHERE id_usuario = ?",
-            [id_emisor]
-        );
-        const emisor_nombre =
-            emisorProfile.length > 0
-                ? emisorProfile[0].nombre_usuario
-                : "Usuario Desconocido";
-
-        // INSERTAR DATOS DE SOLICITUD
-        const query = `
+    // INSERTAR DATOS DE SOLICITUD
+    const query = `
             INSERT INTO solicitudes_contacto (
                 id_emisor,
                 id_receptor,
@@ -633,70 +626,69 @@ app.post("/api/solicitudes-contacto", authenticateToken, async (req, res) => {
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP())
         `;
-        const values = [
-            id_emisor,
-            id_receptor,
-            email || null,
-            whatsapp || null,
-            instagram || null,
-            tiktok || null,
-            facebook || null,
-            "Pendiente",
-        ];
+    const values = [
+      id_emisor,
+      id_receptor,
+      email || null,
+      whatsapp || null,
+      instagram || null,
+      tiktok || null,
+      facebook || null,
+      "Pendiente",
+    ];
 
-        const [result] = await connection.query(query, values);
-        const id_solicitud_generada = result.insertId; 
+    const [result] = await connection.query(query, values);
+    const id_solicitud_generada = result.insertId;
 
-        // NOTIFICACION DE SOLICITUD A USUARIO RECEPTOR (EN BD LA COLUMNA SE LLAMA id_receptor)
-        const notificationTitle = "Nueva Solicitud de Contacto";
-        const notificationMessage = `¡${emisor_nombre} te ha enviado una solicitud de contacto!`;
-        const notificationUrl = `/notificaciones?solicitud=${id_solicitud_generada}`; 
+    // NOTIFICACION DE SOLICITUD A USUARIO RECEPTOR (EN BD LA COLUMNA SE LLAMA id_receptor)
+    const notificationTitle = "Nueva Solicitud de Contacto";
+    const notificationMessage = `¡${emisor_nombre} te ha enviado una solicitud de contacto!`;
+    const notificationUrl = `/notificaciones?solicitud=${id_solicitud_generada}`;
 
-        await connection.query(
-            "INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida, creado_fecha) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
-            [
-                id_receptor,
-                "solicitud_contacto",
-                notificationTitle,
-                notificationMessage,
-                notificationUrl,
-                id_solicitud_generada,
-                false,
-            ]
-        );
+    await connection.query(
+      "INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida, creado_fecha) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
+      [
+        id_receptor,
+        "solicitud_contacto",
+        notificationTitle,
+        notificationMessage,
+        notificationUrl,
+        id_solicitud_generada,
+        false,
+      ]
+    );
 
-        // CONFIRMACION DE SOLICITUD
-        await connection.commit();
-        res.status(201).json({
-            message: "Solicitud de contacto enviada con éxito.",
-            id_solicitud: id_solicitud_generada,
-        });
-    } catch (error) {
-
-      //ERROR EN LA SOLICITUD
-        if (connection) await connection.rollback(); 
-        console.error("Error al enviar solicitud de contacto:", error);
-        res.status(500).json({
-            message:
-                "Error interno del servidor al procesar la solicitud de contacto.",
-            error: error.message,
-        });
-    } finally {
-        if (connection) connection.release(); 
-    }
+    // CONFIRMACION DE SOLICITUD
+    await connection.commit();
+    res.status(201).json({
+      message: "Solicitud de contacto enviada con éxito.",
+      id_solicitud: id_solicitud_generada,
+    });
+  } catch (error) {
+    //ERROR EN LA SOLICITUD
+    if (connection) await connection.rollback();
+    console.error("Error al enviar solicitud de contacto:", error);
+    res.status(500).json({
+      message:
+        "Error interno del servidor al procesar la solicitud de contacto.",
+      error: error.message,
+    });
+  } finally {
+    if (connection) connection.release();
+  }
 });
 
 // 2. RUTA PARA OBTENER LAS SOLICITUDES RECIBIDAS SEGUN ESTATUS (COLUMNA DE TABLA DE solicitudes_contacto)
 app.get("/api/solicitudes-recibidas", authenticateToken, async (req, res) => {
-    console.log(
-        "Solicitud GET /api/solicitudes-recibidas para usuario:",
-        req.user.id_usuario
-    );
-    const id_receptor = req.user.id_usuario;
-    const estatus = req.query.estatus || "Pendiente"; 
+  console.log(
+    "Solicitud GET /api/solicitudes-recibidas para usuario:",
+    req.user.id_usuario
+  );
+  const id_receptor = req.user.id_usuario;
+  const estatus = req.query.estatus || "Pendiente";
 
-    try {
-        const query = `
+  try {
+    const query = `
             SELECT
                 s.id_solicitud,
                 s.creado_fecha,
@@ -718,208 +710,205 @@ app.get("/api/solicitudes-recibidas", authenticateToken, async (req, res) => {
             ORDER BY
                 s.creado_fecha DESC;
         `;
-        const [rows] = await pool.query(query, [id_receptor, estatus]);
+    const [rows] = await pool.query(query, [id_receptor, estatus]);
 
-        rows.forEach((solicitud) => {
-            if (solicitud.emisor_foto_perfil) {
-                solicitud.emisor_foto_perfil = `${req.protocol}://${req.get("host")}${
-                    solicitud.emisor_foto_perfil
-                }`;
-            }
-        });
+    rows.forEach((solicitud) => {
+      if (solicitud.emisor_foto_perfil) {
+        solicitud.emisor_foto_perfil = `${req.protocol}://${req.get("host")}${
+          solicitud.emisor_foto_perfil
+        }`;
+      }
+    });
 
-        res.json(rows);
-    } catch (error) {
-        console.error("Error al obtener solicitudes de contacto recibidas:", error);
-        res.status(500).json({
-            message: "Error interno del servidor al obtener solicitudes recibidas.",
-        });
-    }
+    res.json(rows);
+  } catch (error) {
+    console.error("Error al obtener solicitudes de contacto recibidas:", error);
+    res.status(500).json({
+      message: "Error interno del servidor al obtener solicitudes recibidas.",
+    });
+  }
 });
 
 // 3. RUTA PARA ACEPTAR SOLICITUD
 app.patch(
-    "/api/solicitudes/:id_solicitud/aceptar",
-    authenticateToken,
-    async (req, res) => {
-        console.log(
-            "Solicitud PATCH /api/solicitudes/:id_solicitud/aceptar para solicitud:",
-            req.params.id_solicitud,
-            "por usuario:",
-            req.user.id_usuario
-        );
-        const { id_solicitud } = req.params;
-        const id_receptor = req.user.id_usuario; 
+  "/api/solicitudes/:id_solicitud/aceptar",
+  authenticateToken,
+  async (req, res) => {
+    console.log(
+      "Solicitud PATCH /api/solicitudes/:id_solicitud/aceptar para solicitud:",
+      req.params.id_solicitud,
+      "por usuario:",
+      req.user.id_usuario
+    );
+    const { id_solicitud } = req.params;
+    const id_receptor = req.user.id_usuario;
 
-        let connection; 
-        try {
-            connection = await pool.getConnection();
-            await connection.beginTransaction();
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      await connection.beginTransaction();
 
-            // 1. FUNCION PARA OBTENER ID DEL EMISOR Y EL NOMBRE DEL USUARIO A SOLICITAR
-           
-            const [requests] = await connection.query(
-                "SELECT sc.id_emisor, u.nombre_usuario AS receptor_nombre FROM solicitudes_contacto sc JOIN usuarios u ON sc.id_receptor = u.id_usuario WHERE sc.id_solicitud = ? AND sc.id_receptor = ? AND sc.estatus = ?",
-                [id_solicitud, id_receptor, "Pendiente"]
-            );
+      // 1. FUNCION PARA OBTENER ID DEL EMISOR Y EL NOMBRE DEL USUARIO A SOLICITAR
 
-            if (requests.length === 0) {
-                await connection.rollback();
-                return res.status(404).json({
-                    message: "Solicitud no encontrada o no pendiente para este usuario.",
-                });
-            }
+      const [requests] = await connection.query(
+        "SELECT sc.id_emisor, u.nombre_usuario AS receptor_nombre FROM solicitudes_contacto sc JOIN usuarios u ON sc.id_receptor = u.id_usuario WHERE sc.id_solicitud = ? AND sc.id_receptor = ? AND sc.estatus = ?",
+        [id_solicitud, id_receptor, "Pendiente"]
+      );
 
-            const id_emisor = requests[0].id_emisor; 
-            const receptor_nombre = requests[0].receptor_nombre; 
+      if (requests.length === 0) {
+        await connection.rollback();
+        return res.status(404).json({
+          message: "Solicitud no encontrada o no pendiente para este usuario.",
+        });
+      }
 
-            // 2. FUNCION PARA ACTUALIZAR ESTATUS DE SOLICITUD A ACEPTADA
-            const [result] = await connection.query(
-                "UPDATE solicitudes_contacto SET estatus = ?, fecha_respuesta = CURRENT_TIMESTAMP() WHERE id_solicitud = ? AND id_receptor = ? AND estatus = ?",
-                ["Aceptada", id_solicitud, id_receptor, "Pendiente"]
-            );
+      const id_emisor = requests[0].id_emisor;
+      const receptor_nombre = requests[0].receptor_nombre;
 
-            if (result.affectedRows === 0) {
-               
-                await connection.rollback();
-                return res.status(404).json({
-                    message: "Solicitud no encontrada o no pendiente para este usuario.",
-                });
-            }
+      // 2. FUNCION PARA ACTUALIZAR ESTATUS DE SOLICITUD A ACEPTADA
+      const [result] = await connection.query(
+        "UPDATE solicitudes_contacto SET estatus = ?, fecha_respuesta = CURRENT_TIMESTAMP() WHERE id_solicitud = ? AND id_receptor = ? AND estatus = ?",
+        ["Aceptada", id_solicitud, id_receptor, "Pendiente"]
+      );
 
-            // 3. FUNCION PARA NOTIFICAR A EMISOR EL ESTATUS DE LA SOLICITUD (FUNCIONALIDAD EN REVISION YA QUE SE QUIERE MEJORAR)
-            const notificationTitleEmisorAccepted = "Solicitud de Contacto Aceptada";
-            const mensajeNotificacionAccepted = `¡Tu solicitud de contacto ha sido ACEPTADA por ${receptor_nombre}!`;
-            const urlRedireccionAccepted = `/notificaciones?solicitud=${id_solicitud}`; 
+      if (result.affectedRows === 0) {
+        await connection.rollback();
+        return res.status(404).json({
+          message: "Solicitud no encontrada o no pendiente para este usuario.",
+        });
+      }
 
-            await connection.query(
-                "INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida, creado_fecha) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
-                [
-                    id_emisor, 
-                    "solicitud_aceptada",
-                    notificationTitleEmisorAccepted,
-                    mensajeNotificacionAccepted,
-                    urlRedireccionAccepted,
-                    id_solicitud, 
-                    false,
-                ]
-            );
+      // 3. FUNCION PARA NOTIFICAR A EMISOR EL ESTATUS DE LA SOLICITUD (FUNCIONALIDAD EN REVISION YA QUE SE QUIERE MEJORAR)
+      const notificationTitleEmisorAccepted = "Solicitud de Contacto Aceptada";
+      const mensajeNotificacionAccepted = `¡Tu solicitud de contacto ha sido ACEPTADA por ${receptor_nombre}!`;
+      const urlRedireccionAccepted = `/notificaciones?solicitud=${id_solicitud}`;
 
-            await connection.commit();
-            res.json({
-                message:
-                    "Solicitud de contacto aceptada con éxito y emisor notificado.",
-            });
-        } catch (error) {
-            if (connection) await connection.rollback(); 
-            console.error("Error al aceptar solicitud de contacto:", error);
-            res.status(500).json({
-                message: "Error interno del servidor al aceptar la solicitud.",
-                error: error.message,
-            });
-        } finally {
-            if (connection) connection.release(); 
-        }
+      await connection.query(
+        "INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida, creado_fecha) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
+        [
+          id_emisor,
+          "solicitud_aceptada",
+          notificationTitleEmisorAccepted,
+          mensajeNotificacionAccepted,
+          urlRedireccionAccepted,
+          id_solicitud,
+          false,
+        ]
+      );
+
+      await connection.commit();
+      res.json({
+        message:
+          "Solicitud de contacto aceptada con éxito y emisor notificado.",
+      });
+    } catch (error) {
+      if (connection) await connection.rollback();
+      console.error("Error al aceptar solicitud de contacto:", error);
+      res.status(500).json({
+        message: "Error interno del servidor al aceptar la solicitud.",
+        error: error.message,
+      });
+    } finally {
+      if (connection) connection.release();
     }
+  }
 );
 
 // 4. RUTA PARA RECHAZAR UNA SOLICITUD
 app.patch(
-    "/api/solicitudes/:id_solicitud/rechazar",
-    authenticateToken,
-    async (req, res) => {
-        console.log(
-            "Solicitud PATCH /api/solicitudes/:id_solicitud/rechazar para solicitud:",
-            req.params.id_solicitud,
-            "por usuario:",
-            req.user.id_usuario
-        );
-        const { id_solicitud } = req.params;
-        const id_receptor = req.user.id_usuario; 
+  "/api/solicitudes/:id_solicitud/rechazar",
+  authenticateToken,
+  async (req, res) => {
+    console.log(
+      "Solicitud PATCH /api/solicitudes/:id_solicitud/rechazar para solicitud:",
+      req.params.id_solicitud,
+      "por usuario:",
+      req.user.id_usuario
+    );
+    const { id_solicitud } = req.params;
+    const id_receptor = req.user.id_usuario;
 
-        let connection; 
-        try {
-            connection = await pool.getConnection();
-            await connection.beginTransaction(); 
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      await connection.beginTransaction();
 
-            // 1. MISMA RUTA PASADA PARA OBTENER ID DEL EMISOR Y NOMBRE DE RECEPTOR
-          
-            const [requests] = await connection.query(
-                "SELECT sc.id_emisor, u.nombre_usuario AS receptor_nombre FROM solicitudes_contacto sc JOIN usuarios u ON sc.id_receptor = u.id_usuario WHERE sc.id_solicitud = ? AND sc.id_receptor = ? AND sc.estatus = ?",
-                [id_solicitud, id_receptor, "Pendiente"]
-            );
+      // 1. MISMA RUTA PASADA PARA OBTENER ID DEL EMISOR Y NOMBRE DE RECEPTOR
 
-            if (requests.length === 0) {
-                await connection.rollback();
-                return res.status(404).json({
-                    message: "Solicitud no encontrada o no pendiente para este usuario.",
-                });
-            }
+      const [requests] = await connection.query(
+        "SELECT sc.id_emisor, u.nombre_usuario AS receptor_nombre FROM solicitudes_contacto sc JOIN usuarios u ON sc.id_receptor = u.id_usuario WHERE sc.id_solicitud = ? AND sc.id_receptor = ? AND sc.estatus = ?",
+        [id_solicitud, id_receptor, "Pendiente"]
+      );
 
-            const id_emisor = requests[0].id_emisor; 
-            const receptor_nombre = requests[0].receptor_nombre; 
+      if (requests.length === 0) {
+        await connection.rollback();
+        return res.status(404).json({
+          message: "Solicitud no encontrada o no pendiente para este usuario.",
+        });
+      }
 
-            // 2. ACTUALIZACION DE ESTATUS A RECHAZADA
-            const [result] = await connection.query(
-                "UPDATE solicitudes_contacto SET estatus = ?, fecha_respuesta = CURRENT_TIMESTAMP() WHERE id_solicitud = ? AND id_receptor = ? AND estatus = ?",
-                ["Rechazada", id_solicitud, id_receptor, "Pendiente"]
-            );
+      const id_emisor = requests[0].id_emisor;
+      const receptor_nombre = requests[0].receptor_nombre;
 
-            if (result.affectedRows === 0) {
-               
-                await connection.rollback();
-                return res.status(404).json({
-                    message: "Solicitud no encontrada o no pendiente para este usuario.",
-                });
-            }
+      // 2. ACTUALIZACION DE ESTATUS A RECHAZADA
+      const [result] = await connection.query(
+        "UPDATE solicitudes_contacto SET estatus = ?, fecha_respuesta = CURRENT_TIMESTAMP() WHERE id_solicitud = ? AND id_receptor = ? AND estatus = ?",
+        ["Rechazada", id_solicitud, id_receptor, "Pendiente"]
+      );
 
-            // 3. FUNCION PARA NOTIFICAR A EMISOR QUE SOLICITUD FUE RECHAZADA
-            const notificationTitleEmisorRejected = "Solicitud de Contacto Rechazada";
-            const mensajeNotificacionRejected = `Tu solicitud de contacto ha sido RECHAZADA por ${receptor_nombre}.`;
-            const urlRedireccionRejected = `/notificaciones?solicitud=${id_solicitud}`; 
+      if (result.affectedRows === 0) {
+        await connection.rollback();
+        return res.status(404).json({
+          message: "Solicitud no encontrada o no pendiente para este usuario.",
+        });
+      }
 
-            await connection.query(
-                "INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida, creado_fecha) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
-                [
-                    id_emisor,
-                    "solicitud_rechazada",
-                    notificationTitleEmisorRejected,
-                    mensajeNotificacionRejected,
-                    urlRedireccionRejected,
-                    id_solicitud, 
-                    false, 
-                ]
-            );
+      // 3. FUNCION PARA NOTIFICAR A EMISOR QUE SOLICITUD FUE RECHAZADA
+      const notificationTitleEmisorRejected = "Solicitud de Contacto Rechazada";
+      const mensajeNotificacionRejected = `Tu solicitud de contacto ha sido RECHAZADA por ${receptor_nombre}.`;
+      const urlRedireccionRejected = `/notificaciones?solicitud=${id_solicitud}`;
 
-            await connection.commit();
-            res.json({
-                message:
-                    "Solicitud de contacto rechazada con éxito y emisor notificado.",
-            });
-        } catch (error) {
-            if (connection) await connection.rollback();
-            console.error("Error al rechazar solicitud de contacto:", error);
-            res.status(500).json({
-                message: "Error interno del servidor al rechazar la solicitud.",
-                error: error.message,
-            });
-        } finally {
-            if (connection) connection.release(); 
-        }
+      await connection.query(
+        "INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida, creado_fecha) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
+        [
+          id_emisor,
+          "solicitud_rechazada",
+          notificationTitleEmisorRejected,
+          mensajeNotificacionRejected,
+          urlRedireccionRejected,
+          id_solicitud,
+          false,
+        ]
+      );
+
+      await connection.commit();
+      res.json({
+        message:
+          "Solicitud de contacto rechazada con éxito y emisor notificado.",
+      });
+    } catch (error) {
+      if (connection) await connection.rollback();
+      console.error("Error al rechazar solicitud de contacto:", error);
+      res.status(500).json({
+        message: "Error interno del servidor al rechazar la solicitud.",
+        error: error.message,
+      });
+    } finally {
+      if (connection) connection.release();
     }
+  }
 );
 
 // NUEVA RUTA: OBTENER CONVENIOS ACEPTADOS DEL USUARIO
 app.get("/api/mis-convenios", authenticateToken, async (req, res) => {
-    const userId = req.user.id_usuario; 
-    console.log(
-        "Petición recibida para obtener convenios aceptados del usuario:",
-        userId
-    );
+  const userId = req.user.id_usuario;
+  console.log(
+    "Petición recibida para obtener convenios aceptados del usuario:",
+    userId
+  );
 
-    try {
-        
-        const query = `
+  try {
+    const query = `
             SELECT 
                 s.id_solicitud,
                 s.fecha_respuesta,
@@ -946,59 +935,72 @@ app.get("/api/mis-convenios", authenticateToken, async (req, res) => {
             
             ORDER BY fecha_respuesta DESC;
         `;
-        
-        const [rows] = await pool.query(query, [userId, userId]);
-        
-        const convenios = rows.map((convenio) => {
-            if (convenio.foto_otra_persona_url) {
-                convenio.foto_otra_persona_url = `${req.protocol}://${req.get("host")}${convenio.foto_otra_persona_url}`;
-            }
-            return convenio;
-        });
 
-        console.log(`Se encontraron ${convenios.length} convenios aceptados.`);
-        res.json(convenios);
+    const [rows] = await pool.query(query, [userId, userId]);
 
-    } catch (error) {
-        console.error("Error al obtener convenios aceptados:", error);
-        res.status(500).json({
-            message: "Error interno del servidor al obtener convenios aceptados.",
-            error: error.message,
-        });
-    }
+    const convenios = rows.map((convenio) => {
+      if (convenio.foto_otra_persona_url) {
+        convenio.foto_otra_persona_url = `${req.protocol}://${req.get("host")}${
+          convenio.foto_otra_persona_url
+        }`;
+      }
+      return convenio;
+    });
+
+    console.log(`Se encontraron ${convenios.length} convenios aceptados.`);
+    res.json(convenios);
+  } catch (error) {
+    console.error("Error al obtener convenios aceptados:", error);
+    res.status(500).json({
+      message: "Error interno del servidor al obtener convenios aceptados.",
+      error: error.message,
+    });
+  }
 });
 
-
- // RUTA PARA LAS NOTIFICACIONES NO LEIDAS (FUNCION AUN EN REVISION)
-app.get('/api/notificaciones/unread-count', authenticateToken, async (req, res) => {
+// RUTA PARA LAS NOTIFICACIONES NO LEIDAS (FUNCION AUN EN REVISION)
+app.get(
+  "/api/notificaciones/unread-count",
+  authenticateToken,
+  async (req, res) => {
     const userId = req.user.id_usuario;
 
     if (!userId) {
-        return res.status(400).json({ message: 'ID de usuario no disponible en el token.' });
+      return res
+        .status(400)
+        .json({ message: "ID de usuario no disponible en el token." });
     }
 
     try {
-        const [rows] = await pool.query(
-            "SELECT COUNT(*) as count FROM notificaciones WHERE id_usuario_receptor = ? AND leida = FALSE",
-            [userId]
-        );
-        res.json({ count: rows[0].count });
+      const [rows] = await pool.query(
+        "SELECT COUNT(*) as count FROM notificaciones WHERE id_usuario_receptor = ? AND leida = FALSE",
+        [userId]
+      );
+      res.json({ count: rows[0].count });
     } catch (error) {
-        console.error('Error al obtener el recuento de notificaciones no leídas:', error);
-        res.status(500).json({ message: 'Error interno del servidor al obtener el recuento de notificaciones.' });
+      console.error(
+        "Error al obtener el recuento de notificaciones no leídas:",
+        error
+      );
+      res
+        .status(500)
+        .json({
+          message:
+            "Error interno del servidor al obtener el recuento de notificaciones.",
+        });
     }
-});
-
+  }
+);
 
 app.get("/api/notificaciones", authenticateToken, async (req, res) => {
-    if (!req.user) {
-        return res.status(401).json({ message: "No autenticado." });
-    }
-    const userId = req.user.id_usuario;
+  if (!req.user) {
+    return res.status(401).json({ message: "No autenticado." });
+  }
+  const userId = req.user.id_usuario;
 
-    try {
-        const [notifications] = await pool.query(
-            `SELECT
+  try {
+    const [notifications] = await pool.query(
+      `SELECT
                 n.id_notificacion,
                 n.tipo_notificacion,
                 n.mensaje,
@@ -1025,61 +1027,53 @@ app.get("/api/notificaciones", authenticateToken, async (req, res) => {
                 n.id_usuario_receptor = ? 
             ORDER BY
                 n.creado_fecha DESC`,
-            [userId]
-        );
-        res.status(200).json(notifications);
-    } catch (error) {
-        console.error("Error al obtener notificaciones:", error);
-        res
-            .status(500)
-            .json({
-                message: "Error interno del servidor al obtener notificaciones.",
-            });
-    }
+      [userId]
+    );
+    res.status(200).json(notifications);
+  } catch (error) {
+    console.error("Error al obtener notificaciones:", error);
+    res.status(500).json({
+      message: "Error interno del servidor al obtener notificaciones.",
+    });
+  }
 });
 
 // RUTA PARA MARCAR LAS NOTIFICACIONES COMO LEIDAS
 app.patch(
-    "/api/notificaciones/:id/marcar-leida",
-    authenticateToken,
-    async (req, res) => {
-        if (!req.user) {
-            return res.status(401).json({ message: "No autenticado." });
-        }
-        const notificationId = req.params.id;
-        const userId = req.user.id_usuario;
-
-        try {
-            const [result] = await pool.query(
-                "UPDATE notificaciones SET leida = TRUE WHERE id_notificacion = ? AND id_usuario_receptor = ?",
-                [notificationId, userId]
-            );
-
-            if (result.affectedRows === 0) {
-                return res
-                    .status(404)
-                    .json({
-                        message:
-                            "Notificación no encontrada o no tienes permiso para marcarla como leída.",
-                    });
-            }
-
-            res
-                .status(200)
-                .json({ message: "Notificación marcada como leída exitosamente." });
-        } catch (error) {
-            console.error("Error al marcar notificación como leída:", error);
-            res
-                .status(500)
-                .json({
-                    message:
-                        "Error interno del servidor al marcar notificación como leída.",
-                });
-        }
+  "/api/notificaciones/:id/marcar-leida",
+  authenticateToken,
+  async (req, res) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "No autenticado." });
     }
+    const notificationId = req.params.id;
+    const userId = req.user.id_usuario;
+
+    try {
+      const [result] = await pool.query(
+        "UPDATE notificaciones SET leida = TRUE WHERE id_notificacion = ? AND id_usuario_receptor = ?",
+        [notificationId, userId]
+      );
+
+      if (result.affectedRows === 0) {
+        return res.status(404).json({
+          message:
+            "Notificación no encontrada o no tienes permiso para marcarla como leída.",
+        });
+      }
+
+      res
+        .status(200)
+        .json({ message: "Notificación marcada como leída exitosamente." });
+    } catch (error) {
+      console.error("Error al marcar notificación como leída:", error);
+      res.status(500).json({
+        message:
+          "Error interno del servidor al marcar notificación como leída.",
+      });
+    }
+  }
 );
-
-
 
 // RUTA PARA ACTUALIZAR LA DESCRIPCIÓN DEL PERFIL
 app.patch("/api/profile/description", authenticateToken, async (req, res) => {
@@ -1123,12 +1117,11 @@ app.patch("/api/profile/description", authenticateToken, async (req, res) => {
   }
 });
 
-// RUTA PARA SUBIR VARIAS IMÁGENES AL PORTAFOLIO 
+// RUTA PARA SUBIR VARIAS IMÁGENES AL PORTAFOLIO
 app.post(
- 
-  "/api/upload-portafolio-images", 
+  "/api/upload-portafolio-images",
   authenticateToken,
-  upload.array("portfolioImages", 10), 
+  upload.array("portfolioImages", 10),
   async (req, res) => {
     console.log(
       "Solicitud POST /api/upload-portafolio-images recibida para usuario:",
@@ -1161,7 +1154,6 @@ app.post(
           `Proyecto 'Mi Portafolio' existente encontrado para userId ${userId}: ${projectId}`
         );
       } else {
-       
         console.log(
           `Creando nuevo proyecto 'Mi Portafolio' para userId ${userId}...`
         );
@@ -1179,12 +1171,12 @@ app.post(
       }
 
       // 2. FUNCION PARA AÑADIR IMAGEN A PORTAFOLIO (GUARDADA EN TABLA LLAMADA imagen)
-      
+
       for (const file of req.files) {
-        const imageUrl = `/uploads/${file.filename}`; 
+        const imageUrl = `/uploads/${file.filename}`;
         const [imageResult] = await connection.query(
           "INSERT INTO imagen (id_proyecto, url_imagen, descripcion_imagen) VALUES (?, ?, ?)",
-          [projectId, imageUrl, "Imagen de portafolio"] 
+          [projectId, imageUrl, "Imagen de portafolio"]
         );
         const id_imagen = imageResult.insertId;
         const fullImageUrl = `${req.protocol}://${req.get("host")}${imageUrl}`;
@@ -1271,7 +1263,6 @@ app.delete(
               `Error al eliminar el archivo físico ${filePath}:`,
               err
             );
-          
           } else {
             console.log(`Archivo físico eliminado: ${filePath}`);
           }
@@ -1310,7 +1301,7 @@ app.post(
       "Solicitud POST /api/challenges recibida para usuario:",
       req.user.id_usuario
     );
-    const userId = req.user.id_usuario; 
+    const userId = req.user.id_usuario;
 
     // 1. VALIDAR LOS DATOS DEL FORMULARIO QUE APARECE PARA CREAR DESAFIO
     const { nombre_desafio, descripcion_desafio, beneficios, duracion_dias } =
@@ -1334,9 +1325,9 @@ app.post(
       });
     }
 
-    let connection; 
+    let connection;
     try {
-      connection = await pool.getConnection(); 
+      connection = await pool.getConnection();
       await connection.beginTransaction();
 
       // 2. FUNCION PARA OBTENER ID DEL USUARIO CREADOR DE DESAFIO Y CONTADOR (EL EMPRENDEDOR SOLO PODRA CREAR UN DEAFIO A LA VEZ Y 3 GRATIS, LUEGO LA OPCION SERA PAGA)
@@ -1368,18 +1359,17 @@ app.post(
         desafios_cuenta
       );
 
-     // FUNCION PARA CONTEO DE DESAFIOS GRATIS
+      // FUNCION PARA CONTEO DE DESAFIOS GRATIS
       const MAX_FREE_CHALLENGES = 3;
       if (desafios_cuenta >= MAX_FREE_CHALLENGES) {
         console.warn(
           "Error 402: El emprendedor ha alcanzado el límite de desafíos gratuitos."
         );
-        await connection.rollback(); 
+        await connection.rollback();
         return res.status(402).json({
           message: `Has alcanzado el límite de ${MAX_FREE_CHALLENGES} desafíos gratuitos. Por favor, realiza un pago para crear más desafíos.`,
         });
       }
-      
 
       // FUNCION PARA VERIFICAR SI DESAFIO EXISTE
       console.log(
@@ -1395,7 +1385,7 @@ app.post(
         console.warn(
           "Error 409: El emprendedor ya tiene un desafío activo y no puede crear otro."
         );
-        await connection.rollback(); 
+        await connection.rollback();
         return res.status(409).json({
           message:
             "Ya tienes un desafío activo. Debes esperar a que finalice para crear uno nuevo.",
@@ -1404,7 +1394,6 @@ app.post(
       console.log(
         "No se encontraron desafíos activos. Procediendo a crear el nuevo desafío."
       );
-    
 
       // 3. VERIFICAR FECHA DE FIN DE DESAFIO
       const fechaCreacion = new Date();
@@ -1442,7 +1431,7 @@ app.post(
 
       const tituloNotificacion = "¡Nuevo Desafío Publicado!";
       const mensajeNotificacion = `Se ha publicado un nuevo desafío: "${nombre_desafio}". ¡Échale un vistazo!`;
-      const urlRedireccion = `/desafios/${idDesafioRecienCreado}`; 
+      const urlRedireccion = `/desafios/${idDesafioRecienCreado}`;
 
       for (const receptor of receptors) {
         await connection.query(
@@ -1464,14 +1453,12 @@ app.post(
           `Notificación de nuevo desafío enviada a usuario ${receptor.id_usuario}.`
         );
       }
-    
 
-      await connection.commit(); 
+      await connection.commit();
       console.log(
         `Desafío creado exitosamente para id_emprendedor ${id_emprendedor}. ID: ${idDesafioRecienCreado}`
       );
 
-     
       res.status(201).json({
         message: "Desafío creado exitosamente!",
         id_desafio: idDesafioRecienCreado,
@@ -1489,7 +1476,7 @@ app.post(
       });
     } finally {
       if (connection) {
-        connection.release(); 
+        connection.release();
       }
     }
   }
@@ -1505,7 +1492,7 @@ app.get(
       "Solicitud GET /api/challenges/me recibida para usuario:",
       req.user.id_usuario
     );
-    const userId = req.user.id_usuario; 
+    const userId = req.user.id_usuario;
 
     try {
       // 1. FUNCION QUE LLAMA EL ID DEL EMPRENDEDOR
@@ -1565,7 +1552,7 @@ app.get(
     let connection;
     try {
       connection = await pool.getConnection();
-      
+
       const [rows] = await connection.query(`
                 SELECT
                     d.id_desafio,
@@ -1591,7 +1578,6 @@ app.get(
             `);
       connection.release();
 
-  
       const desafiosConUrlCompleta = rows.map((desafio) => {
         if (desafio.foto_perfil_emprendedor) {
           desafio.foto_perfil_emprendedor = `${req.protocol}://${req.get(
@@ -1616,7 +1602,6 @@ app.get(
     }
   }
 );
-
 
 app.get("/api/desafios/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
@@ -1660,7 +1645,7 @@ app.get("/api/desafios/:id", authenticateToken, async (req, res) => {
     }
 
     const desafio = rows[0];
-   
+
     if (desafio.foto_perfil_emprendedor) {
       desafio.foto_perfil_emprendedor = `${req.protocol}://${req.get("host")}${
         desafio.foto_perfil_emprendedor
@@ -1683,12 +1668,11 @@ app.get("/api/desafios/:id", authenticateToken, async (req, res) => {
 app.get("/api/desafios/:id/propuestas", authenticateToken, async (req, res) => {
   const { id: id_desafio } = req.params;
 
- 
   console.log(`Backend: Solicitud de propuestas para idDesafio: ${id_desafio}`);
 
-  let connection; 
+  let connection;
   try {
-    connection = await pool.getConnection(); 
+    connection = await pool.getConnection();
     const [propuestas] = await connection.execute(
       `SELECT pd.*, u.nombre_usuario
              FROM propuestas_desafio pd
@@ -1697,7 +1681,6 @@ app.get("/api/desafios/:id/propuestas", authenticateToken, async (req, res) => {
       [id_desafio]
     );
 
-   
     console.log(
       "Backend: Resultados de la base de datos para propuestas:",
       propuestas
@@ -1728,10 +1711,9 @@ app.post(
 
     const imagen_url = req.file
       ? `/uploads/proposals/${req.file.filename}`
-      : null; 
+      : null;
 
     if (!texto_propuesta && !imagen_url) {
-     
       if (req.file && req.file.path) {
         fs.unlink(req.file.path, (unlinkErr) => {
           if (unlinkErr)
@@ -1749,14 +1731,14 @@ app.post(
     let connection;
     try {
       connection = await pool.getConnection();
-      await connection.beginTransaction(); 
+      await connection.beginTransaction();
 
       const [desafioRows] = await connection.execute(
         "SELECT id_desafio, estado, id_emprendedor, nombre_desafio FROM desafios WHERE id_desafio = ?",
         [id_desafio]
       );
       if (desafioRows.length === 0) {
-        await connection.rollback(); 
+        await connection.rollback();
         if (req.file && req.file.path) {
           fs.unlink(req.file.path, (unlinkErr) => {
             if (unlinkErr)
@@ -1766,7 +1748,7 @@ app.post(
         return res.status(404).json({ message: "Desafío no encontrado." });
       }
       if (desafioRows[0].estado !== "Activo") {
-        await connection.rollback(); 
+        await connection.rollback();
         if (req.file && req.file.path) {
           fs.unlink(req.file.path, (unlinkErr) => {
             if (unlinkErr)
@@ -1779,10 +1761,9 @@ app.post(
         });
       }
 
-      const idEmprendedorDeTablaDesafios = desafioRows[0].id_emprendedor; 
+      const idEmprendedorDeTablaDesafios = desafioRows[0].id_emprendedor;
       const nombreDesafio = desafioRows[0].nombre_desafio;
 
-      
       const [emprendedorUserRows] = await connection.execute(
         "SELECT id_usuario FROM emprendedor WHERE id_emprendedor = ?",
         [idEmprendedorDeTablaDesafios]
@@ -1801,11 +1782,10 @@ app.post(
             "Emprendedor asociado al desafío no encontrado en la tabla de emprendedores.",
         });
       }
-      const idUsuarioEmprendedor = emprendedorUserRows[0].id_usuario; 
+      const idUsuarioEmprendedor = emprendedorUserRows[0].id_usuario;
 
       if (idUsuarioEmprendedor === id_usuario_proponente) {
-        
-        await connection.rollback(); 
+        await connection.rollback();
         if (req.file && req.file.path) {
           fs.unlink(req.file.path, (unlinkErr) => {
             if (unlinkErr)
@@ -1815,8 +1795,8 @@ app.post(
         return res.status(403).json({
           message: "No puedes enviar una propuesta a tu propio desafío.",
         });
-      } 
-      
+      }
+
       // 3. FUNCION PARA INGRESAR PROPUESTA A BASE DE DATOS EN LA TABLA LLAMADA propuestas_desafio
 
       const [result] = await connection.execute(
@@ -1838,9 +1818,8 @@ app.post(
       // 4. FUNCION PARA NOTIFICACION A EMPRENDEDOR DE NUEVA PROPUESTA (EN REVISION)
       const tituloNotificacion = "¡Nueva Propuesta Recibida!";
       const mensajeNotificacion = `Has recibido una nueva propuesta para tu desafío "${nombreDesafio}" de ${req.user.nombre_usuario}.`;
-      const urlRedireccion = `/mis-desafios/${id_desafio}/propuestas`; 
+      const urlRedireccion = `/mis-desafios/${id_desafio}/propuestas`;
 
-     
       await connection.execute(
         `INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida, creado_fecha) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP())`, // <-- Así, en una sola línea o con cuidado al formatear
         [
@@ -1857,8 +1836,6 @@ app.post(
         `Notificación de nueva propuesta enviada al emprendedor ${idUsuarioEmprendedor}.`
       );
 
-    
-
       await connection.commit();
       res.status(201).json({
         message: "Propuesta enviada con éxito.",
@@ -1866,7 +1843,6 @@ app.post(
         imagenUrl: imagen_url,
       });
     } catch (error) {
-    
       if (connection) {
         await connection.rollback();
       }
@@ -1876,7 +1852,7 @@ app.post(
           if (unlinkErr)
             console.error("Error al eliminar archivo tras error:", unlinkErr);
         });
-      } 
+      }
       if (error instanceof multer.MulterError) {
         if (error.code === "LIMIT_FILE_SIZE") {
           return res
@@ -1892,7 +1868,7 @@ app.post(
         error: error.message,
       });
     } finally {
-      if (connection) connection.release(); 
+      if (connection) connection.release();
     }
   }
 );
@@ -1901,7 +1877,7 @@ app.post(
 app.put(
   "/api/challenges/:id/select-winner",
   authenticateToken,
-  authorizeEntrepreneur, 
+  authorizeEntrepreneur,
   async (req, res) => {
     console.log(
       `Solicitud PUT /api/challenges/${req.params.id}/select-winner recibida por usuario:`,
@@ -1909,23 +1885,21 @@ app.put(
     );
     const id_desafio = req.params.id;
     const { id_propuesta_ganadora, redes_sociales_emprendedor } = req.body;
-    const id_emprendedor_sesion = req.user.id_usuario; 
+    const id_emprendedor_sesion = req.user.id_usuario;
 
     // 1. Validar los datos de entrada
     if (!id_propuesta_ganadora || !redes_sociales_emprendedor) {
       console.warn("Error 400: Campos de selección de ganador incompletos.");
-      return res
-        .status(400)
-        .json({
-          message:
-            "Se requiere la ID de la propuesta ganadora y las redes sociales del emprendedor.",
-        });
+      return res.status(400).json({
+        message:
+          "Se requiere la ID de la propuesta ganadora y las redes sociales del emprendedor.",
+      });
     }
 
     let connection;
     try {
       connection = await pool.getConnection();
-      await connection.beginTransaction(); 
+      await connection.beginTransaction();
 
       // 2. Verificar que el desafío existe, pertenece al emprendedor autenticado y ha finalizado
       console.log(`Verificando desafío ${id_desafio} y su estado.`);
@@ -1948,69 +1922,114 @@ app.put(
         [desafio.id_emprendedor]
       );
 
-      if (emprendedorUserIdResult.length === 0 || emprendedorUserIdResult[0].id_usuario !== id_emprendedor_sesion) {
-        console.warn(`Error 403: El usuario ${id_emprendedor_sesion} no es el propietario del desafío ${id_desafio}.`);
+      if (
+        emprendedorUserIdResult.length === 0 ||
+        emprendedorUserIdResult[0].id_usuario !== id_emprendedor_sesion
+      ) {
+        console.warn(
+          `Error 403: El usuario ${id_emprendedor_sesion} no es el propietario del desafío ${id_desafio}.`
+        );
         await connection.rollback();
-        return res.status(403).json({ message: "No tienes permiso para seleccionar un ganador para este desafío." });
+        return res
+          .status(403)
+          .json({
+            message:
+              "No tienes permiso para seleccionar un ganador para este desafío.",
+          });
       }
 
       // Verificar que el desafío ya haya terminado
       const fechaFinDesafio = new Date(desafio.fecha_fin);
       const fechaActual = new Date();
       if (fechaActual < fechaFinDesafio) {
-        console.warn(`Error 400: El desafío ${id_desafio} aún no ha finalizado.`);
+        console.warn(
+          `Error 400: El desafío ${id_desafio} aún no ha finalizado.`
+        );
         await connection.rollback();
         return res
           .status(400)
-          .json({ message: "El desafío aún no ha terminado. No se puede seleccionar un ganador." });
+          .json({
+            message:
+              "El desafío aún no ha terminado. No se puede seleccionar un ganador.",
+          });
       }
 
       // Verificar si ya se ha seleccionado un ganador para este desafío
       if (desafio.usuario_ganador !== null) {
-        console.warn(`Error 409: El desafío ${id_desafio} ya tiene un ganador seleccionado.`);
+        console.warn(
+          `Error 409: El desafío ${id_desafio} ya tiene un ganador seleccionado.`
+        );
         await connection.rollback();
-        return res.status(409).json({ message: "Este desafío ya tiene un ganador seleccionado." });
+        return res
+          .status(409)
+          .json({ message: "Este desafío ya tiene un ganador seleccionado." });
       }
 
       // 3. Obtener el ID del usuario proponente de la propuesta ganadora
-      console.log(`Buscando usuario proponente para propuesta ${id_propuesta_ganadora}.`);
+      console.log(
+        `Buscando usuario proponente para propuesta ${id_propuesta_ganadora}.`
+      );
       const [propuestaResult] = await connection.query(
         "SELECT id_usuario_proponente FROM propuestas_desafio WHERE id_propuesta = ? AND id_desafio = ?",
         [id_propuesta_ganadora, id_desafio]
       );
 
       if (propuestaResult.length === 0) {
-        console.warn(`Error 404: Propuesta con ID ${id_propuesta_ganadora} no encontrada para el desafío ${id_desafio}.`);
+        console.warn(
+          `Error 404: Propuesta con ID ${id_propuesta_ganadora} no encontrada para el desafío ${id_desafio}.`
+        );
         await connection.rollback();
-        return res.status(404).json({ message: "Propuesta ganadora no encontrada para este desafío." });
+        return res
+          .status(404)
+          .json({
+            message: "Propuesta ganadora no encontrada para este desafío.",
+          });
       }
 
       const id_usuario_ganador = propuestaResult[0].id_usuario_proponente;
       console.log(`Usuario ganador identificado: ${id_usuario_ganador}`);
 
       // 4. Actualizar el desafío con el ganador y los datos de contacto
-      console.log(`Actualizando desafío ${id_desafio} con ganador ${id_usuario_ganador} y contacto.`);
-      
+      console.log(
+        `Actualizando desafío ${id_desafio} con ganador ${id_usuario_ganador} y contacto.`
+      );
+
       await connection.query(
         "UPDATE desafios SET usuario_ganador = ?, contacto_emprendedor = ?, estado = 'Finalizado' WHERE id_desafio = ?",
-        [id_usuario_ganador, JSON.stringify(redes_sociales_emprendedor), id_desafio]
+        [
+          id_usuario_ganador,
+          JSON.stringify(redes_sociales_emprendedor),
+          id_desafio,
+        ]
       );
       console.log(`Desafío ${id_desafio} actualizado correctamente.`);
 
+      await connection.query(
+        "UPDATE usuarios SET desafios_ganados = desafios_ganados + 1 WHERE id_usuario = ?",
+        [id_usuario_ganador]
+      );
+      console.log(
+        `Contador de desafíos ganados incrementado para el usuario ${id_usuario_ganador}.`
+      );
+
       // 5. Notificar al usuario ganador
-      console.log(`Preparando notificación para el ganador ${id_usuario_ganador}.`);
+      console.log(
+        `Preparando notificación para el ganador ${id_usuario_ganador}.`
+      );
       const [ganadorInfo] = await connection.query(
         "SELECT nombre_usuario, correo_electronico FROM usuarios WHERE id_usuario = ?",
         [id_usuario_ganador]
       );
 
       if (ganadorInfo.length === 0) {
-        console.warn(`Advertencia: No se encontró información del usuario ganador ${id_usuario_ganador}. La notificación no se enviará.`);
+        console.warn(
+          `Advertencia: No se encontró información del usuario ganador ${id_usuario_ganador}. La notificación no se enviará.`
+        );
       } else {
         const tituloNotificacionGanador = `¡Felicidades, has ganado el desafío "${desafio.nombre_desafio}"!`;
         const mensajeNotificacionGanador = `¡Tu propuesta ha sido seleccionada como ganadora para el desafío "${desafio.nombre_desafio}"! El emprendedor se pondrá en contacto contigo.`;
-        
-        const urlRedireccionGanador = `/mis-desafios/${id_desafio}/ganador`; 
+
+        const urlRedireccionGanador = `/mis-desafios/${id_desafio}/ganador`;
 
         await connection.query(
           `INSERT INTO notificaciones (id_usuario_receptor, tipo_notificacion, titulo, mensaje, url_redireccion, id_referencia, leida, creado_fecha) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP())`,
@@ -2024,14 +2043,18 @@ app.put(
             false,
           ]
         );
-        console.log(`Notificación de victoria enviada a usuario ${id_usuario_ganador}.`);
+        console.log(
+          `Notificación de victoria enviada a usuario ${id_usuario_ganador}.`
+        );
       }
 
-      await connection.commit(); 
-      res.status(200).json({ message: "Ganador seleccionado y notificado exitosamente." });
+      await connection.commit();
+      res
+        .status(200)
+        .json({ message: "Ganador seleccionado y notificado exitosamente." });
     } catch (error) {
       if (connection) {
-        await connection.rollback(); 
+        await connection.rollback();
       }
       console.error("Error al seleccionar ganador del desafío:", error);
       res.status(500).json({
@@ -2040,20 +2063,19 @@ app.put(
       });
     } finally {
       if (connection) {
-        connection.release(); 
+        connection.release();
       }
     }
   }
 );
 
-
 // RUTA PARA OBTENER DE BD TODOS LOS PERFILES REGISTRADOS
 app.get("/api/profiles", authenticateToken, async (req, res) => {
-    const currentUserId = req.user.id_usuario;
+  const currentUserId = req.user.id_usuario;
 
-    try {
-        const [allProfiles] = await pool.query(
-            `SELECT
+  try {
+    const [allProfiles] = await pool.query(
+      `SELECT
                 u.id_usuario,
                 u.nombre_usuario,
                 u.tipo_perfil,
@@ -2077,51 +2099,51 @@ app.get("/api/profiles", authenticateToken, async (req, res) => {
             LEFT JOIN
                 disenador_marketing dm ON u.id_usuario = dm.id_usuario
             WHERE
-                u.id_usuario != ?`, 
-            [currentUserId]
-        );
+                u.id_usuario != ?`,
+      [currentUserId]
+    );
 
-        const formattedProfiles = allProfiles.map((profile) => {
-            let profession = profile.tipo_perfil;
-            let location = "";
-            let description = profile.descripcion_perfil || "Aún no ha añadido una descripción."; 
+    const formattedProfiles = allProfiles.map((profile) => {
+      let profession = profile.tipo_perfil;
+      let location = "";
+      let description =
+        profile.descripcion_perfil || "Aún no ha añadido una descripción.";
 
-            if (profile.tipo_perfil === "Emprendedor") {
-                profession = profile.nombre_negocio || "Emprendedor";
-                location = profile.emprendedor_localidad || "";
-            } else if (profile.tipo_perfil === "Diseñador") {
-                profession = "Diseñador";
-                location = profile.dm_localidad || "";
-            } else if (profile.tipo_perfil === "Marketing") {
-                profession = "Especialista en Marketing";
-                location = profile.dm_localidad || "";
-            }
-            
-            const fullImageUrl = profile.foto_perfil_url
-                ? `${req.protocol}://${req.get("host")}${profile.foto_perfil_url}`
-                : "";
+      if (profile.tipo_perfil === "Emprendedor") {
+        profession = profile.nombre_negocio || "Emprendedor";
+        location = profile.emprendedor_localidad || "";
+      } else if (profile.tipo_perfil === "Diseñador") {
+        profession = "Diseñador";
+        location = profile.dm_localidad || "";
+      } else if (profile.tipo_perfil === "Marketing") {
+        profession = "Especialista en Marketing";
+        location = profile.dm_localidad || "";
+      }
 
-            return {
-                id_usuario: profile.id_usuario,
-                nombre_usuario: profile.nombre_usuario,
-                tipo_perfil: profile.tipo_perfil, 
-                descripcion_perfil: description,
-                profession: profession,
-                location: location, 
-                foto_perfil_url: fullImageUrl,
-                reaccion_acumulada: profile.reaccion_acumulada,
-            };
-        });
-        res.status(200).json(formattedProfiles);
-    } catch (error) {
-        console.error("Error al obtener todos los perfiles:", error);
-        res.status(500).json({
-            message: "Error interno del servidor al obtener perfiles.",
-            error: error.message,
-        });
-    }
+      const fullImageUrl = profile.foto_perfil_url
+        ? `${req.protocol}://${req.get("host")}${profile.foto_perfil_url}`
+        : "";
+
+      return {
+        id_usuario: profile.id_usuario,
+        nombre_usuario: profile.nombre_usuario,
+        tipo_perfil: profile.tipo_perfil,
+        descripcion_perfil: description,
+        profession: profession,
+        location: location,
+        foto_perfil_url: fullImageUrl,
+        reaccion_acumulada: profile.reaccion_acumulada,
+      };
+    });
+    res.status(200).json(formattedProfiles);
+  } catch (error) {
+    console.error("Error al obtener todos los perfiles:", error);
+    res.status(500).json({
+      message: "Error interno del servidor al obtener perfiles.",
+      error: error.message,
+    });
+  }
 });
-
 
 // RUTA PARA OBTENER EL PERFIL Y PROYECTOS DE CUALQUIER USUARIO POR SU ID
 app.get("/api/profiles/:id", authenticateToken, async (req, res) => {
@@ -2138,12 +2160,17 @@ app.get("/api/profiles/:id", authenticateToken, async (req, res) => {
     );
 
     if (users.length === 0) {
-      console.log("Error 404: Perfil de usuario no encontrado para ID:", userId);
-      return res.status(404).json({ message: "Perfil de usuario no encontrado." });
+      console.log(
+        "Error 404: Perfil de usuario no encontrado para ID:",
+        userId
+      );
+      return res
+        .status(404)
+        .json({ message: "Perfil de usuario no encontrado." });
     }
     profileData = users[0];
     profileData.reputacion = profileData.reputacion || 0;
-    
+
     if (profileData.foto_perfil_url) {
       profileData.foto_perfil_url = `${req.protocol}://${req.get("host")}${
         profileData.foto_perfil_url
@@ -2195,7 +2222,7 @@ app.get("/api/profiles/:id", authenticateToken, async (req, res) => {
 
 // RUTAS PARA EL FORO
 
-// 1. RUTA PARA OBTENER TODOS LOS FOROS EN GENERAL 
+// 1. RUTA PARA OBTENER TODOS LOS FOROS EN GENERAL
 app.get("/api/forum/threads", async (req, res) => {
   try {
     const [threads] = await pool.query(`
@@ -2226,11 +2253,9 @@ app.get("/api/forum/threads", async (req, res) => {
 // 2. RUTA PARA CREAR NUEVO TEMA DE FORO
 app.post("/api/forum/threads", authenticateToken, async (req, res) => {
   if (!req.user) {
-    return res
-      .status(401)
-      .json({
-        message: "No autenticado. Debes iniciar sesión para crear un tema.",
-      });
+    return res.status(401).json({
+      message: "No autenticado. Debes iniciar sesión para crear un tema.",
+    });
   }
   console.log(
     "Solicitud POST /api/forum/threads recibida para usuario:",
@@ -2268,13 +2293,12 @@ app.post("/api/forum/threads", authenticateToken, async (req, res) => {
 
 // RUTA PARA OBTENER UN FORO A LA VEZ.
 app.get("/api/forum/threads/:id", authenticateToken, async (req, res) => {
-    const threadId = req.params.id;
-    const userId = req.user ? req.user.id_usuario : null; 
+  const threadId = req.params.id;
+  const userId = req.user ? req.user.id_usuario : null;
 
-    try {
-        
-        const [threads] = await pool.query(
-            `
+  try {
+    const [threads] = await pool.query(
+      `
             SELECT
                 f.id_foro AS id,
                 f.titulo AS title,
@@ -2295,23 +2319,25 @@ app.get("/api/forum/threads/:id", authenticateToken, async (req, res) => {
             WHERE
                 f.id_foro = ?
             `,
-            [threadId]
-        );
+      [threadId]
+    );
 
-        if (threads.length === 0) {
-            return res.status(404).json({ message: "Tema del foro no encontrado." });
-        }
+    if (threads.length === 0) {
+      return res.status(404).json({ message: "Tema del foro no encontrado." });
+    }
 
-        const thread = threads[0];
-        if (thread.author_profile_pic) {
-            thread.author_profile_pic = `${req.protocol}://${req.get("host")}${thread.author_profile_pic}`;
-        } else {
-            thread.author_profile_pic = ""; 
-        }
+    const thread = threads[0];
+    if (thread.author_profile_pic) {
+      thread.author_profile_pic = `${req.protocol}://${req.get("host")}${
+        thread.author_profile_pic
+      }`;
+    } else {
+      thread.author_profile_pic = "";
+    }
 
-        // RUTA PARA LAS RESPUESTAS DE ESE FORO
-        const [replies] = await pool.query(
-            `
+    // RUTA PARA LAS RESPUESTAS DE ESE FORO
+    const [replies] = await pool.query(
+      `
             SELECT
                 fm.id_mensaje AS id,
                 fm.contenido AS content,
@@ -2334,62 +2360,64 @@ app.get("/api/forum/threads/:id", authenticateToken, async (req, res) => {
             ORDER BY
                 fm.fecha_publicacion ASC
             `,
-            [threadId]
-        );
-        
-      
-        for (const reply of replies) {
-            if (reply.author_profile_pic) {
-                reply.author_profile_pic = `${req.protocol}://${req.get("host")}${reply.author_profile_pic}`;
-            } else {
-                reply.author_profile_pic = "";
-            }
+      [threadId]
+    );
 
-            const [likesResult] = await pool.query(
-                `SELECT COUNT(*) AS likesCount
+    for (const reply of replies) {
+      if (reply.author_profile_pic) {
+        reply.author_profile_pic = `${req.protocol}://${req.get("host")}${
+          reply.author_profile_pic
+        }`;
+      } else {
+        reply.author_profile_pic = "";
+      }
+
+      const [likesResult] = await pool.query(
+        `SELECT COUNT(*) AS likesCount
                  FROM foro_reaccion
                  WHERE id_mensaje = ? AND tipo_reaccion = 'like'`,
-                [reply.id]
-            );
-            reply.likesCount = likesResult[0].likesCount;
+        [reply.id]
+      );
+      reply.likesCount = likesResult[0].likesCount;
 
-            if (userId) {
-                const [userLikeResult] = await pool.query(
-                    `SELECT COUNT(*) AS isLiked
+      if (userId) {
+        const [userLikeResult] = await pool.query(
+          `SELECT COUNT(*) AS isLiked
                      FROM foro_reaccion
                      WHERE id_mensaje = ? AND id_usuario = ? AND tipo_reaccion = 'like'`,
-                    [reply.id, userId]
-                );
-                reply.likedByCurrentUser = userLikeResult[0].isLiked > 0;
-            } else {
-                reply.likedByCurrentUser = false;
-            }
-        }
-        
-        thread.replies = replies;
-        res.status(200).json(thread);
-    } catch (error) {
-        console.error(`Error al obtener el tema ${threadId} o sus respuestas:`, error);
-        res.status(500).json({
-            message: "Error interno del servidor al obtener el tema del foro.",
-            error: error.message,
-        });
+          [reply.id, userId]
+        );
+        reply.likedByCurrentUser = userLikeResult[0].isLiked > 0;
+      } else {
+        reply.likedByCurrentUser = false;
+      }
     }
+
+    thread.replies = replies;
+    res.status(200).json(thread);
+  } catch (error) {
+    console.error(
+      `Error al obtener el tema ${threadId} o sus respuestas:`,
+      error
+    );
+    res.status(500).json({
+      message: "Error interno del servidor al obtener el tema del foro.",
+      error: error.message,
+    });
+  }
 });
 
-// 4. RUTA PARA AÑADIR RESPUESTA A UN TEMA DE FORO 
+// 4. RUTA PARA AÑADIR RESPUESTA A UN TEMA DE FORO
 app.post(
   "/api/forum/threads/:id/replies",
   authenticateToken,
   async (req, res) => {
     if (!req.user) {
-      return res
-        .status(401)
-        .json({
-          message: "No autenticado. Debes iniciar sesión para responder.",
-        });
+      return res.status(401).json({
+        message: "No autenticado. Debes iniciar sesión para responder.",
+      });
     }
-    const threadId = req.params.id; 
+    const threadId = req.params.id;
     const userId = req.user.id_usuario;
     const { content } = req.body;
 
@@ -2411,7 +2439,6 @@ app.post(
       }
 
       const [result] = await pool.query(
-       
         "INSERT INTO foro_mensaje (id_foro, id_usuario, contenido, fecha_publicacion) VALUES (?, ?, ?, NOW())",
         [threadId, userId, content]
       );
@@ -2434,125 +2461,141 @@ app.post(
   }
 );
 
-// RUTA PARA VERIFICAR LAS REACCIONES POR INDIVIDUAL 
+// RUTA PARA VERIFICAR LAS REACCIONES POR INDIVIDUAL
 app.post("/api/replies/:replyId/like", authenticateToken, async (req, res) => {
-    if (!req.user) {
-        return res.status(401).json({ message: 'No autenticado. Debes iniciar sesión para dar "me gusta".' });
+  if (!req.user) {
+    return res
+      .status(401)
+      .json({
+        message: 'No autenticado. Debes iniciar sesión para dar "me gusta".',
+      });
+  }
+  const replyId = req.params.replyId;
+  const userId = req.user.id_usuario;
+
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    await connection.beginTransaction();
+
+    const [messageDetails] = await connection.query(
+      `SELECT id_mensaje, id_usuario FROM foro_mensaje WHERE id_mensaje = ?`,
+      [replyId]
+    );
+    if (messageDetails.length === 0) {
+      await connection.rollback();
+      return res
+        .status(404)
+        .json({ message: "Mensaje (respuesta) no encontrado." });
     }
-    const replyId = req.params.replyId;
-    const userId = req.user.id_usuario;
+    const replyAuthorId = messageDetails[0].id_usuario;
 
-    let connection;
-    try {
-        connection = await pool.getConnection();
-        await connection.beginTransaction();
+    if (userId === replyAuthorId) {
+      await connection.rollback();
+      return res
+        .status(403)
+        .json({ message: "No puedes reaccionar a tu propia respuesta." });
+    }
 
-        const [messageDetails] = await connection.query(
-            `SELECT id_mensaje, id_usuario FROM foro_mensaje WHERE id_mensaje = ?`,
-            [replyId]
-        );
-        if (messageDetails.length === 0) {
-            await connection.rollback();
-            return res.status(404).json({ message: "Mensaje (respuesta) no encontrado." });
-        }
-        const replyAuthorId = messageDetails[0].id_usuario;
+    const [existingReaction] = await connection.query(
+      `SELECT id_reaccion FROM foro_reaccion WHERE id_mensaje = ? AND id_usuario = ? AND tipo_reaccion = 'like'`,
+      [replyId, userId]
+    );
 
-        if (userId === replyAuthorId) {
-            await connection.rollback();
-            return res.status(403).json({ message: "No puedes reaccionar a tu propia respuesta." });
-        }
+    let action = "";
+    if (existingReaction.length > 0) {
+      await connection.query(
+        `DELETE FROM foro_reaccion WHERE id_reaccion = ?`,
+        [existingReaction[0].id_reaccion]
+      );
+      action = "unliked";
+    } else {
+      await connection.query(
+        `INSERT INTO foro_reaccion (id_mensaje, id_usuario, tipo_reaccion, fecha_reaccion) VALUES (?, ?, ?, NOW())`,
+        [replyId, userId, "like"]
+      );
+      action = "liked";
+    }
 
-        const [existingReaction] = await connection.query(
-            `SELECT id_reaccion FROM foro_reaccion WHERE id_mensaje = ? AND id_usuario = ? AND tipo_reaccion = 'like'`,
-            [replyId, userId]
-        );
+    // Obtenemos el nuevo conteo de likes para la respuesta
+    const [newLikesCountResult] = await connection.query(
+      `SELECT COUNT(*) AS newLikesCount FROM foro_reaccion WHERE id_mensaje = ? AND tipo_reaccion = 'like'`,
+      [replyId]
+    );
+    const newLikesCount = newLikesCountResult[0].newLikesCount;
 
-        let action = "";
-        if (existingReaction.length > 0) {
-            await connection.query(
-                `DELETE FROM foro_reaccion WHERE id_reaccion = ?`,
-                [existingReaction[0].id_reaccion]
-            );
-            action = "unliked";
-        } else {
-            await connection.query(
-                `INSERT INTO foro_reaccion (id_mensaje, id_usuario, tipo_reaccion, fecha_reaccion) VALUES (?, ?, ?, NOW())`,
-                [replyId, userId, "like"]
-            );
-            action = "liked";
-        }
-        
-        // Obtenemos el nuevo conteo de likes para la respuesta
-        const [newLikesCountResult] = await connection.query(
-            `SELECT COUNT(*) AS newLikesCount FROM foro_reaccion WHERE id_mensaje = ? AND tipo_reaccion = 'like'`,
-            [replyId]
-        );
-        const newLikesCount = newLikesCountResult[0].newLikesCount;
-
-        // Y obtenemos el conteo total de likes para el autor
-        const [newAuthorReputationResult] = await connection.query(
-            `SELECT COUNT(fr.id_reaccion) AS total_likes
+    // Y obtenemos el conteo total de likes para el autor
+    const [newAuthorReputationResult] = await connection.query(
+      `SELECT COUNT(fr.id_reaccion) AS total_likes
              FROM foro_mensaje fm
              JOIN foro_reaccion fr ON fm.id_mensaje = fr.id_mensaje
              WHERE fm.id_usuario = ? AND fr.tipo_reaccion = 'like'`,
-            [replyAuthorId]
-        );
-        const reaccion_acumulada_autor = newAuthorReputationResult[0].total_likes;
-
-        await connection.commit();
-        
-        res.json({
-            success: true,
-            message: `Mensaje ${action} exitosamente.`,
-            newLikesCount: newLikesCount,
-            likedByCurrentUser: action === "liked",
-            reaccion_acumulada_autor: reaccion_acumulada_autor,
-        });
-
-    } catch (err) {
-        if (connection) {
-            await connection.rollback();
-        }
-        console.error("Error al procesar el like:", err);
-        res.status(500).json({ message: "Error interno del servidor al procesar la reacción." });
-    } finally {
-        if (connection) {
-            connection.release();
-        }
-    }
-});
-
-// RUTA OBTENER REACCION ACUMULADA DE UN USUARIO ESPECÍFICO 
-app.get("/api/users/:userId/reaccion-acumulada", authenticateToken, async (req, res) => {
-  const { userId } = req.params;
-
-  console.log(`Petición recibida para reaccion-acumulada del usuario: ${userId}`);
-
-  try {
-    const [rows] = await pool.query(
-      `SELECT reaccion_acumulada FROM usuarios WHERE id_usuario = ?`,
-      [userId]
+      [replyAuthorId]
     );
+    const reaccion_acumulada_autor = newAuthorReputationResult[0].total_likes;
 
-    if (rows.length === 0) {
-      console.log(`Usuario con ID ${userId} no encontrado.`);
-      return res.status(404).json({ message: "Usuario no encontrado." });
-    }
+    await connection.commit();
 
-    const reaccionAcumulada = rows[0].reaccion_acumulada || 0;
-    
-    console.log(`Reacción acumulada para el usuario ${userId}: ${reaccionAcumulada}`);
-
-    res.json({ reaccion_acumulada: reaccionAcumulada });
-
-   } catch (error) {
-    console.error("Error al obtener todos los perfiles:", error); 
-    res.status(500).json({
-      message: "Error interno del servidor al obtener perfiles.",
-      error: error.message,
+    res.json({
+      success: true,
+      message: `Mensaje ${action} exitosamente.`,
+      newLikesCount: newLikesCount,
+      likedByCurrentUser: action === "liked",
+      reaccion_acumulada_autor: reaccion_acumulada_autor,
     });
+  } catch (err) {
+    if (connection) {
+      await connection.rollback();
+    }
+    console.error("Error al procesar el like:", err);
+    res
+      .status(500)
+      .json({ message: "Error interno del servidor al procesar la reacción." });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
   }
 });
+
+// RUTA OBTENER REACCION ACUMULADA DE UN USUARIO ESPECÍFICO
+app.get(
+  "/api/users/:userId/reaccion-acumulada",
+  authenticateToken,
+  async (req, res) => {
+    const { userId } = req.params;
+
+    console.log(
+      `Petición recibida para reaccion-acumulada del usuario: ${userId}`
+    );
+
+    try {
+      const [rows] = await pool.query(
+        `SELECT reaccion_acumulada FROM usuarios WHERE id_usuario = ?`,
+        [userId]
+      );
+
+      if (rows.length === 0) {
+        console.log(`Usuario con ID ${userId} no encontrado.`);
+        return res.status(404).json({ message: "Usuario no encontrado." });
+      }
+
+      const reaccionAcumulada = rows[0].reaccion_acumulada || 0;
+
+      console.log(
+        `Reacción acumulada para el usuario ${userId}: ${reaccionAcumulada}`
+      );
+
+      res.json({ reaccion_acumulada: reaccionAcumulada });
+    } catch (error) {
+      console.error("Error al obtener todos los perfiles:", error);
+      res.status(500).json({
+        message: "Error interno del servidor al obtener perfiles.",
+        error: error.message,
+      });
+    }
+  }
+);
 
 // 6. RUTA PARA OBTENER TODOS LOS PERFILES
 app.get("/api/profiles", async (req, res) => {
@@ -2575,7 +2618,7 @@ app.get("/api/profiles", async (req, res) => {
                 usuarios u
             ORDER BY
                 u.nombre_usuario ASC
-        `); 
+        `);
 
     const formattedProfiles = profiles.map((profile) => {
       const fotoUrl = profile.foto_perfil_url
@@ -2598,12 +2641,12 @@ app.get("/api/profiles", async (req, res) => {
   }
 });
 
-// RUTA DE PRUEBA 
+// RUTA DE PRUEBA
 app.get("/", (req, res) => {
   res.send("API de Convenio de Emprendimiento funcionando!");
 });
 
-// RUTA PARA INICIAR EL SERVIDOR 
+// RUTA PARA INICIAR EL SERVIDOR
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Servidor Express corriendo en el puerto ${PORT}`);

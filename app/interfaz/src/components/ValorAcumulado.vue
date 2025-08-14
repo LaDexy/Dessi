@@ -1,6 +1,6 @@
 <template>
 
-  <!--ESTE ES EL ICONO DE MEDALLA DE TARJETAS DE PERFIL QUE MAS ADELANTE SE IMPLEMENTARA COMO CONTADOR DE DESAFIOS PARTICIPADOS-->
+  <!--ESTE ES EL ICONO DE MEDALLA DE TARJETAS DE PERFIL -->
   <div class="valor-acumulado-display">
     <i class="fa-solid fa-medal" style="color: #FFD43B;"></i>
     <span class="valor">{{ reputacion }}</span>
