@@ -41,13 +41,14 @@
     <h2 class="TituloPerfiles">Perfiles de Usuarios</h2>
 
     <AlbumPerfil
-      :show="showAlbumModal"
-      :profileName="selectedProfileName"
-      :album="selectedProfileAlbum"
-      @close="showAlbumModal = false"
-    />
+  :show="showAlbumModal"
+  :profileName="selectedProfileName"
+  :album="selectedProfileAlbum"
+  :localidad="selectedProfileLocalidad"
+  :tipoTrabajo="selectedProfileTipoTrabajo"
+  @close="showAlbumModal = false"
+/>
 
-    <!-- Este componente recibe la lista de perfiles, que ahora incluye el contador de likes -->
     <TarjetasPerfiles
       :profiles="filteredProfiles"
       @send-request="openVentanaSolicitud"
@@ -140,6 +141,8 @@ export default {
       showMisConveniosModal: false,
       misConvenios: [],
       isLoadingConvenios: false,
+       selectedProfileLocalidad: null,
+    selectedProfileTipoTrabajo: null,
     };
   },
 
@@ -465,41 +468,48 @@ export default {
     },
 
     async handleViewProfile(profile) {
-      console.log("Preparando para abrir álbum de fotos de:", profile.nombre_usuario);
+  console.log("Preparando para abrir álbum de fotos de:", profile.nombre_usuario);
 
-      this.selectedProfileName = "Cargando...";
+  this.selectedProfileName = "Cargando...";
+  this.selectedProfileAlbum = [];
+  this.selectedProfileLocalidad = null; 
+  this.selectedProfileTipoTrabajo = null; 
+  this.showAlbumModal = true;
+
+  try {
+    const token = localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
+    if (!token) {
+      throw new Error("No hay token de autenticación.");
+    }
+
+    
+    const response = await axios.get(`http://localhost:4000/api/profiles/${profile.id_usuario}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (response.status === 200) {
+      const profileWithAlbum = response.data;
+      console.log("Álbum de fotos obtenido con éxito:", profileWithAlbum.proyectos);
+      console.log("Datos de perfil completos:", profileWithAlbum); 
+      this.selectedProfileName = profileWithAlbum.nombre_usuario;
+
+     
+      this.selectedProfileLocalidad = profileWithAlbum.localidad || null;
+      this.selectedProfileTipoTrabajo = profileWithAlbum.tipo_negocio || profileWithAlbum.modalidad_trabajo || null;
+      
+      this.selectedProfileAlbum = profileWithAlbum.proyectos.flatMap(p => p.imagenes);
+    } else {
+      console.error("Error al obtener el álbum:", response.status, response.data);
+      this.selectedProfileName = profile.nombre_usuario;
       this.selectedProfileAlbum = [];
-      this.showAlbumModal = true;
-
-      try {
-        const token = localStorage.getItem("userToken") || sessionStorage.getItem("userToken");
-        if (!token) {
-          throw new Error("No hay token de autenticación.");
-        }
-
-        const response = await axios.get(`http://localhost:4000/api/profiles/${profile.id_usuario}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (response.status === 200) {
-          const profileWithAlbum = response.data;
-          console.log("Álbum de fotos obtenido con éxito:", profileWithAlbum.proyectos);
-
-          this.selectedProfileName = profileWithAlbum.nombre_usuario;
-
-          this.selectedProfileAlbum = profileWithAlbum.proyectos.flatMap(p => p.imagenes);
-        } else {
-          console.error("Error al obtener el álbum:", response.status, response.data);
-          this.selectedProfileName = profile.nombre_usuario;
-          this.selectedProfileAlbum = [];
-        }
-      } catch (error) {
-        console.error("Error en la solicitud para obtener el álbum:", error);
-        this.selectedProfileName = profile.nombre_usuario;
-        this.selectedProfileAlbum = [];
-        this.showMessageModal("Error", "No se pudo cargar el álbum de fotos.");
-      }
-    },
+    }
+  } catch (error) {
+    console.error("Error en la solicitud para obtener el álbum:", error);
+    this.selectedProfileName = profile.nombre_usuario;
+    this.selectedProfileAlbum = [];
+    this.showMessageModal("Error", "No se pudo cargar el álbum de fotos.");
+  }
+},
 
     showErrorMessage(title, message) {
       this.messageModalTitle = title;

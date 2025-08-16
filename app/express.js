@@ -306,17 +306,16 @@ app.post("/api/register", async (req, res) => {
     try {
       console.log("Insertando usuario principal...");
       const [userResult] = await connection.query(
-        
         "INSERT INTO usuarios (nombre_usuario, correo_electronico, contrasena_hash, tipo_perfil, fecha_registro, foto_perfil_url, descripcion_perfil, reputacion, desafios_ganados) VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, ?)",
         [
           nombre_usuario,
           correo_electronico,
           contrasena_hash,
           tipo_perfil,
-          "", 
-          "", 
-          0, 
-          0, 
+          "",
+          "",
+          0,
+          0,
         ]
       );
       const id_usuario = userResult.insertId;
@@ -982,12 +981,10 @@ app.get(
         "Error al obtener el recuento de notificaciones no leídas:",
         error
       );
-      res
-        .status(500)
-        .json({
-          message:
-            "Error interno del servidor al obtener el recuento de notificaciones.",
-        });
+      res.status(500).json({
+        message:
+          "Error interno del servidor al obtener el recuento de notificaciones.",
+      });
     }
   }
 );
@@ -1930,12 +1927,10 @@ app.put(
           `Error 403: El usuario ${id_emprendedor_sesion} no es el propietario del desafío ${id_desafio}.`
         );
         await connection.rollback();
-        return res
-          .status(403)
-          .json({
-            message:
-              "No tienes permiso para seleccionar un ganador para este desafío.",
-          });
+        return res.status(403).json({
+          message:
+            "No tienes permiso para seleccionar un ganador para este desafío.",
+        });
       }
 
       // Verificar que el desafío ya haya terminado
@@ -1946,12 +1941,10 @@ app.put(
           `Error 400: El desafío ${id_desafio} aún no ha finalizado.`
         );
         await connection.rollback();
-        return res
-          .status(400)
-          .json({
-            message:
-              "El desafío aún no ha terminado. No se puede seleccionar un ganador.",
-          });
+        return res.status(400).json({
+          message:
+            "El desafío aún no ha terminado. No se puede seleccionar un ganador.",
+        });
       }
 
       // Verificar si ya se ha seleccionado un ganador para este desafío
@@ -1979,11 +1972,9 @@ app.put(
           `Error 404: Propuesta con ID ${id_propuesta_ganadora} no encontrada para el desafío ${id_desafio}.`
         );
         await connection.rollback();
-        return res
-          .status(404)
-          .json({
-            message: "Propuesta ganadora no encontrada para este desafío.",
-          });
+        return res.status(404).json({
+          message: "Propuesta ganadora no encontrada para este desafío.",
+        });
       }
 
       const id_usuario_ganador = propuestaResult[0].id_usuario_proponente;
@@ -2153,7 +2144,7 @@ app.get("/api/profiles/:id", authenticateToken, async (req, res) => {
   );
 
   try {
-    let profileData = {};
+    let profileData = {}; 
     const [users] = await pool.query(
       "SELECT id_usuario, nombre_usuario, correo_electronico, tipo_perfil, foto_perfil_url, descripcion_perfil, reputacion FROM usuarios WHERE id_usuario = ?",
       [userId]
@@ -2177,9 +2168,32 @@ app.get("/api/profiles/:id", authenticateToken, async (req, res) => {
       }`;
     } else {
       profileData.foto_perfil_url = "";
-    }
+    } 
 
-    // Consulta para obtener los proyectos y fotos del usuario
+    const userProfileType = profileData.tipo_perfil;
+
+    if (userProfileType === "Emprendedor") {
+      console.log("Consultando datos de emprendedor...");
+      const [emprendedorData] = await pool.query(
+        "SELECT nombre_negocio, localidad, tipo_negocio, desafios_cuenta FROM emprendedor WHERE id_usuario = ?",
+        [userId]
+      );
+      if (emprendedorData.length > 0) {
+        profileData = { ...profileData, ...emprendedorData[0] };
+      }
+    } else if (
+      userProfileType === "Diseñador" ||
+      userProfileType === "Marketing"
+    ) {
+      console.log("Consultando datos de diseñador/marketing...");
+      const [dmData] = await pool.query(
+        "SELECT localidad, modalidad_trabajo FROM disenador_marketing WHERE id_usuario = ?",
+        [userId]
+      );
+      if (dmData.length > 0) {
+        profileData = { ...profileData, ...dmData[0] };
+      }
+    } 
     console.log("Consultando proyectos y fotos del usuario...");
     const [projects] = await pool.query(
       "SELECT p.id_proyecto, p.titulo_proyecto, p.descripcion_proyecto, p.fecha_creacion, p.estado, i.id_imagen, i.url_imagen, i.descripcion_imagen FROM proyecto p LEFT JOIN imagen i ON p.id_proyecto = i.id_proyecto WHERE p.id_usuario = ? ORDER BY p.fecha_creacion DESC, i.orden ASC",
@@ -2464,11 +2478,9 @@ app.post(
 // RUTA PARA VERIFICAR LAS REACCIONES POR INDIVIDUAL
 app.post("/api/replies/:replyId/like", authenticateToken, async (req, res) => {
   if (!req.user) {
-    return res
-      .status(401)
-      .json({
-        message: 'No autenticado. Debes iniciar sesión para dar "me gusta".',
-      });
+    return res.status(401).json({
+      message: 'No autenticado. Debes iniciar sesión para dar "me gusta".',
+    });
   }
   const replyId = req.params.replyId;
   const userId = req.user.id_usuario;

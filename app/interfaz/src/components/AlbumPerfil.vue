@@ -5,6 +5,11 @@
         <button class="modal-close-button" @click="$emit('close')">&times;</button>
         
         <h3 class="modal-title">Álbum de {{ profileName }}</h3>
+
+        <div class="profile-details-info">
+          <p v-if="localidad"><strong>Localidad:</strong> {{ localidad }}</p>
+          <p v-if="tipoTrabajo"><strong>Modalidad:</strong> {{ tipoTrabajo }}</p>
+        </div>
         
         <div v-if="album && album.length > 0" class="album-grid">
           <div v-for="(image, index) in album" :key="index" class="album-image-container">
@@ -35,6 +40,14 @@ export default {
     album: {
       type: Array,
       default: () => []
+    },
+    localidad: {
+      type: String,
+      default: null
+    },
+    tipoTrabajo: {
+      type: String,
+      default: null
     }
   },
   emits: ['close']
@@ -73,12 +86,12 @@ export default {
   border: none;
   font-size: 1.875rem;
   cursor: pointer;
-  color: #ef4444; /* Rojo */
+  color: #ef4444; 
 }
 .modal-title {
   font-size: 1.875rem;
   font-weight: bold;
-  color: #6a0dad; /* Púrpura */
+  color: #6a0dad; 
   margin-bottom: 1.5rem;
   text-align: center;
 }
@@ -86,14 +99,14 @@ export default {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 1rem;
-  max-height: 400px; /* Altura máxima para el scroll */
+  max-height: 400px; 
   overflow-y: auto;
   padding-right: 1rem;
 }
 .album-image-container {
   position: relative;
   width: 100%;
-  padding-top: 100%; /* Proporción 1:1 */
+  padding-top: 100%; 
   border-radius: 0.5rem;
   overflow: hidden;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -108,7 +121,7 @@ export default {
 }
 .empty-album-message {
   text-align: center;
-  color: #6b7280; /* Gris */
+  color: #6b7280; 
   font-style: italic;
   margin-top: 1rem;
 }
