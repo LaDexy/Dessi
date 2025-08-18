@@ -1933,20 +1933,6 @@ app.put(
         });
       }
 
-      // Verificar que el desafío ya haya terminado
-      const fechaFinDesafio = new Date(desafio.fecha_fin);
-      const fechaActual = new Date();
-      if (fechaActual < fechaFinDesafio) {
-        console.warn(
-          `Error 400: El desafío ${id_desafio} aún no ha finalizado.`
-        );
-        await connection.rollback();
-        return res.status(400).json({
-          message:
-            "El desafío aún no ha terminado. No se puede seleccionar un ganador.",
-        });
-      }
-
       // Verificar si ya se ha seleccionado un ganador para este desafío
       if (desafio.usuario_ganador !== null) {
         console.warn(

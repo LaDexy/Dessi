@@ -1,73 +1,73 @@
 <template>
   <div>
-  <!-- ESTA ES LA PARTE QUE SE CARGA AL DARLE CLIC A LOS DATOS BASICOS DEL DESAFIO -->
-  <div class="modal-overlay" @click.self="cerrarModalDetalle">
-    <div class="modal-content-detail">
-      <div v-if="isLoadingDetail" class="loading-message-detail">Cargando detalles del desafío y participantes...</div>
-      <div v-else-if="detailErrorMessage" class="error-message-detail">{{ detailErrorMessage }}</div>
-      <div v-else-if="challengeDetail" class="challenge-detail-view">
-        <h2 class="detail-title">{{ challengeDetail.nombre_desafio }}</h2>
-        <p class="detail-description">{{ challengeDetail.descripcion_desafio }}</p>
+    <div class="modal-overlay" @click.self="cerrarModalDetalle">
+      <div class="modal-content-detail">
+        <div v-if="isLoadingDetail" class="loading-message-detail">Cargando detalles del desafío y participantes...</div>
+        <div v-else-if="detailErrorMessage" class="error-message-detail">{{ detailErrorMessage }}</div>
+        <div v-else-if="challengeDetail" class="challenge-detail-view">
+          <h2 class="detail-title">{{ challengeDetail.nombre_desafio }}</h2>
+          <p class="detail-description">{{ challengeDetail.descripcion_desafio }}</p>
 
-        <div class="detail-info-grid">
-          <div class="info-item"><p><strong>Estado:</strong> {{ challengeDetail.estado }}</p></div>
-          <div class="info-item"><p><strong>Duración:</strong> {{ challengeDetail.dias_duracion }} días</p></div>
-          <div class="info-item"><p><strong>Creado el:</strong> {{ formatDate(challengeDetail.fecha_creacion) }}</p></div>
-          <div class="info-item"><p><strong>Fecha Fin:</strong> {{ formatDate(challengeDetail.fecha_fin) }}</p></div>
-          <div class="info-item full-width"><p><strong>Beneficios:</strong> {{ challengeDetail.beneficios || 'No especificados' }}</p></div>
-        </div>
+          <div class="detail-info-grid">
+            <div class="info-item"><p><strong>Estado:</strong> {{ challengeStatus }}</p></div>
+            <div class="info-item"><p><strong>Duración:</strong> {{ challengeDetail.dias_duracion }} días</p></div>
+            <div class="info-item"><p><strong>Creado el:</strong> {{ formatDate(challengeDetail.fecha_creacion) }}</p></div>
+            <div class="info-item"><p><strong>Fecha Fin:</strong> {{ formatDate(challengeDetail.fecha_fin) }}</p></div>
+            <div class="info-item full-width"><p><strong>Beneficios:</strong> {{ challengeDetail.beneficios || 'No especificados' }}</p></div>
+          </div>
 
-        <hr>
+          <hr>
 
-        <h3 class="section-subtitle">Propuestas de los Participantes:</h3>
-        <div v-if="isLoadingProposals">Cargando propuestas...</div>
-        <div v-else-if="proposals.length === 0" class="no-proposals-message">
-          <p>Aún no hay propuestas de participantes para este desafío.</p>
-        </div>
-        <div v-else class="proposals-list">
-          <div v-for="proposal in proposals" :key="proposal.id_propuesta" class="proposal-card">
-            <p><strong>De:</strong> {{ proposal.nombre_usuario }}</p> 
-            <p>{{ proposal.texto_propuesta }}</p>
-            <div v-if="proposal.imagen_url" class="proposal-image-container"> 
-              <img :src="`http://localhost:4000${proposal.imagen_url}`" alt="Propuesta del participante" class="proposal-image"/>
+          <div v-if="challengeDetail.usuario_ganador" class="winner-selected-message">
+            <p>🎉 ¡Ya has seleccionado un ganador para este desafío!</p>
+            <p>La propuesta ganadora fue la de <strong>{{ challengeDetail.nombre_ganador }}</strong>.</p>
+          </div>
+          
+          <h3 class="section-subtitle">Propuestas de los Participantes:</h3>
+          <div v-if="isLoadingProposals">Cargando propuestas...</div>
+          <div v-else-if="proposals.length === 0" class="no-proposals-message">
+            <p>Aún no hay propuestas de participantes para este desafío.</p>
+          </div>
+          <div v-else class="proposals-list">
+            <div v-for="proposal in proposals" :key="proposal.id_propuesta" class="proposal-card">
+              <p><strong>De:</strong> {{ proposal.nombre_usuario }}</p> 
+              <p>{{ proposal.texto_propuesta }}</p>
+              <div v-if="proposal.imagen_url" class="proposal-image-container"> 
+                <img :src="`http://localhost:4000${proposal.imagen_url}`" alt="Propuesta del participante" class="proposal-image"/>
+              </div>
+              <p class="proposal-date">Enviado el: {{ formatDate(proposal.fecha_envio) }}</p>
+
+              <button 
+                v-if="!challengeDetail.usuario_ganador" 
+                @click="openSelectWinnerModal(proposal)" 
+                class="select-winner-icon"
+                title="Seleccionar esta propuesta como ganadora"
+              >
+                <i class="fa-solid fa-trophy fa-lg" style="color: #f2bc00;"></i>
+              </button>
+              
+              <span v-if="challengeDetail.usuario_ganador === proposal.id_usuario_proponente" class="winner-badge">
+                🏆 GANADOR
+              </span>
             </div>
-            <p class="proposal-date">Enviado el: {{ formatDate(proposal.fecha_envio) }}</p>
-
-            <!-- Ícono de trofeo: visible si el desafío ha terminado y no hay ganador aún -->
-            <button 
-              v-if="challengeHasEnded && challengeDetail.usuario_ganador === null" 
-              @click="openSelectWinnerModal(proposal)" 
-              class="select-winner-icon"
-              title="Seleccionar esta propuesta como ganadora"
-            >
-              <i class="fa-solid fa-trophy fa-lg" style="color: #f2bc00;"></i>
-            </button>
-            <!-- Muestra el badge "Ganador" si esta es la propuesta ganadora -->
-            <span v-if="challengeDetail.usuario_ganador === proposal.id_usuario_proponente" class="winner-badge">
-              🏆 GANADOR
-            </span>
           </div>
         </div>
       </div>
     </div>
+
+    <ModalSeleccionarGanador
+      v-if="showSelectWinnerModal"
+      :idDesafio="idDesafio"
+      :idPropuestaGanadora="selectedProposal ? selectedProposal.id_propuesta : null"
+      :nombreDesafio="challengeDetail ? challengeDetail.nombre_desafio : ''"
+      @cerrar="showSelectWinnerModal = false"
+      @ganadorSeleccionado="handleWinnerSelected"
+    />
   </div>
-
-  
-  <ModalSeleccionarGanador
-    v-if="showSelectWinnerModal"
-    :idDesafio="idDesafio"
-    :idPropuestaGanadora="selectedProposal ? selectedProposal.id_propuesta : null"
-    :nombreDesafio="challengeDetail ? challengeDetail.nombre_desafio : ''"
-    @cerrar="showSelectWinnerModal = false"
-    @ganadorSeleccionado="handleWinnerSelected"
-  />
-</div>
-
 </template>
 
 <script>
 import axios from 'axios';
-// Importa el nuevo componente de modal
 import ModalSeleccionarGanador from './ModalSeleccionarGanador.vue'; 
 
 export default {
@@ -93,7 +93,6 @@ export default {
     };
   },
   computed: {
-
     challengeHasEnded() {
       if (!this.challengeDetail || !this.challengeDetail.fecha_fin) {
         return false;
@@ -101,7 +100,19 @@ export default {
       const today = new Date();
       const endDate = new Date(this.challengeDetail.fecha_fin);
     
-      return today.setHours(0,0,0,0) > endDate.setHours(0,0,0,0);
+      return today.setHours(0, 0, 0, 0) >= endDate.setHours(0, 0, 0, 0);
+    },
+    challengeStatus() {
+      if (!this.challengeDetail) {
+        return 'Cargando...';
+      }
+      if (this.challengeDetail.usuario_ganador) {
+        return 'Finalizado (Ganador seleccionado)';
+      }
+      if (this.challengeHasEnded) {
+        return 'Finalizado (Esperando ganador)';
+      }
+      return 'Activo';
     }
   },
   watch: {
@@ -129,9 +140,7 @@ export default {
       try {
         const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
         if (!token) {
-         
           this.detailErrorMessage = 'No estás autenticado. Por favor, inicia sesión.';
-         
           return;
         }
 
@@ -150,7 +159,6 @@ export default {
         this.detailErrorMessage = 'Error al cargar los detalles del desafío: ' + (error.message || 'Error de conexión.');
         if (error.response && error.response.status === 403) {
            this.detailErrorMessage = 'No tienes permiso para ver este desafío o tu sesión ha expirado.';
-           
         }
       } finally {
         this.isLoadingDetail = false;
@@ -176,7 +184,6 @@ export default {
         }
       } catch (error) {
         console.error('Error al cargar las propuestas:', error);
-       
       } finally {
         this.isLoadingProposals = false;
       }
@@ -191,25 +198,22 @@ export default {
       this.showSelectWinnerModal = true;
     },
     handleWinnerSelected() {
-     
       console.log('Ganador seleccionado. Refrescando detalles del desafío y propuestas.');
       this.showSelectWinnerModal = false; 
-     
       this.fetchChallengeDetails(this.idDesafio); 
-      
     },
     editChallenge() {
       alert('Funcionalidad de editar desafío (próximamente...)');
     },
     closeChallenge() {
-       alert('Funcionalidad de cerrar desafío (próximamente...)');
+        alert('Funcionalidad de cerrar desafío (próximamente...)');
     }
   }
 }
 </script>
 
 <style scoped>
-
+/* ... (estilos sin cambios) ... */
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -425,7 +429,6 @@ hr {
   font-style: italic;
 }
 
-
 .select-winner-icon {
   position: absolute;
   top: 15px;
@@ -442,7 +445,6 @@ hr {
 .select-winner-icon:hover {
   transform: scale(1.2);
 }
-
 
 .winner-badge {
   position: absolute;
