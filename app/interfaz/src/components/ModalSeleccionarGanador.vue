@@ -75,7 +75,6 @@ export default {
       this.successMessage = '';
       this.errorMessage = '';
 
-     
       const hasContactInfo = Object.values(this.redes_sociales).some(value => value.trim() !== '');
       if (!hasContactInfo) {
         this.errorMessage = 'Debes proporcionar al menos un medio de contacto para el ganador.';
@@ -94,7 +93,7 @@ export default {
           redes_sociales_emprendedor: this.redes_sociales
         };
 
-        const response = await axios.put(`http://localhost:4000/api/desafios/${this.idDesafio}/seleccionar-ganador`, dataToSend, {
+        const response = await axios.put(`http://localhost:4000/api/challenges/${this.idDesafio}/select-winner`, dataToSend, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -126,6 +125,7 @@ export default {
 </script>
 
 <style scoped>
+/* Los estilos CSS no necesitan cambios, ya que solo el script fue modificado */
 .modal-overlay {
   position: fixed;
   top: 0;
