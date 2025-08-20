@@ -11,17 +11,26 @@
         <p class="modal-description">Ingresa los datos de contacto para que el ganador pueda comunicarse contigo.</p>
         
         <form @submit.prevent="seleccionarGanador">
+          
+          <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" v-model="redes_sociales.email" placeholder="contacto@ejemplo.com" class="form-input">
+          </div>
+          <div class="form-group">
+            <label for="whatsapp">WhatsApp:</label>
+            <input type="tel" id="whatsapp" v-model="redes_sociales.whatsapp" placeholder="+584123456789" class="form-input">
+          </div>
           <div class="form-group">
             <label for="instagram">Instagram:</label>
             <input type="text" id="instagram" v-model="redes_sociales.instagram" placeholder="@tu_usuario_de_instagram" class="form-input">
           </div>
           <div class="form-group">
-            <label for="linkedin">LinkedIn (URL):</label>
-            <input type="url" id="linkedin" v-model="redes_sociales.linkedin" placeholder="https://linkedin.com/in/tuperfil" class="form-input">
+            <label for="tiktok">TikTok:</label>
+            <input type="text" id="tiktok" v-model="redes_sociales.tiktok" placeholder="@tu_usuario_de_tiktok" class="form-input">
           </div>
           <div class="form-group">
-            <label for="whatsapp">WhatsApp:</label>
-            <input type="tel" id="whatsapp" v-model="redes_sociales.whatsapp" placeholder="+584123456789" class="form-input">
+            <label for="facebook">Facebook:</label>
+            <input type="text" id="facebook" v-model="redes_sociales.facebook" placeholder="TuUsuario" class="form-input">
           </div>
           
           <button type="submit" class="submit-button">Confirmar Ganador</button>
@@ -59,10 +68,13 @@ export default {
   },
   data() {
     return {
+      
       redes_sociales: {
+        email: '',
+        whatsapp: '',
         instagram: '',
-        linkedin: '',
-        whatsapp: ''
+        tiktok: '',
+        facebook: ''
       },
       isLoading: false,
       successMessage: '',
@@ -93,6 +105,7 @@ export default {
           redes_sociales_emprendedor: this.redes_sociales
         };
 
+       
         const response = await axios.put(`http://localhost:4000/api/challenges/${this.idDesafio}/select-winner`, dataToSend, {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -125,7 +138,7 @@ export default {
 </script>
 
 <style scoped>
-/* Los estilos CSS no necesitan cambios, ya que solo el script fue modificado */
+
 .modal-overlay {
   position: fixed;
   top: 0;

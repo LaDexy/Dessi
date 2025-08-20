@@ -1981,14 +1981,6 @@ app.put(
       );
       console.log(`Desafío ${id_desafio} actualizado correctamente.`);
 
-      await connection.query(
-        "UPDATE usuarios SET desafios_ganados = desafios_ganados + 1 WHERE id_usuario = ?",
-        [id_usuario_ganador]
-      );
-      console.log(
-        `Contador de desafíos ganados incrementado para el usuario ${id_usuario_ganador}.`
-      );
-
       // 5. Notificar al usuario ganador
       console.log(
         `Preparando notificación para el ganador ${id_usuario_ganador}.`
