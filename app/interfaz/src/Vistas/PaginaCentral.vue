@@ -2,6 +2,8 @@
   <div>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+    <BotonSalida v-if="$route.name !== 'Principal'"/>
+
     <ContenidoMenu
       :userRole="userProfileType"
       class="fixed-menu-button"
