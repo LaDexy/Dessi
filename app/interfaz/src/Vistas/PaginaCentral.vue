@@ -2,8 +2,6 @@
   <div>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <BotonSalida/>
-
     <ContenidoMenu
       :userRole="userProfileType"
       class="fixed-menu-button"

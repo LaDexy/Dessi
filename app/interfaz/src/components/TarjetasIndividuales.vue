@@ -9,7 +9,6 @@
       <footer class="Final-Tarjeta">
         <div class="Categoria-Tarjeta">
           <span class="profile-name">{{ profile.nombre_usuario }}</span>
-          <ValorAcumulado :reputacion="profile.reputacion" />
           <IconoInteraccion :totalLikesForo="profile.reaccion_acumulada" />
         </div>
 
@@ -34,13 +33,12 @@
 
 <script>
 
-import ValorAcumulado from '@/components/ValorAcumulado.vue';
+
 import IconoInteraccion from '@/components/IconoInteraccion.vue';
 
 export default {
   name: "TarjetasIndividuales", 
   components: {
-    ValorAcumulado,
     IconoInteraccion
   },
   props: {

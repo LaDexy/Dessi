@@ -2,7 +2,7 @@
   <div id="app">
     <router-view></router-view>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <BotonSalida v-if="!isPaginaCentral" />
+        <BotonSalida v-if="$route.name !== 'Principal'" />
   </div>
 </template>
 
