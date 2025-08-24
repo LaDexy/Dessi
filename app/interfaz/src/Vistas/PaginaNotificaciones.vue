@@ -1,10 +1,7 @@
 <template>
   <div class="pagina-notificaciones-container">
 
-      <!--RENDERIZAR PARA ADAPTACION A NAVEGADOR-->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-       <!--FUNCION PARA TODA LA PAGINA O URL CORRESPONDIENTE A LA NOTIFICACIONES, ESTA ES LA PAGINA QUE SE DESPLIEGA AL PRESIONAR ICONODE NOTIFICACION-->
 
     <h2>Tus Notificaciones</h2>
     <button @click="goBack" class="back-button">
@@ -36,18 +33,26 @@
         <div v-else-if="notification.tipo_notificacion === 'solicitud_aceptada' || notification.tipo_notificacion === 'solicitud_rechazada'">
           <button @click.stop="openAcceptedRejectedModal(notification)" class="btn-view-status">Ver Estado</button>
         </div>
-        
-        <div class="notification-actions">
-            <button
-                v-if="!notification.leida && 
-                     notification.tipo_notificacion !== 'solicitud_contacto' &&
-                     notification.tipo_notificacion !== 'solicitud_aceptada' &&
-                     notification.tipo_notificacion !== 'solicitud_rechazada'"
-                @click.stop="markNotificationAsRead(notification.id_notificacion)"
-                class="action-button mark-read-button"
-            >
+
+        <div v-else-if="notification.tipo_notificacion === 'desafio_ganado'" class="action-buttons">
+            <button @click.stop="openDatosEmprendedorModal(notification)" class="btn-view-status">Ver Datos Emprendedor</button>
+            <button @click.stop="markNotificationAsRead(notification.id_notificacion)" class="action-button mark-read-button">
                 Marcar como leído
             </button>
+        </div>
+
+        <div class="notification-actions">
+          <button
+            v-if="!notification.leida && 
+                  notification.tipo_notificacion !== 'solicitud_contacto' &&
+                  notification.tipo_notificacion !== 'solicitud_aceptada' &&
+                  notification.tipo_notificacion !== 'solicitud_rechazada' &&
+                  notification.tipo_notificacion !== 'desafio_ganado'"
+            @click.stop="markNotificationAsRead(notification.id_notificacion)"
+            class="action-button mark-read-button"
+          >
+            Marcar como leído
+          </button>
         </div>
       </div>
     </div>
@@ -119,12 +124,12 @@
             <p v-if="selectedNewRequest.emisor_tiktok"><strong>TikTok:</strong> {{ selectedNewRequest.emisor_tiktok }}</p>
             <p v-if="selectedNewRequest.emisor_facebook"><strong>Facebook:</strong> {{ selectedNewRequest.emisor_facebook }}</p>
         </div>
-       
+        
         <div class="message-modal-actions">
           <button @click="acceptContactRequestFromModal(selectedNewRequest)" class="btn-accept">Aceptar</button>
           <button @click="rejectContactRequestFromModal(selectedNewRequest)" class="btn-reject">Rechazar</button>
         </div>
-   
+    
       </div>
     </div>
   </div>
@@ -204,6 +209,8 @@ export default {
           return 'fas fa-times-circle text-danger';
         case 'nuevo_desafio':
           return 'fas fa-bullhorn';
+        case 'desafio_ganado':
+          return 'fas fa-award'; // Nuevo ícono para desafíos ganados
         default:
           return 'fas fa-bell';
       }
@@ -233,8 +240,9 @@ export default {
     handleNotificationClick(notification) {
       if (notification.tipo_notificacion === 'solicitud_contacto' ||
           notification.tipo_notificacion === 'solicitud_aceptada' ||
-          notification.tipo_notificacion === 'solicitud_rechazada') {
-        console.log("Notificación de solicitud clickeada. Las acciones están en los botones específicos.");
+          notification.tipo_notificacion === 'solicitud_rechazada' ||
+          notification.tipo_notificacion === 'desafio_ganado') {
+        console.log("Notificación de solicitud o ganado clickeada. Las acciones están en los botones específicos.");
         return;
       }
 
@@ -321,25 +329,37 @@ export default {
       this.markNotificationAsRead(id_notificacion);
       this.closeAcceptedRejectedModal();
     },
-    async openContactDetailsModal(notification) {
-      try {
-        const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
-        const response = await axios.get(`http://localhost:4000/api/solicitudes/${notification.id_referencia}/details`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (response.status === 200) {
-          this.selectedContactDetails = response.data;
-          this.showContactDetailsModal = true;
-          if (!notification.leida) {
-            this.markNotificationAsRead(notification.id_notificacion);
-          }
-        } else {
-          this.showErrorMessage('Error', 'No se pudieron cargar los detalles de contacto.');
+    async openDatosEmprendedorModal(notification) {
+        try {
+            const token = localStorage.getItem('userToken') || sessionStorage.getItem('userToken');
+            if (!token) {
+                console.warn('No hay token de autenticación.');
+                return;
+            }
+
+            const response = await axios.get(`http://localhost:4000/api/desafios/${notification.id_referencia}/ganador`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (response.status === 200 && response.data.contacto_emprendedor) {
+                this.selectedContactDetails = {
+                    ...response.data.contacto_emprendedor,
+                    nombre_usuario: response.data.nombre_emprendedor,
+                    id_notificacion: notification.id_notificacion
+                };
+                this.showContactDetailsModal = true;
+
+                if (!notification.leida) {
+                    this.markNotificationAsRead(notification.id_notificacion);
+                }
+            } else {
+                this.showErrorMessage('Error al Cargar Datos', 'No se pudieron obtener los datos de contacto del emprendedor.');
+            }
+
+        } catch (error) {
+            console.error('Error al obtener datos de contacto para el desafío:', error);
+            this.showErrorMessage('Error de Conexión', 'Hubo un problema al cargar los datos. Inténtalo de nuevo.');
         }
-      } catch (error) {
-        console.error('Error al obtener detalles de contacto:', error);
-        this.showErrorMessage('Error', 'Error de conexión o al obtener detalles de contacto.');
-      }
     },
     closeContactDetailsModal() {
       this.showContactDetailsModal = false;
@@ -359,342 +379,343 @@ export default {
 </script>
 
 <style scoped>
+/* Tu CSS no cambia, solo tienes que asegurarte de que está aquí */
 
 .pagina-notificaciones-container {
-  padding: 20px;
-  max-width: 800px;
-  margin: 20px auto;
-  background-color: #fcfcfc;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-  color: #333;
-  font-family: 'Arial', sans-serif;
+    padding: 20px;
+    max-width: 800px;
+    margin: 20px auto;
+    background-color: #fcfcfc;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+    color: #333;
+    font-family: 'Arial', sans-serif;
 }
 
 h2 {
-  text-align: center;
-  color: #5e1c7d;
-  margin-bottom: 30px;
-  font-size: 2.2em;
-  font-weight: 700;
+    text-align: center;
+    color: #5e1c7d;
+    margin-bottom: 30px;
+    font-size: 2.2em;
+    font-weight: 700;
 }
 
 .back-button {
-  display: inline-flex;
-  align-items: center;
-  padding: 10px 18px;
-  background-color: #d9bad9;
-  color: #5e1c7d;
-  border: 1px solid #c0a8c0;
-  border-radius: 25px;
-  cursor: pointer;
-  font-size: 1.05em;
-  font-weight: 600;
-  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-  margin-bottom: 25px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    display: inline-flex;
+    align-items: center;
+    padding: 10px 18px;
+    background-color: #d9bad9;
+    color: #5e1c7d;
+    border: 1px solid #c0a8c0;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: 1.05em;
+    font-weight: 600;
+    transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    margin-bottom: 25px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .back-button:hover {
-  background-color: #c0a8c0;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: #c0a8c0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .loading-message, .error-message, .no-notifications-message {
-  text-align: center;
-  padding: 20px;
-  font-size: 1.1em;
-  color: #5e1c7d;
-  background-color: #f2e6f2;
-  border-radius: 8px;
-  margin-top: 20px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    text-align: center;
+    padding: 20px;
+    font-size: 1.1em;
+    color: #5e1c7d;
+    background-color: #f2e6f2;
+    border-radius: 8px;
+    margin-top: 20px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .error-message {
-  color: #d84315;
-  background-color: #ffe0b2;
-  border: 1px solid #ffcc80;
+    color: #d84315;
+    background-color: #ffe0b2;
+    border: 1px solid #ffcc80;
 }
 
 .notifications-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
 .notification-card {
-  background-color: #ffffff;
-  border: 1px solid #eee;
-  border-radius: 10px;
-  padding: 18px 22px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
+    background-color: #ffffff;
+    border: 1px solid #eee;
+    border-radius: 10px;
+    padding: 18px 22px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
 }
 
 .notification-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
 }
 
 .notification-card.unread {
-  background-color: #f7eff7; 
-  border-left: 6px solid #5e1c7d; 
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 0 0 1px #5e1c7d;
+    background-color: #f7eff7; 
+    border-left: 6px solid #5e1c7d; 
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 0 0 1px #5e1c7d;
 }
 
 .notification-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
 }
 
 .notification-header i {
-  font-size: 1.7em;
-  margin-right: 15px;
-  color: #5e1c7d;
-  min-width: 30px;
-  text-align: center;
+    font-size: 1.7em;
+    margin-right: 15px;
+    color: #5e1c7d;
+    min-width: 30px;
+    text-align: center;
 }
 
 .notification-header h3 {
-  margin: 0;
-  font-size: 1.3em;
-  color: #5e1c7d;
-  flex-grow: 1;
-  font-weight: 600;
+    margin: 0;
+    font-size: 1.3em;
+    color: #5e1c7d;
+    flex-grow: 1;
+    font-weight: 600;
 }
 
 .notification-message {
-  font-size: 1.05em;
-  color: #444;
-  margin-bottom: 12px;
-  line-height: 1.5;
+    font-size: 1.05em;
+    color: #444;
+    margin-bottom: 12px;
+    line-height: 1.5;
 }
 
 .notification-date {
-  font-size: 0.88em;
-  color: #777;
-  text-align: right;
-  margin-top: 10px;
+    font-size: 0.88em;
+    color: #777;
+    text-align: right;
+    margin-top: 10px;
 }
 
 .solicitud-acciones {
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px solid #eee;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
 }
 
 .solicitud-estado {
-  font-weight: bold;
-  color: #5e1c7d;
-  margin-bottom: 10px;
-  align-self: flex-start;
+    font-weight: bold;
+    color: #5e1c7d;
+    margin-bottom: 10px;
+    align-self: flex-start;
 }
 
 .action-buttons {
-  display: flex;
-  gap: 10px;
+    display: flex;
+    gap: 10px;
 }
 
 .btn-accept, .btn-reject, .btn-view-status {
-  padding: 9px 20px;
-  border: none;
-  border-radius: 22px;
-  cursor: pointer;
-  font-size: 0.98em;
-  font-weight: 600;
-  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  white-space: nowrap;
+    padding: 9px 20px;
+    border: none;
+    border-radius: 22px;
+    cursor: pointer;
+    font-size: 0.98em;
+    font-weight: 600;
+    transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    white-space: nowrap;
 }
 
 .btn-accept {
-  background-color: #8bc34a;
-  color: white;
+    background-color: #8bc34a;
+    color: white;
 }
 
 .btn-accept:hover {
-  background-color: #7cb342;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    background-color: #7cb342;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .btn-reject {
-  background-color: #ef5350;
-  color: white;
+    background-color: #ef5350;
+    color: white;
 }
 
 .btn-reject:hover {
-  background-color: #e53935;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    background-color: #e53935;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .btn-view-status {
-  background-color: #5e1c7d;
-  color: white;
+    background-color: #5e1c7d;
+    color: white;
 }
 
 .btn-view-status:hover {
-  background-color: #4a148c;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    background-color: #4a148c;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
 }
 
 .contact-details {
-  margin-top: 10px;
-  background-color: #f7eaf7;
-  border: 1px solid #e0c0e0;
-  border-radius: 8px;
-  padding: 12px;
-  font-size: 0.9em;
-  color: #5e1c7d;
+    margin-top: 10px;
+    background-color: #f7eaf7;
+    border: 1px solid #e0c0e0;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 0.9em;
+    color: #5e1c7d;
 }
 
 .contact-details p {
-  margin: 5px 0;
+    margin: 5px 0;
 }
 
 .message-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-  backdrop-filter: blur(4px);
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
 }
 
 .message-modal-content {
-  background-color: #ffffff;
-  padding: 35px 30px;
-  border-radius: 18px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  max-width: 500px;
-  width: 90%;
-  text-align: center;
-  position: relative;
-  animation: fadeIn 0.3s ease-out;
+    background-color: #ffffff;
+    padding: 35px 30px;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+    position: relative;
+    animation: fadeIn 0.3s ease-out;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .modal-close-button {
-  position: absolute;
-  top: 15px;
-  right: 18px;
-  background: none;
-  border: none;
-  font-size: 30px;
-  cursor: pointer;
-  color: #b71c1c;
-  transition: transform 0.2s ease, color 0.2s ease;
+    position: absolute;
+    top: 15px;
+    right: 18px;
+    background: none;
+    border: none;
+    font-size: 30px;
+    cursor: pointer;
+    color: #b71c1c;
+    transition: transform 0.2s ease, color 0.2s ease;
 }
 .modal-close-button:hover {
-  color: #8c0000;
-  transform: rotate(90deg) scale(1.1);
+    color: #8c0000;
+    transform: rotate(90deg) scale(1.1);
 }
 
 .message-modal-title {
-  font-size: 2rem;
-  font-weight: bold;
-  color: #5e1c7d;
-  margin-bottom: 20px;
-  line-height: 1.2;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #5e1c7d;
+    margin-bottom: 20px;
+    line-height: 1.2;
 }
 
 .message-modal-message {
-  font-size: 1.15rem;
-  color: #444;
-  margin-bottom: 30px;
-  line-height: 1.6;
+    font-size: 1.15rem;
+    color: #444;
+    margin-bottom: 30px;
+    line-height: 1.6;
 }
 
 .message-modal-actions {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  margin-top: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
 }
 
 .message-modal-button-close {
-  background-color: #d9bad9;
-  color: #5e1c7d;
-  padding: 12px 28px;
-  border-radius: 25px;
-  font-weight: 600;
-  transition: background-color 0.2s ease-in-out, transform 0.2s ease, box-shadow 0.2s ease;
-  cursor: pointer;
-  border: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background-color: #d9bad9;
+    color: #5e1c7d;
+    padding: 12px 28px;
+    border-radius: 25px;
+    font-weight: 600;
+    transition: background-color 0.2s ease-in-out, transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .message-modal-button-close:hover {
-  background-color: #c0a8c0;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    background-color: #c0a8c0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
 
 .contact-details-modal-info {
-  text-align: left;
-  margin-bottom: 25px;
-  background-color: #fcf6fc;
-  border-radius: 10px;
-  padding: 15px 20px;
-  border: 1px solid #eee;
+    text-align: left;
+    margin-bottom: 25px;
+    background-color: #fcf6fc;
+    border-radius: 10px;
+    padding: 15px 20px;
+    border: 1px solid #eee;
 }
 .contact-details-modal-info p {
-  margin: 8px 0;
-  font-size: 1.05em;
-  color: #333;
-  line-height: 1.4;
+    margin: 8px 0;
+    font-size: 1.05em;
+    color: #333;
+    line-height: 1.4;
 }
 .contact-details-modal-info strong {
-  color: #5e1c7d;
+    color: #5e1c7d;
 }
 
 .icon-container {
-  font-size: 4em;
-  margin-bottom: 20px;
-  display: flex;
-  justify-content: center;
+    font-size: 4em;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
 }
 
 .success-icon {
-  color: #8bc34a;
+    color: #8bc34a;
 }
 
 .error-icon {
-  color: #ef5350;
+    color: #ef5350;
 }
 
 .success-title {
-  color: #8bc34a;
+    color: #8bc34a;
 }
 
 .error-title {
-  color: #ef5350;
+    color: #ef5350;
 }
 
 .received-date {
-  font-size: 0.95em;
-  color: #888;
-  margin-top: 20px;
+    font-size: 0.95em;
+    color: #888;
+    margin-top: 20px;
 }
 
 .action-button.mark-read-button {
