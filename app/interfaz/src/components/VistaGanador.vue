@@ -230,7 +230,7 @@ export default {
 .back-button {
   display: inline-block;
   padding: 15px 30px;
-  background-color: #5e1c7d;
+  background-color: hsl(300, 40%, 74%);
   color: white;
   text-decoration: none;
   border-radius: 12px;
@@ -239,7 +239,7 @@ export default {
 }
 
 .back-button:hover {
-  background-color: #4a1763;
+  background-color: hsl(300, 50%, 71%);
   transform: translateY(-2px);
 }
 

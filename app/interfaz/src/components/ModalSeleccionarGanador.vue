@@ -251,7 +251,7 @@ export default {
 .submit-button {
   width: 100%;
   padding: 15px;
-  background-color: #5e1c7d;
+  background-color: #d9bad9;
   color: white;
   border: none;
   border-radius: 12px;
@@ -264,7 +264,7 @@ export default {
 }
 
 .submit-button:hover {
-  background-color: #4a1763;
+  background-color: #d6a1d6;
   transform: translateY(-2px);
 }
 

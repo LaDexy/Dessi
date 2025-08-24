@@ -240,16 +240,16 @@ export default {
   }
 }
 
-/* Título del modal */
+
 .modal-heading {
-  font-size: 2.2em; /* Equivalent to text-2xl */
-  font-weight: bold; /* Equivalent to font-bold */
-  text-align: center; /* Equivalent to text-center */
-  color: #333; /* Equivalent to text-gray-800 */
-  margin-bottom: 30px; /* Equivalent to mb-6 */
+  font-size: 2.2em; 
+  font-weight: bold;
+  text-align: center; 
+  color: #333;
+  margin-bottom: 30px; 
 }
 
-/* Botón de cerrar el modal */
+
 .close-button {
   position: absolute;
   top: 15px;
@@ -265,65 +265,64 @@ export default {
   transform: rotate(90deg);
 }
 
-/* Estilos generales para los grupos de formulario */
+
 .form-group {
-  margin-bottom: 20px; /* Equivalent to mb-4 */
+  margin-bottom: 20px; 
 }
 
-/* Estilo para el último grupo de formulario para ajustar el margen */
+
 .form-group-last {
-  margin-bottom: 30px; /* Equivalent to mb-6 */
+  margin-bottom: 30px; 
 }
 
 .form-group label,
 .form-group-last label {
-  display: block; /* Equivalent to block */
-  color: #5e1c7d; /* Equivalent to text-gray-700 */
-  font-size: 0.95em; /* Close to text-sm */
-  font-weight: 600; /* Equivalent to font-semibold */
-  margin-bottom: 8px; /* Equivalent to mb-2 */
+  display: block; 
+  color: #5e1c7d; 
+  font-size: 0.95em; 
+  font-weight: 600; 
+  margin-bottom: 8px; 
 }
 
-/* Estilos para los inputs de texto y número y textareas */
+
 .form-field {
-  width: 100%; /* Equivalent to w-full */
-  padding: 12px 15px; /* Equivalent to py-2 px-3 */
-  border: 1px solid #e0e0e0; /* Equivalent to border */
-  border-radius: 8px; /* Equivalent to rounded-md */
+  width: 100%; 
+  padding: 12px 15px; 
+  border: 1px solid #e0e0e0; 
+  border-radius: 8px; 
   font-size: 1em;
-  color: #333; /* Equivalent to text-gray-700 */
+  color: #333; 
   background-color: #fcfcfc;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
   box-sizing: border-box;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); /* Equivalent to shadow-sm */
-  -webkit-appearance: none; /* Equivalent to appearance-none */
-  appearance: none; /* Equivalent to appearance-none */
-  line-height: 1.25; /* Equivalent to leading-tight */
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05); 
+  -webkit-appearance: none; 
+  appearance: none; 
+  line-height: 1.25; 
 }
 
 .form-field:focus {
-  outline: none; /* Equivalent to focus:outline-none */
-  border-color: #d9bad9; /* Equivalent to focus:border-transparent (or a specific color) */
-  box-shadow: 0 0 0 3px hsla(300, 29%, 78%, 0.5); /* Equivalent to focus:ring-2 focus:ring-purple-500 */
+  outline: none; 
+  border-color: #d9bad9; 
+  box-shadow: 0 0 0 3px hsla(300, 29%, 78%, 0.5); 
 }
 
-/* Botón de crear desafío */
 .submit-button {
-  width: 100%; /* Equivalent to w-full */
-  background-color: #5e1c7d; /* Equivalent to bg-purple-600 */
-  color: white; /* Equivalent to text-white */
-  padding: 14px 20px; /* Equivalent to py-2 px-4 */
+  width: 100%; 
+  background-color: hsl(300, 40%, 74%); 
+  color: white;
+  padding: 14px 20px; 
   border: none;
-  border-radius: 25px; /* Equivalent to rounded-md, but more rounded here */
+  border-radius: 25px; 
   font-size: 1.15em;
-  font-weight: bold; /* Equivalent to font-bold */
+  font-weight: bold; 
   cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; /* Equivalent to transition duration-300 ease-in-out */
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; 
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
 }
 
 .submit-button:hover:not(:disabled) {
-  background-color: #4a148c; /* Equivalent to hover:bg-purple-700 */
+  background-color: hsl(300, 54%, 71%); 
   transform: translateY(-3px);
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
 }
@@ -334,11 +333,11 @@ export default {
   box-shadow: none;
 }
 
-/* Mensajes de error */
+
 .error-text {
-  color: #ef5350; /* Equivalent to text-red-500 */
-  text-align: center; /* Equivalent to text-center */
-  margin-top: 25px; /* Equivalent to mt-4 */
+  color: #ef5350; 
+  text-align: center; 
+  margin-top: 25px; 
   background-color: #ffebee;
   padding: 12px;
   border-radius: 8px;
@@ -346,11 +345,11 @@ export default {
   border: 1px solid #ef9a9a;
 }
 
-/* Mensajes de éxito */
+
 .success-text {
-  color: #8bc34a; /* Equivalent to text-green-500 */
-  text-align: center; /* Equivalent to text-center */
-  margin-top: 25px; /* Equivalent to mt-4 */
+  color: #8bc34a;
+  text-align: center; 
+  margin-top: 25px; 
   background-color: #e8f5e9;
   padding: 12px;
   border-radius: 8px;
@@ -358,7 +357,6 @@ export default {
   border: 1px solid #a5d6a7;
 }
 
-/* Mensaje de desafíos restantes */
 .challenge-limit-message {
   background-color: #f2e6f2;
   color: #5e1c7d;
